@@ -137,6 +137,34 @@ impl Calculo {
     pub fn validacion(&self) -> bool {
         self.contexto.validacion
     }
+
+    /// ¿Puede medir con los temporizadores de la GPU (su cola los tiene)?
+    #[must_use]
+    pub fn mide_tiempos(&self) -> bool {
+        self.contexto.bits_tiempo > 0
+    }
+
+    /// Ejecuta un kernel SPIR-V (entrada `main`; un buffer de `u32` en el conjunto 0,
+    /// enlace 0) sobre `elementos` valores, en grupos de `grupo` hilos, y devuelve
+    /// el buffer y lo que tardó el kernel según la GPU.
+    ///
+    /// # Errors
+    ///
+    /// Si la GPU no admite tantos grupos, rechaza el SPIR-V o Vulkan falla.
+    pub fn ejecutar(&self, spirv: &[u32], elementos: u32, grupo: u32) -> Result<Resultado, String> {
+        let e = ffi::ejecutar(&self.contexto, spirv, elementos, grupo)?;
+        Ok(Resultado { datos: e.datos, nanosegundos: e.nanosegundos })
+    }
+}
+
+/// Lo que devuelve un kernel.
+#[derive(Debug, Clone)]
+pub struct Resultado {
+    /// El buffer, ya en la CPU.
+    pub datos: Vec<u32>,
+    /// Lo que tardó **solo el kernel**, medido por la GPU (sin la copia ni el envío).
+    /// `None` si la cola no tiene temporizadores.
+    pub nanosegundos: Option<f64>,
 }
 
 /// Los avisos y errores de las capas de validación en todo el proceso. La regla

@@ -67,3 +67,38 @@ fn contexto_de_vulkan_sin_avisos() {
     drop(calculo);
     assert_eq!(avisos_de_validacion(), 0, "las capas de validación avisaron (ver arriba)");
 }
+
+#[test]
+fn memoria_con_lo_necesario_y_mejor_con_lo_preferido() {
+    use telar_gpu::eleccion::{MEMORIA_COHERENTE, MEMORIA_CON_CACHE, MEMORIA_GPU, MEMORIA_VISIBLE, elegir_memoria};
+    let visible = MEMORIA_VISIBLE | MEMORIA_COHERENTE;
+    let tipos = [MEMORIA_GPU, visible, visible | MEMORIA_CON_CACHE];
+    // Para leer en la CPU: visible y coherente; mejor con caché.
+    assert_eq!(elegir_memoria(&tipos, 0b111, visible, MEMORIA_CON_CACHE), Some(2));
+    // Si el recurso no admite el tipo con caché (bit 2 apagado), el otro.
+    assert_eq!(elegir_memoria(&tipos, 0b011, visible, MEMORIA_CON_CACHE), Some(1));
+    assert_eq!(elegir_memoria(&tipos, 0b111, MEMORIA_GPU, 0), Some(0));
+    assert_eq!(elegir_memoria(&tipos, 0b001, visible, 0), None);
+}
+
+#[test]
+fn grupos_y_tiempos() {
+    use telar_gpu::eleccion::{grupos, nanosegundos};
+    assert_eq!(grupos(1 << 24, 256), 65_536);
+    assert_eq!(grupos(257, 256), 2); // el último grupo, incompleto
+    assert_eq!(grupos(0, 256), 0);
+    // 1000 tics de 1 ns.
+    assert_eq!(nanosegundos(500, 1500, 64, 1.0), 1000.0);
+    // Un contador de 36 bits que da la vuelta entre las dos lecturas.
+    let maximo = (1u64 << 36) - 1;
+    assert_eq!(nanosegundos(maximo - 9, 10, 36, 1.0), 20.0);
+}
+
+#[test]
+fn demasiados_grupos_es_un_error_antes_de_tocar_la_gpu() {
+    let Ok(calculo) = Calculo::nuevo(&Opciones::default()) else {
+        return; // sin Vulkan: lo dice contexto_de_vulkan_sin_avisos
+    };
+    let error = calculo.ejecutar(&[], u32::MAX, 1).err().unwrap_or_default();
+    assert!(error.contains("grupos"), "{error}");
+}

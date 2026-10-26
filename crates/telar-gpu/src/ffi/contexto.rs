@@ -13,6 +13,7 @@ use super::tipos::{
     ST_APPLICATION_INFO, ST_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT, ST_DEVICE_CREATE_INFO, ST_DEVICE_QUEUE_CREATE_INFO,
     ST_INSTANCE_CREATE_INFO, ST_WIN32_SURFACE_CREATE_INFO_KHR, TIPO_GENERAL, TIPOS_DE_MENSAJE, VK_API_1_3, VK_SUCCESS,
 };
+use super::tipos_calculo::{Monton, PropiedadesMemoria, TipoMemoria};
 use crate::eleccion::puntuar;
 
 /// Avisos y errores de las capas de validación en todo el proceso.
@@ -63,6 +64,25 @@ pub(crate) struct Contexto {
     pub(crate) familia: u32,
     pub(crate) nombre: String,
     pub(crate) validacion: bool,
+    /// Nanosegundos por tic del temporizador de la GPU (`timestampPeriod`).
+    pub(crate) periodo_ns: f32,
+    /// Bits válidos de los tiempos en la familia elegida (0 = sin temporizador).
+    pub(crate) bits_tiempo: u32,
+    /// Grupos que se pueden lanzar en X de una vez.
+    pub(crate) grupos_max_x: u32,
+    /// Las propiedades de cada tipo de memoria (`VkMemoryType::propertyFlags`).
+    pub(crate) tipos_memoria: Vec<u32>,
+}
+
+/// Lo que se recuerda de la mejor GPU mientras se buscan.
+struct Candidata {
+    puntos: u32,
+    fisico: Fisico,
+    familia: u32,
+    nombre: String,
+    periodo_ns: f32,
+    bits_tiempo: u32,
+    grupos_max_x: u32,
 }
 
 impl Contexto {
@@ -86,6 +106,10 @@ impl Contexto {
             familia: 0,
             nombre: String::new(),
             validacion,
+            periodo_ns: 0.0,
+            bits_tiempo: 0,
+            grupos_max_x: 0,
+            tipos_memoria: Vec::new(),
         };
         if let Some((crear, _)) = fi.mensajero {
             let info = info_mensajero();
@@ -125,7 +149,7 @@ impl Contexto {
             v.truncate(n as usize);
             v
         };
-        let mut mejor: Option<(u32, Fisico, u32, String)> = None;
+        let mut mejor: Option<Candidata> = None;
         for fisico in fisicos {
             let mut p = PropiedadesFisico {
                 version_api: 0,
@@ -154,14 +178,33 @@ impl Contexto {
                 continue;
             };
             let puntos = puntuar(p.tipo);
-            if mejor.as_ref().is_none_or(|m| puntos > m.0) {
+            if mejor.as_ref().is_none_or(|m| puntos > m.puntos) {
                 let fin = p.nombre.iter().position(|&b| b == 0).unwrap_or(p.nombre.len());
-                mejor = Some((puntos, fisico, familia, String::from_utf8_lossy(&p.nombre[..fin]).into_owned()));
+                mejor = Some(Candidata {
+                    puntos,
+                    fisico,
+                    familia,
+                    nombre: String::from_utf8_lossy(&p.nombre[..fin]).into_owned(),
+                    periodo_ns: p.periodo_tiempo(),
+                    bits_tiempo: familias[familia as usize].bits_tiempo,
+                    grupos_max_x: p.grupos_max_x(),
+                });
             }
         }
-        let (_, fisico, familia, nombre) =
-            mejor.ok_or("ninguna GPU tiene una cola de gráficos que pueda presentar en la ventana")?;
-        (self.fisico, self.familia, self.nombre) = (fisico, familia, nombre);
+        let c = mejor.ok_or("ninguna GPU tiene una cola de gráficos que pueda presentar en la ventana")?;
+        (self.fisico, self.familia, self.nombre) = (c.fisico, c.familia, c.nombre);
+        (self.periodo_ns, self.bits_tiempo, self.grupos_max_x) = (c.periodo_ns, c.bits_tiempo, c.grupos_max_x);
+        let mut memoria = PropiedadesMemoria {
+            n_tipos: 0,
+            tipos: [TipoMemoria::default(); 32],
+            n_montones: 0,
+            montones: [Monton::default(); 16],
+        };
+        // SAFETY: el físico es válido y `memoria` tiene la forma exacta de
+        // VkPhysicalDeviceMemoryProperties (32 tipos y 16 montones).
+        unsafe { (self.fi.memoria)(self.fisico, &raw mut memoria) };
+        let n = (memoria.n_tipos as usize).min(32);
+        self.tipos_memoria = memoria.tipos[..n].iter().map(|t| t.propiedades).collect();
         Ok(())
     }
 

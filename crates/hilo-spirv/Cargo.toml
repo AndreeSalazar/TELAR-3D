@@ -1,0 +1,13 @@
+[package]
+name = "hilo-spirv"
+description = "SPIR-V emitido a mano, en no_std: el ensamblador de TELAR antes de HILO"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+# Del núcleo (no_std + alloc): no usa ningún crate, ni conoce Vulkan.
+
+[lints]
+workspace = true

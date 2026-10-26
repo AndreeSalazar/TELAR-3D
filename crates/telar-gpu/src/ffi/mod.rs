@@ -7,6 +7,7 @@
 //! - `funciones`: las del dispositivo (y, si hay ventana, las de la swapchain).
 //! - `contexto`: instancia, validación, superficie, dispositivo y cola.
 //! - `presentacion`: swapchain, sincronización y el dibujo de cada fotograma.
+//! - `tipos_calculo`, `funciones_calculo` y `calculo`: buffers, pipelines de cálculo y tiempos.
 
 #![allow(unsafe_code, reason = "la puerta a Vulkan: cada unsafe lleva su // SAFETY:")]
 
@@ -25,11 +26,16 @@ macro_rules! cargar {
     }};
 }
 
+mod calculo;
 mod carga;
 mod contexto;
 mod funciones;
+mod funciones_calculo;
 mod presentacion;
+mod recursos;
 mod tipos;
+mod tipos_calculo;
 
+pub(crate) use calculo::ejecutar;
 pub(crate) use contexto::{AVISOS, Contexto};
 pub(crate) use presentacion::Presentacion;

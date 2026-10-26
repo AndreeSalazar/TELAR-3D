@@ -28,3 +28,19 @@ Los avisos de tipo GENERAL (del cargador de Vulkan y de capas que otros programa
 ## Tests
 
 `tests/app.rs` lanza el ejecutable de verdad con `--prueba` y exige «120 fotogramas · 0 avisos de validación».
+
+## La Fase 2: el primer kernel
+
+```bash
+cargo run -p telar-app --release -- --calculo                    # 16 777 216 números
+cargo run -p telar-app --release -- --calculo --elementos 1000000
+```
+
+`hilo-spirv` escribe el kernel, `telar-gpu` lo ejecuta y lo mide, y la app lo compara **bit a bit** con `hash_pcg` en la CPU. En la RTX 3060:
+
+```text
+GPU (solo el kernel): 0.196 ms · CPU (un hilo): 16.868 ms
+GPU y CPU iguales bit a bit (16777216 de 16777216) · 0 avisos de validación
+```
+
+El test `el_primer_kernel_da_lo_mismo_en_la_gpu_que_en_la_cpu` lo exige con 1 048 576 números.

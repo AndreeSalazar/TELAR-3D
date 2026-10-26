@@ -5,6 +5,7 @@
 use core::ffi::c_void;
 
 use super::carga::FnInstancia;
+use super::funciones_calculo::FnCalculo;
 use super::tipos::{
     Asig, BarreraImagen, Cola, Comandos, Disp, InfoEnvio, InfoInicioComandos, InfoPresentacion, InfoReservaComandos,
     InfoSimple, InfoSwapchain, Objeto, Rango,
@@ -62,6 +63,8 @@ pub(crate) struct FnDispositivo {
     pub(crate) enviar: Enviar,
     /// Solo si el dispositivo activó `VK_KHR_swapchain` (hay ventana).
     pub(crate) swapchain: Option<FnSwapchain>,
+    /// Buffers, pipelines de cálculo, despacho y tiempos.
+    pub(crate) calculo: FnCalculo,
 }
 
 /// Las funciones de `VK_KHR_swapchain`.
@@ -109,6 +112,7 @@ impl FnDispositivo {
             limpiar_color: cargar!(buscar, "vkCmdClearColorImage", LimpiarColor),
             enviar: cargar!(buscar, "vkQueueSubmit", Enviar),
             swapchain,
+            calculo: FnCalculo::cargar(buscar)?,
         })
     }
 }

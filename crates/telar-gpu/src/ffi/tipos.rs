@@ -165,6 +165,32 @@ pub(crate) struct PropiedadesFisico {
     pub(crate) resto: [u8; 1024],
 }
 
+/// Desplazamientos dentro de `VkPhysicalDeviceProperties`, calculados campo a
+/// campo sobre `vulkan_core.h` con las reglas de alineación de C (la estructura
+/// mide 824 bytes y `limits` empieza en el 296).
+pub(crate) const DESPLAZAMIENTO_GRUPOS_MAX_X: usize = 516; // limits.maxComputeWorkGroupCount[0]
+pub(crate) const DESPLAZAMIENTO_PERIODO_TIEMPO: usize = 720; // limits.timestampPeriod
+/// Dónde empieza `resto`: 5 × u32 + el nombre (256 bytes).
+const INICIO_RESTO: usize = 20 + 256;
+
+impl PropiedadesFisico {
+    /// Los 4 bytes que hay en `desplazamiento` (contado desde el principio de la estructura).
+    fn cuatro_bytes(&self, desplazamiento: usize) -> [u8; 4] {
+        let i = desplazamiento - INICIO_RESTO;
+        [self.resto[i], self.resto[i + 1], self.resto[i + 2], self.resto[i + 3]]
+    }
+
+    /// Cuántos grupos se pueden lanzar en X de una vez.
+    pub(crate) fn grupos_max_x(&self) -> u32 {
+        u32::from_le_bytes(self.cuatro_bytes(DESPLAZAMIENTO_GRUPOS_MAX_X))
+    }
+
+    /// Nanosegundos por tic del temporizador de la GPU.
+    pub(crate) fn periodo_tiempo(&self) -> f32 {
+        f32::from_le_bytes(self.cuatro_bytes(DESPLAZAMIENTO_PERIODO_TIEMPO))
+    }
+}
+
 /// `VkQueueFamilyProperties`.
 #[repr(C)]
 #[derive(Default, Clone, Copy)]

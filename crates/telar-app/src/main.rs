@@ -10,7 +10,11 @@
 //! cargo run -p telar-app -- --prueba          ventana oculta, 120 fotogramas; sale con 1 si hay avisos
 //! cargo run -p telar-app -- --sin-validacion  sin las capas de validación (más rápido)
 //! cargo run -p telar-app -- --segundos 5      visible, y se cierra sola a los 5 s
+//! cargo run -p telar-app --release -- --calculo [--elementos N]
+//!                                             Fase 2: el primer kernel en la GPU, bit a bit contra la CPU
 //! ```
+
+mod calculo;
 
 use std::process::ExitCode;
 use std::time::{Duration, Instant};
@@ -31,6 +35,20 @@ fn main() -> ExitCode {
     let validacion = !args.iter().any(|a| a == "--sin-validacion");
     // `--segundos N`: se cierra sola (para medir los fps con la ventana visible).
     let segundos = args.iter().position(|a| a == "--segundos").and_then(|i| args.get(i + 1)?.parse::<u64>().ok());
+    if args.iter().any(|a| a == "--calculo") {
+        let elementos = args.iter().position(|a| a == "--elementos").and_then(|i| args.get(i + 1)?.parse::<u32>().ok());
+        return match calculo::medir(validacion, elementos.unwrap_or(1 << 24)) {
+            Ok(iguales) => {
+                let avisos = avisos_de_validacion();
+                println!("telar: {avisos} avisos de validación");
+                if iguales && avisos == 0 { ExitCode::SUCCESS } else { ExitCode::FAILURE }
+            }
+            Err(e) => {
+                eprintln!("telar: {e}");
+                ExitCode::FAILURE
+            }
+        };
+    }
     match ejecutar(prueba, validacion, segundos.map(Duration::from_secs)) {
         Ok(cuadros) => {
             let avisos = avisos_de_validacion();

@@ -83,3 +83,40 @@ pub fn mezclar(a: [f32; 4], b: [f32; 4], t: f32) -> [f32; 4] {
     let t = t.clamp(0.0, 1.0);
     core::array::from_fn(|i| a[i] + (b[i] - a[i]) * t)
 }
+
+/// `VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT`: memoria de la GPU (la rápida).
+pub const MEMORIA_GPU: u32 = 0x1;
+/// `HOST_VISIBLE`: la CPU la puede leer.
+pub const MEMORIA_VISIBLE: u32 = 0x2;
+/// `HOST_COHERENT`: sin vaciar cachés a mano.
+pub const MEMORIA_COHERENTE: u32 = 0x4;
+/// `HOST_CACHED`: con caché en la CPU (leerla es mucho más rápido).
+pub const MEMORIA_CON_CACHE: u32 = 0x8;
+
+/// El tipo de memoria: de los que el recurso admite (`permitidos`, un bit por
+/// tipo), el primero con todas las `necesarias`; si alguno tiene además las
+/// `preferidas`, ese.
+#[must_use]
+pub fn elegir_memoria(tipos: &[u32], permitidos: u32, necesarias: u32, preferidas: u32) -> Option<u32> {
+    let validos = || {
+        (0u32..).zip(tipos).filter(move |&(i, &t)| i < 32 && permitidos & (1 << i) != 0 && t & necesarias == necesarias)
+    };
+    validos().find(|&(_, &t)| t & preferidas == preferidas).or_else(|| validos().next()).map(|(i, _)| i)
+}
+
+/// Cuántos grupos de `grupo` hilos hacen falta para `elementos` (el último, incompleto).
+#[must_use]
+pub fn grupos(elementos: u32, grupo: u32) -> u32 {
+    elementos.div_ceil(grupo.max(1))
+}
+
+/// Del contador de la GPU a nanosegundos: solo valen los `bits` bajos (el contador
+/// da la vuelta) y cada tic dura `periodo_ns`.
+#[must_use]
+pub fn nanosegundos(inicio: u64, fin: u64, bits: u32, periodo_ns: f32) -> f64 {
+    let mascara = if bits >= 64 { u64::MAX } else { (1u64 << bits) - 1 };
+    let tics = fin.wrapping_sub(inicio) & mascara;
+    let tics = f64::from(u32::try_from(tics >> 32).unwrap_or(0)) * 4_294_967_296.0
+        + f64::from(u32::try_from(tics & 0xFFFF_FFFF).unwrap_or(0));
+    tics * f64::from(periodo_ns)
+}

@@ -20,3 +20,20 @@ fn ventana_y_gpu_sin_avisos_de_validacion() {
     // La inicial y una por cada cambio de tamaño.
     assert!(texto.contains("swapchain creada 3 veces"), "la swapchain no se rehízo:\n{texto}");
 }
+
+#[test]
+fn el_primer_kernel_da_lo_mismo_en_la_gpu_que_en_la_cpu() {
+    let salida = Command::new(env!("CARGO_BIN_EXE_telar"))
+        .args(["--calculo", "--elementos", "1048576"])
+        .output()
+        .expect("no se pudo lanzar telar");
+    let texto = String::from_utf8_lossy(&salida.stdout);
+    let errores = String::from_utf8_lossy(&salida.stderr);
+    if errores.contains("vulkan-1.dll") {
+        eprintln!("sin Vulkan en esta máquina: {errores}");
+        return;
+    }
+    assert!(salida.status.success(), "telar --calculo falló:\n{texto}\n{errores}");
+    assert!(texto.contains("iguales bit a bit (1048576 de 1048576)"), "{texto}");
+    assert!(texto.contains("0 avisos de validación"), "{texto}");
+}

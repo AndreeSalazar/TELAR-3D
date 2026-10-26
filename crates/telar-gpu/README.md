@@ -41,3 +41,20 @@ cargo test -p telar-gpu -- --nocapture
 ```
 
 Las decisiones puras, y un contexto de Vulkan de verdad (sin ventana) con validación: **cero avisos**. En una máquina sin Vulkan, el test lo dice y no cuenta como fallo.
+
+## Calcular (Fase 2)
+
+```rust
+let gpu = Calculo::nuevo(&Opciones::default())?;          // sin ventana
+let r = gpu.ejecutar(&spirv, 1 << 24, 256)?;               // kernel SPIR-V, elementos, hilos por grupo
+r.datos;        // el buffer, ya en la CPU
+r.nanosegundos; // solo el kernel, medido por la GPU
+```
+
+- **Los datos viven en memoria de la GPU** (`DEVICE_LOCAL`); al final se copian a memoria que la CPU lee (visible y coherente, con caché si la hay).
+- **Los temporizadores miden solo el kernel**: dos marcas, antes y después del despacho, y `timestampPeriod` para pasarlo a nanosegundos.
+- **Offsets calculados, no supuestos:** `timestampPeriod` y `maxComputeWorkGroupCount` se leen de `VkPhysicalDeviceProperties` por su desplazamiento (720 y 516), calculado campo a campo sobre el header con las reglas de alineación de C. El total, 824 bytes, coincide con el tamaño real.
+- **`Recursos`** guarda todo lo que se crea (buffers, memoria, pipeline, descriptores, comandos, valla, consultas); su Drop lo suelta también si algo falla a medias.
+- Si se piden más grupos de los que admite la GPU, es un error **antes** de tocarla.
+
+`telar-gpu` no conoce `hilo-spirv` (están aislados): recibe el kernel como `&[u32]`, y los une `telar-app`.

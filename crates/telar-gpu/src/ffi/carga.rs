@@ -9,6 +9,7 @@ use super::tipos::{
     Asig, Capacidades, Disp, Fisico, FormatoSuperficie, InfoDispositivo, InfoInstancia, InfoMensajero,
     InfoSuperficieWin32, Instancia, Objeto, PropiedadesCapa, PropiedadesFamilia, PropiedadesFisico,
 };
+use super::tipos_calculo::PropiedadesMemoria;
 
 // SAFETY: firmas de libloaderapi.h (kernel32.dll): el nombre de la biblioteca en
 // UTF-16 terminado en cero y el de la función en ASCII terminado en cero.
@@ -35,6 +36,7 @@ type DestruirDeInstancia = unsafe extern "system" fn(Instancia, Objeto, Asig);
 type SoportaPresentar = unsafe extern "system" fn(Fisico, u32, Objeto, *mut u32) -> i32;
 type LeerCapacidades = unsafe extern "system" fn(Fisico, Objeto, *mut Capacidades) -> i32;
 type ListarFormatos = unsafe extern "system" fn(Fisico, Objeto, *mut u32, *mut FormatoSuperficie) -> i32;
+type LeerMemoria = unsafe extern "system" fn(Fisico, *mut PropiedadesMemoria);
 type CrearMensajero = unsafe extern "system" fn(Instancia, *const InfoMensajero, Asig, *mut Objeto) -> i32;
 
 /// Las funciones globales (antes de tener instancia).
@@ -91,6 +93,7 @@ pub(crate) struct FnInstancia {
     pub(crate) soporta_presentar: SoportaPresentar,
     pub(crate) capacidades: LeerCapacidades,
     pub(crate) formatos: ListarFormatos,
+    pub(crate) memoria: LeerMemoria,
     /// Solo con validación (`VK_EXT_debug_utils`).
     pub(crate) mensajero: Option<(CrearMensajero, DestruirDeInstancia)>,
 }
@@ -122,6 +125,7 @@ impl FnInstancia {
             soporta_presentar: cargar!(buscar, "vkGetPhysicalDeviceSurfaceSupportKHR", SoportaPresentar),
             capacidades: cargar!(buscar, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR", LeerCapacidades),
             formatos: cargar!(buscar, "vkGetPhysicalDeviceSurfaceFormatsKHR", ListarFormatos),
+            memoria: cargar!(buscar, "vkGetPhysicalDeviceMemoryProperties", LeerMemoria),
             mensajero,
         })
     }

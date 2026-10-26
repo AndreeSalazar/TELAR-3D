@@ -9,10 +9,10 @@ crates/
   telar-guard/   ✅ los guardianes (9 reglas)                    std, sin crates
   telar-ventana/ ✅ Win32 a mano (unsafe SOLO en src/ffi/)       std · aislada: no usa nada nuestro
   telar-gpu/     ✅ Vulkan a mano (unsafe SOLO en src/ffi/)      std · aislada: no usa nada nuestro
-  telar-app/     ✅ `telar`: une ventana y GPU (y, en la Fase 8, la interfaz de nodos)
+  telar-app/     ✅ `telar`: une ventana, GPU y kernels (y, en la Fase 8, la interfaz de nodos)
   nudo/          geometría, atributos y grafo que cocina        no_std + alloc
   hilo/          lenguaje HILO: léxico, sintaxis, tipos, IR     no_std + alloc
-  hilo-spirv/    IR → SPIR-V, emitido a mano                    no_std + alloc
+  hilo-spirv/    ✅ SPIR-V emitido a mano (el primer kernel)       no_std + alloc
   telar-nodos/   un nodo por carpeta (código, libreto, tests)   no_std + alloc
 ```
 
@@ -23,6 +23,7 @@ cargo guard check     # el guardián
 cargo verify          # guardián + rustfmt + clippy pedantic + tests: antes de dar algo por terminado
 cargo run -p telar-app --release          # la ventana
 cargo run -p telar-app -- --prueba        # 120 fotogramas oculta: 0 avisos de validación o falla
+cargo run -p telar-app --release -- --calculo   # el primer kernel: GPU contra CPU, bit a bit
 ```
 
 ## Reglas (las hará cumplir `telar-guard`)

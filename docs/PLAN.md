@@ -30,6 +30,13 @@ La ventana y la GPU están aisladas por completo (regla `fronteras`) y solo `tel
 
 **Hecho cuando:** el SPIR-V pasa `spirv-val`, la GPU da los mismos bytes que la referencia en la CPU, y el tiempo se mide con temporizadores de la GPU.
 
+**✅ Hecha.** `hilo-spirv` (`no_std`) escribe el kernel: 230 palabras, aprobadas por `spirv-val`, que en su primera ejecución cazó un fallo del constructor. En la RTX 3060, 16 777 216 números:
+- 0,196 ms en la GPU, solo el kernel, medido con sus temporizadores;
+- 16,9 ms en la CPU (un hilo);
+- **iguales bit a bit**, y 0 avisos de validación.
+
+Son ~342 GB/s, cerca del máximo de la memoria (360 GB/s). Los datos viven en memoria de la GPU y solo al final se copian a la CPU. `telar --calculo` lo repite.
+
 ## Fase 3 · NUDO, la geometría y el grafo
 
 Puntos, vértices, primitivas y atributos; el grafo con marcas de sucio; los nodos caja, esfera, rejilla, transformar y unir. Todo en `no_std`, en la CPU y con tests.
