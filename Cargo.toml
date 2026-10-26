@@ -1,0 +1,38 @@
+# TELAR 3D: un workspace de Rust, sin un solo crate de terceros.
+# Las reglas (y su porqué) están en CLAUDE.md y docs/GUARDIANES.md.
+[workspace]
+resolver = "3"
+members = ["crates/telar-guard"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.99"
+license = "MIT"
+publish = false
+
+# Lo que el compilador no deja pasar. `unsafe` está prohibido en todo el
+# workspace: los módulos src/ffi/ lo permiten de forma explícita, y el
+# guardián vigila que solo ahí (regla unsafe-acotado).
+[workspace.lints.rust]
+unsafe_code = "deny"
+missing_docs = "deny"
+unused_must_use = "deny"
+unreachable_pub = "deny"
+
+[workspace.lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
+dbg_macro = "deny"
+todo = "deny"
+unimplemented = "deny"
+unwrap_used = "deny"
+expect_used = "deny"
+module_name_repetitions = "allow"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

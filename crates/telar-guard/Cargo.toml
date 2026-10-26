@@ -1,0 +1,15 @@
+[package]
+name = "telar-guard"
+description = "El guardián de las reglas de TELAR 3D, sin dependencias"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "telar-guard"
+path = "src/main.rs"
+
+[lints]
+workspace = true

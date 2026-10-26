@@ -1,0 +1,42 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cargo run -q --release --manifest-path \"$CLAUDE_PROJECT_DIR/Cargo.toml\" -p telar-guard -- hook pre-bash",
+            "timeout": 60,
+            "statusMessage": "telar: revisando el comando"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cargo run -q --release --manifest-path \"$CLAUDE_PROJECT_DIR/Cargo.toml\" -p telar-guard -- hook post-edit",
+            "timeout": 60,
+            "statusMessage": "telar-guard: revisando reglas"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cargo run -q --release --manifest-path \"$CLAUDE_PROJECT_DIR/Cargo.toml\" -p telar-guard -- hook stop",
+            "timeout": 300,
+            "statusMessage": "telar: guardián y tests antes de terminar"
+          }
+        ]
+      }
+    ]
+  }
+}

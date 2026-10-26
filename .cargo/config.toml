@@ -1,0 +1,7 @@
+# Atajos del taller:
+#   cargo guard check     el guardián (todas las reglas)
+#   cargo guard rules     la lista de reglas con su porqué
+#   cargo verify          guardián + rustfmt + clippy + tests: antes de dar algo por terminado
+[alias]
+guard = "run -q --release -p telar-guard --"
+verify = "run -q --release -p telar-guard -- verify"

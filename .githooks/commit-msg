@@ -1,0 +1,3 @@
+#!/bin/sh
+# Mensajes convencionales: tipo(ámbito): descripción. Lo valida el guardián.
+exec cargo run -q --release -p telar-guard -- commit-msg "$1"

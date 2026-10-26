@@ -1,0 +1,86 @@
+# Arquitectura: la GPU manda
+
+## La idea en una frase
+
+**Los datos nacen, viven y mueren en la GPU.** La CPU edita el grafo, lo compila y le pasa a la GPU unos pocos bytes de parámetros por fotograma. Todo lo demás (emitir, simular, decidir cuánto trabajo hay y renderizar) lo hace la GPU sin volver a preguntar.
+
+En casi todos los motores la CPU es la jefa y la GPU obedece: la CPU decide, manda, espera y vuelve a decidir. Cada ida y vuelta cuesta milisegundos. En TELAR, la CPU es la **arquitecta** (prepara el plan una vez) y la GPU es la **obra** (lo ejecuta y se organiza sola).
+
+## Los crates, aislados
+
+```
+                 ┌──────────── no_std + alloc (sin sistema operativo) ────────────┐
+                 │                                                                │
+   telar-nodos ──┤──► nudo  (geometría, atributos, grafo, cocinado)               │
+                 │                                                                │
+   hilo ─────────┤──► IR tipado ──► hilo-spirv (SPIR-V emitido a mano)            │
+                 └────────────────────────────────────────────────────────────────┘
+                                   │ bytes SPIR-V + plan de despachos
+                                   ▼
+   telar-gpu (std; Vulkan a mano, unsafe solo en src/ffi/)
+   telar-ventana (std; Win32 a mano, unsafe solo en src/ffi/)
+                                   ▼
+   telar-app (std): la interfaz de nodos, elegante
+```
+
+- Las flechas solo van hacia abajo. **El núcleo no conoce Vulkan ni Windows**: produce bytes (SPIR-V) y un plan (qué kernels lanzar, con qué buffers). Así funciona igual en Windows, en Linux o en BMO-X.
+- `telar-gpu` es el único sitio que sabe que existe una GPU. Cambiar Vulkan por DX12, o por VERRANO en BMO-X, no toca nada de arriba.
+- Cada crate tiene su README, sus tests y su guardián.
+
+## Qué hace cada uno
+
+| | CPU (la arquitecta) | GPU (la obra) |
+|---|---|---|
+| **Cuándo** | al cambiar el grafo | cada fotograma |
+| **Qué** | editar nodos, compilar HILO → SPIR-V, fusionar nodos, reservar buffers y grabar los comandos una vez | emitir, advectar, resolver la presión, quemar el combustible, decidir cuántos ladrillos hay activos, renderizar |
+| **Datos** | el grafo (pequeño) | la geometría y los volúmenes (grandes): nunca bajan a la CPU |
+| **Por fotograma** | escribir ~256 bytes de parámetros y enviar el lote ya grabado | todo lo demás |
+
+## El modelo de datos
+
+- **Geometría** (como en Houdini): puntos, vértices, primitivas y **atributos** (`P`, `N`, `Cd`, `v`, `id`…). En la GPU, cada atributo es un buffer propio (estructura de arrays): los hilos leen en línea y la memoria va a toda velocidad.
+- **Volúmenes:** primero, rejillas densas (128³–256³ caben de sobra en la RTX 3060). Después, **ladrillos dispersos**: solo existe la memoria donde hay humo o fuego, con ideas de OpenVDB/NanoVDB implementadas por nosotros. La GPU decide qué ladrillos se activan.
+- **Parámetros:** un único buffer uniforme por fotograma. Mover un deslizador de la interfaz solo cambia esos bytes, no recompila nada.
+
+## El grafo que cocina
+
+1. El grafo vive en la CPU (en `nudo`), con marcas de **sucio**: cambiar un nodo ensucia solo lo que depende de él.
+2. Al cambiar la **topología** (añadir o quitar nodos o cables), `hilo` recompila y **fusiona**: los nodos seguidos que trabajan punto a punto se unen en un solo kernel, sin leer ni escribir la memoria entre medias.
+3. Al cambiar solo un **parámetro**, no se recompila: se escribe el buffer de parámetros.
+4. El resultado es un **plan**: una lista fija de despachos que `telar-gpu` graba una vez en un *command buffer* y reenvía cada fotograma.
+
+## Cómo «piensa» la GPU
+
+- **Despacho indirecto** (`vkCmdDispatchIndirect`): un kernel cuenta, por ejemplo, cuántos ladrillos tienen fuego y escribe él mismo cuántos grupos lanzar en la pasada siguiente. La CPU no se entera ni necesita enterarse.
+- **Colas de trabajo en la GPU:** los kernels añaden tareas con atómicos enteros (deterministas si se ordenan) y otra pasada las consume.
+- **Más adelante:** la generación de comandos en la GPU (`VK_EXT_device_generated_commands`), o Work Graphs en DX12. Se valorará si el driver de la RTX 3060 lo soporta.
+- **Sin lecturas de vuelta:** las estadísticas (fps, ladrillos activos) bajan en un anillo asíncrono, con varios fotogramas de retraso, sin frenar nunca a la GPU.
+
+## Su procesamiento propio: por qué la GPU necesita algo distinto
+
+Sí: la GPU necesita su propia forma de procesar, no la de la CPU traducida.
+
+- **Miles de hilos a la vez:** los algoritmos se eligen por ser paralelos, no por ser los más cortos. Ejemplo: Jacobi o *red-black* Gauss-Seidel para la presión, y multigrid después; no un solver secuencial.
+- **La memoria manda más que los cálculos:** fusionar nodos y usar estructuras de arrays vale más que optimizar una multiplicación.
+- **Determinismo a propósito:** número de iteraciones fijo, reducciones en árbol con orden fijo y sin sumas de `float` atómicas. Si dos ejecuciones dan bytes distintos, es un fallo.
+- **Precisión elegida:** `f32` en general, y `f16` solo donde se mida que no se pierde calidad.
+
+## La CPU como testigo, no como jefa
+
+Cada kernel tiene una **implementación de referencia en la CPU**, en `no_std`, lenta y clara: el mismo IR de HILO, interpretado. Los tests comparan GPU contra CPU (con tolerancia en `float`, o bit a bit donde se exige determinismo). Por encima está **Houdini Apprentice como referencia externa**, con el mismo nodo y la misma entrada.
+
+Orden de autoridad, como en BMO-X:
+
+1. el resultado en la GPU real, medido;
+2. la referencia en la CPU (corrección);
+3. Houdini Apprentice (comparación);
+4. la teoría del artículo.
+
+## Un fotograma, de punta a punta
+
+```
+CPU: escribe parámetros (256 B) ─► envía el lote grabado ─► sigue con la interfaz
+GPU: emitir ─► advectar ─► fuerzas ─► presión ─► combustión ─► ¿ladrillos activos? (indirecto)
+     ─► marcha de rayos con emisión de cuerpo negro ─► tonemap ─► presentar
+     └─► (anillo asíncrono) estadísticas para la interfaz
+```

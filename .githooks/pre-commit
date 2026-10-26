@@ -1,0 +1,5 @@
+#!/bin/sh
+# Ningún commit pasa si el guardián, rustfmt, clippy o los tests fallan.
+# Saltárselo con --no-verify está prohibido por las reglas (CLAUDE.md).
+set -e
+exec cargo verify

@@ -1,0 +1,7 @@
+# Siempre LF en el repositorio, en cualquier sistema (regla lf).
+* text=auto eol=lf
+
+*.spv binary
+*.png binary
+*.webp binary
+*.exr binary
