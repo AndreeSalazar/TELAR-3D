@@ -16,6 +16,13 @@ Workspace de Cargo, `rust-toolchain.toml` fijada, `telar-guard` con las reglas d
 
 **Hecho cuando:** la ventana se ve a la frecuencia del monitor, con **cero avisos** de las capas de validación, y todo el `unsafe` está en `ffi/` con su `// SAFETY:`.
 
+**✅ Hecha.** En la RTX 3060:
+- 75 fps, la frecuencia del monitor (377 fotogramas en 5 s);
+- 0 avisos de validación, también al rehacer la swapchain en dos cambios de tamaño;
+- un ejecutable de 166 KB.
+
+La ventana y la GPU están aisladas por completo (regla `fronteras`) y solo `telar-app` las une. La prueba automática es `cargo run -p telar-app -- --prueba`.
+
 ## Fase 2 · El primer kernel, en SPIR-V a mano
 
 - **`hilo-spirv`:** un constructor de SPIR-V en `no_std`, una API en Rust que emite las instrucciones. Es el «ensamblador» antes de tener el lenguaje, como TALK-CPU antes de los compiladores.

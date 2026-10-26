@@ -1,0 +1,23 @@
+[package]
+name = "telar-app"
+description = "TELAR 3D: la aplicación que une la ventana y la GPU"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+# Regla fronteras: la app es el único sitio que conoce a la vez la ventana y la GPU.
+[package.metadata.telar]
+puede-usar = ["telar-ventana", "telar-gpu"]
+
+[[bin]]
+name = "telar"
+path = "src/main.rs"
+
+[dependencies]
+telar-ventana = { path = "../telar-ventana" }
+telar-gpu = { path = "../telar-gpu" }
+
+[lints]
+workspace = true

@@ -8,7 +8,7 @@ use crate::toml;
 
 /// ¿Es una sección de dependencias? `dependencies`, `dev-dependencies`,
 /// `build-dependencies`, `workspace.dependencies` o la de un `target`.
-fn es_de_dependencias(seccion: &str) -> bool {
+pub(crate) fn es_de_dependencias(seccion: &str) -> bool {
     ["dependencies", "dev-dependencies", "build-dependencies"]
         .iter()
         .any(|d| seccion == *d || seccion.ends_with(&format!(".{d}")))
@@ -29,10 +29,7 @@ pub(crate) fn revisar(repo: &Repo) -> Vec<Problema> {
             } else if let Some((seccion, _)) = e.seccion.rsplit_once('.')
                 && es_de_dependencias(seccion)
             {
-                let tabla =
-                    tablas
-                        .entry(e.seccion.clone())
-                        .or_insert((e.linea_seccion, None, false));
+                let tabla = tablas.entry(e.seccion.clone()).or_insert((e.linea_seccion, None, false));
                 match e.clave.as_str() {
                     "path" => tabla.1 = Some(e.valor.trim_matches('"').to_owned()),
                     "workspace" => tabla.2 = e.valor == "true",
@@ -41,44 +38,23 @@ pub(crate) fn revisar(repo: &Repo) -> Vec<Problema> {
             }
         }
         for (seccion, (linea, ruta, workspace)) in tablas {
-            let nombre = seccion
-                .rsplit_once('.')
-                .map_or(seccion.as_str(), |(_, n)| n);
+            let nombre = seccion.rsplit_once('.').map_or(seccion.as_str(), |(_, n)| n);
             if let Some(motivo) = juzgar(dir, ruta.as_deref(), workspace) {
-                problemas.push(Problema::en(
-                    archivo,
-                    linea,
-                    format!("`{nombre}`: {motivo}"),
-                ));
+                problemas.push(Problema::en(archivo, linea, format!("`{nombre}`: {motivo}")));
             }
         }
     }
     problemas
 }
 
-fn revisar_entrada(
-    archivo: &str,
-    dir: &str,
-    nombre: &str,
-    valor: &str,
-    linea: usize,
-    out: &mut Vec<Problema>,
-) {
+fn revisar_entrada(archivo: &str, dir: &str, nombre: &str, valor: &str, linea: usize, out: &mut Vec<Problema>) {
     let motivo = if valor.starts_with('{') {
-        juzgar(
-            dir,
-            toml::campo(valor, "path"),
-            toml::campo(valor, "workspace") == Some("true"),
-        )
+        juzgar(dir, toml::campo(valor, "path"), toml::campo(valor, "workspace") == Some("true"))
     } else {
         Some("es un crate de terceros (una versión de crates.io)".to_owned())
     };
     if let Some(motivo) = motivo {
-        out.push(Problema::en(
-            archivo,
-            linea,
-            format!("`{nombre}`: {motivo}"),
-        ));
+        out.push(Problema::en(archivo, linea, format!("`{nombre}`: {motivo}")));
     }
 }
 
@@ -97,7 +73,7 @@ fn juzgar(dir: &str, ruta: Option<&str>, workspace: bool) -> Option<String> {
 }
 
 /// `crates/a/../b` → `crates/b`. `None` si se sale de la raíz.
-fn normalizar(ruta: &str) -> Option<String> {
+pub(crate) fn normalizar(ruta: &str) -> Option<String> {
     let mut partes: Vec<&str> = Vec::new();
     for parte in ruta.split(['/', '\\']) {
         match parte {

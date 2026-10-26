@@ -1,9 +1,8 @@
 //! Mensajes de commit convencionales: `tipo(ámbito): descripción`.
 
 /// Los tipos permitidos.
-pub const TIPOS: [&str; 11] = [
-    "feat", "fix", "docs", "style", "refactor", "perf", "test", "build", "ci", "chore", "revert",
-];
+pub const TIPOS: [&str; 11] =
+    ["feat", "fix", "docs", "style", "refactor", "perf", "test", "build", "ci", "chore", "revert"];
 
 /// Comprueba la primera línea útil del mensaje (las que empiezan por `#` son
 /// comentarios de git).
@@ -12,11 +11,7 @@ pub const TIPOS: [&str; 11] = [
 ///
 /// Si no sigue el formato, con una explicación y un ejemplo.
 pub fn validar(mensaje: &str) -> Result<(), String> {
-    let Some(primera) = mensaje
-        .lines()
-        .map(str::trim_end)
-        .find(|l| !l.trim().is_empty() && !l.starts_with('#'))
-    else {
+    let Some(primera) = mensaje.lines().map(str::trim_end).find(|l| !l.trim().is_empty() && !l.starts_with('#')) else {
         return Err("el mensaje está vacío".to_owned());
     };
     // Los que escribe git solo (fusiones y reversiones) pasan tal cual.
@@ -51,7 +46,5 @@ fn cumple(linea: &str) -> bool {
         resto = despues;
     }
     resto = resto.strip_prefix('!').unwrap_or(resto);
-    resto
-        .strip_prefix(": ")
-        .is_some_and(|d| d.trim().chars().count() >= 3)
+    resto.strip_prefix(": ").is_some_and(|d| d.trim().chars().count() >= 3)
 }

@@ -5,6 +5,7 @@
 //! `rendimiento`…) llegarán con sus fases. Ver docs/GUARDIANES.md.
 
 mod deps;
+mod fronteras;
 mod higiene;
 mod inseguro;
 mod nucleo;
@@ -13,13 +14,20 @@ use crate::informe::{Regla, Resultado};
 use crate::repo::Repo;
 
 /// Todas las reglas de código, en el orden en que se informan.
-pub static REGLAS: [Regla; 8] = [
+pub static REGLAS: [Regla; 9] = [
     Regla {
         id: "cero-deps",
         titulo: "Sin crates de terceros: solo dependencias por ruta dentro de crates/",
         motivo: "control total: cada línea que corre es nuestra",
         arreglo: "escríbelo como un crate en crates/ y enlázalo con `path = \"../x\"`",
         revisar: deps::revisar,
+    },
+    Regla {
+        id: "fronteras",
+        titulo: "Cada crate usa solo lo que declara; ventana y GPU, aisladas por completo",
+        motivo: "cada pieza se cambia sin romper las demás, y el núcleo no conoce el sistema",
+        arreglo: "declara la dependencia en [package.metadata.telar] puede-usar, o une las piezas en telar-app",
+        revisar: fronteras::revisar,
     },
     Regla {
         id: "nucleo-sin-std",
@@ -37,7 +45,7 @@ pub static REGLAS: [Regla; 8] = [
     },
     Regla {
         id: "ffi-aislada",
-        titulo: "extern \"…\", #[link], LoadLibraryW y GetProcAddress, solo en src/ffi/",
+        titulo: "extern \"…\", #[link], LoadLibraryW y GetProcAddress, solo en src/ffi/ (y ffi privado)",
         motivo: "hablar con Windows y con Vulkan, solo por una puerta",
         arreglo: "declara la función del sistema en src/ffi/ y llámala desde fuera a través de un envoltorio seguro",
         revisar: inseguro::ffi_aislada,
@@ -75,11 +83,5 @@ pub static REGLAS: [Regla; 8] = [
 /// Revisa todas las reglas sobre el repo.
 #[must_use]
 pub fn revisar(repo: &Repo) -> Vec<Resultado> {
-    REGLAS
-        .iter()
-        .map(|regla| Resultado {
-            regla,
-            problemas: (regla.revisar)(repo),
-        })
-        .collect()
+    REGLAS.iter().map(|regla| Resultado { regla, problemas: (regla.revisar)(repo) }).collect()
 }

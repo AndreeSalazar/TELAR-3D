@@ -17,9 +17,10 @@ Los guardianes no son frenos: son **banderas**. Dicen exactamente dónde puede f
 | Regla | Qué exige | Por qué |
 |---|---|---|
 | `cero-deps` | en los `Cargo.toml`, solo dependencias por ruta dentro de `crates/` | control total: cada línea que corre es nuestra |
+| `fronteras` | cada crate usa solo lo que declara en `[package.metadata.telar] puede-usar`; `telar-ventana` y `telar-gpu` no usan nada nuestro (ni entre ellas); el núcleo solo usa el núcleo | cada pieza se cambia sin romper las demás; solo `telar-app` une la ventana y la GPU |
 | `nucleo-sin-std` | `nudo`, `hilo`, `hilo-spirv` y `telar-nodos` con `#![no_std]`, sin `std::` | que el núcleo funcione en cualquier sistema, también en BMO-X |
-| `unsafe-acotado` | `unsafe` solo en `crates/*/src/ffi/`, con `// SAFETY:` justo encima | lo peligroso, pequeño, en un sitio y justificado |
-| `ffi-aislada` | `extern "system"`, `LoadLibraryW` y `GetProcAddress`, solo en `ffi/` | hablar con Windows y con Vulkan, solo por una puerta |
+| `unsafe-acotado` | `unsafe` solo en `crates/*/src/ffi/`, con `// SAFETY:` justo encima (los tipos de puntero a función, `unsafe extern "system" fn(…)`, no lo necesitan: no ejecutan nada) | lo peligroso, pequeño, en un sitio y justificado |
+| `ffi-aislada` | `extern "system"`, `LoadLibraryW` y `GetProcAddress`, solo en `ffi/`, y el módulo `ffi` nunca es `pub` | hablar con Windows y con Vulkan, solo por una puerta, que no se exporta |
 | `tamano` | ningún archivo de código pasa de 400 líneas | partir por responsabilidades |
 | `sin-restos` | ni `dbg!`, `todo!`, `unimplemented!` ni `#[ignore]` sin motivo | lo que no está hecho se rechaza con motivo, no se esconde |
 | `lf` | saltos de línea LF | sin diffs fantasma |

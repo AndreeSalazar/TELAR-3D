@@ -186,11 +186,7 @@ pub fn buscar_seguida(codigo: &str, palabra: &str, sufijo: &str) -> Vec<usize> {
     let lineas: Vec<&str> = codigo.lines().collect();
     buscar_palabra(codigo, palabra)
         .into_iter()
-        .filter(|&(n, col)| {
-            lineas[n - 1][col + palabra.len()..]
-                .trim_start()
-                .starts_with(sufijo)
-        })
+        .filter(|&(n, col)| lineas[n - 1][col + palabra.len()..].trim_start().starts_with(sufijo))
         .map(|(n, _)| n)
         .collect()
 }

@@ -11,20 +11,8 @@ pub(crate) const MAX_LINEAS: usize = 400;
 const CODIGO: [&str; 5] = [".rs", ".hilo", ".wgsl", ".sh", ".ps1"];
 
 /// Archivos de texto: los que tienen que ir con saltos LF.
-const TEXTO: [&str; 12] = [
-    ".rs",
-    ".toml",
-    ".md",
-    ".hilo",
-    ".wgsl",
-    ".sh",
-    ".ps1",
-    ".json",
-    ".txt",
-    ".yml",
-    ".gitignore",
-    ".gitattributes",
-];
+const TEXTO: [&str; 12] =
+    [".rs", ".toml", ".md", ".hilo", ".wgsl", ".sh", ".ps1", ".json", ".txt", ".yml", ".gitignore", ".gitattributes"];
 
 pub(crate) fn tamano(repo: &Repo) -> Vec<Problema> {
     repo.archivos
@@ -33,11 +21,7 @@ pub(crate) fn tamano(repo: &Repo) -> Vec<Problema> {
         .filter_map(|f| {
             let lineas = repo.leer(f)?.lines().count();
             (lineas > MAX_LINEAS).then(|| {
-                Problema::en(
-                    f,
-                    0,
-                    format!("{lineas} líneas (máximo {MAX_LINEAS}): divide por responsabilidades"),
-                )
+                Problema::en(f, 0, format!("{lineas} líneas (máximo {MAX_LINEAS}): divide por responsabilidades"))
             })
         })
         .collect()
@@ -58,11 +42,7 @@ pub(crate) fn sin_restos(repo: &Repo) -> Vec<Problema> {
         for (n, linea) in codigo.lines().enumerate() {
             let compacta: String = linea.chars().filter(|c| !c.is_whitespace()).collect();
             if compacta.contains("#[ignore]") {
-                problemas.push(Problema::en(
-                    archivo,
-                    n + 1,
-                    "`#[ignore]` sin motivo (usa `#[ignore = \"por qué\"]`)",
-                ));
+                problemas.push(Problema::en(archivo, n + 1, "`#[ignore]` sin motivo (usa `#[ignore = \"por qué\"]`)"));
             }
         }
     }
@@ -90,16 +70,11 @@ pub(crate) fn crate_completo(repo: &Repo) -> Vec<Problema> {
             problemas.push(Problema::en(&base, 0, "falta README.md"));
         }
         let tests_aparte = repo.rust_en(&format!("{base}tests/")).next().is_some();
-        let tests_dentro = repo.rust_en(&format!("{base}src/")).any(|f| {
-            repo.leer(f)
-                .is_some_and(|src| blanquear(&src).contains("#[test]"))
-        });
+        let tests_dentro = repo
+            .rust_en(&format!("{base}src/"))
+            .any(|f| repo.leer(f).is_some_and(|src| blanquear(&src).contains("#[test]")));
         if !tests_aparte && !tests_dentro {
-            problemas.push(Problema::en(
-                &base,
-                0,
-                "no tiene tests (ni tests/*.rs ni #[test] en src/)",
-            ));
+            problemas.push(Problema::en(&base, 0, "no tiene tests (ni tests/*.rs ni #[test] en src/)"));
         }
     }
     problemas

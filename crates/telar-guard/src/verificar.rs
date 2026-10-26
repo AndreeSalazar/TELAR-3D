@@ -66,18 +66,7 @@ pub fn verify(raiz: &Path) -> bool {
 
     let pasos: [(&str, &[&str]); 3] = [
         ("rustfmt", &["fmt", "--all", "--check"]),
-        (
-            "clippy pedantic",
-            &[
-                "clippy",
-                "--workspace",
-                "--all-targets",
-                "-q",
-                "--",
-                "-D",
-                "warnings",
-            ],
-        ),
+        ("clippy pedantic", &["clippy", "--workspace", "--all-targets", "-q", "--", "-D", "warnings"]),
         ("tests", &["test", "--workspace", "-q"]),
     ];
     for (nombre, args) in pasos {

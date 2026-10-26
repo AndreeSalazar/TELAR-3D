@@ -2,11 +2,7 @@
 //! bloquear, decir dónde y no confundirse con lo que solo lo parece
 //! (un `unsafe` en un comentario, un `dbg!` en una cadena…).
 
-#![allow(
-    clippy::unwrap_used,
-    clippy::expect_used,
-    reason = "en los tests, un fallo es un panic con su mensaje"
-)]
+#![allow(clippy::unwrap_used, clippy::expect_used, reason = "en los tests, un fallo es un panic con su mensaje")]
 
 use std::fs;
 use std::path::PathBuf;
@@ -22,17 +18,13 @@ struct Prueba {
 
 impl Prueba {
     fn nueva(nombre: &str) -> Self {
-        let raiz =
-            std::env::temp_dir().join(format!("telar-guard-{nombre}-{}", std::process::id()));
+        let raiz = std::env::temp_dir().join(format!("telar-guard-{nombre}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&raiz);
         let p = Self { raiz };
-        p.escribir(
-            "Cargo.toml",
-            "[workspace]\nresolver = \"3\"\nmembers = [\"crates/ejemplo\"]\n",
-        );
+        p.escribir("Cargo.toml", "[workspace]\nresolver = \"3\"\nmembers = [\"crates/ejemplo\"]\n");
         p.escribir(
             "crates/ejemplo/Cargo.toml",
-            "[package]\nname = \"ejemplo\"\nversion = \"0.1.0\"\n\n[dependencies]\nhermano = { path = \"../hermano\" }\n",
+            "[package]\nname = \"ejemplo\"\nversion = \"0.1.0\"\n\n[package.metadata.telar]\npuede-usar = [\"hermano\"]\n\n[dependencies]\nhermano = { path = \"../hermano\" }\n",
         );
         p.escribir("crates/ejemplo/README.md", "# ejemplo\n");
         p.escribir(
@@ -59,11 +51,7 @@ impl Prueba {
     /// Los problemas de una regla.
     fn problemas(&self, regla: &str) -> Vec<Problema> {
         let repo = Repo::abrir(&self.raiz).unwrap();
-        reglas::revisar(&repo)
-            .into_iter()
-            .find(|r| r.regla.id == regla)
-            .unwrap()
-            .problemas
+        reglas::revisar(&repo).into_iter().find(|r| r.regla.id == regla).unwrap().problemas
     }
 
     /// Los sitios (`archivo:línea`) de una regla.
@@ -74,11 +62,7 @@ impl Prueba {
     /// Las reglas rotas.
     fn rotas(&self) -> Vec<&'static str> {
         let repo = Repo::abrir(&self.raiz).unwrap();
-        reglas::revisar(&repo)
-            .into_iter()
-            .filter(|r| !r.problemas.is_empty())
-            .map(|r| r.regla.id)
-            .collect()
+        reglas::revisar(&repo).into_iter().filter(|r| !r.problemas.is_empty()).map(|r| r.regla.id).collect()
     }
 }
 
@@ -120,14 +104,8 @@ fn nucleo_sin_std_exige_no_std_y_solo_core_y_alloc() {
     p.escribir("crates/nudo/Cargo.toml", "[package]\nname = \"nudo\"\n");
     p.escribir("crates/nudo/README.md", "# nudo\n");
     p.escribir("crates/nudo/tests/a.rs", "#[test]\nfn a() {}\n");
-    p.escribir(
-        "crates/nudo/src/lib.rs",
-        "//! Sin no_std.\nuse std::vec::Vec;\n",
-    );
-    assert_eq!(
-        p.sitios("nucleo-sin-std"),
-        ["crates/nudo/src/lib.rs:1", "crates/nudo/src/lib.rs:2"]
-    );
+    p.escribir("crates/nudo/src/lib.rs", "//! Sin no_std.\nuse std::vec::Vec;\n");
+    assert_eq!(p.sitios("nucleo-sin-std"), ["crates/nudo/src/lib.rs:1", "crates/nudo/src/lib.rs:2"]);
 
     // Bien: no_std, alloc y core. Un `std::` en un comentario no cuenta.
     p.escribir(
@@ -147,10 +125,7 @@ fn unsafe_acotado_solo_en_ffi_y_justificado() {
         LIB,
         "//! Un `unsafe` en un comentario no cuenta.\n#![allow(unsafe_code, reason = \"x\")]\npub fn f() -> &'static str {\n    unsafe { \"unsafe en una cadena\" }\n}\n",
     );
-    assert_eq!(
-        p.sitios("unsafe-acotado"),
-        [format!("{LIB}:4"), format!("{LIB}:2")]
-    );
+    assert_eq!(p.sitios("unsafe-acotado"), [format!("{LIB}:4"), format!("{LIB}:2")]);
 
     p.escribir(LIB, "//! Bien.\nmod ffi;\n");
     p.escribir(
@@ -173,24 +148,86 @@ fn unsafe_acotado_solo_en_ffi_y_justificado() {
 }
 
 #[test]
+fn los_tipos_de_puntero_a_funcion_no_necesitan_safety() {
+    let p = Prueba::nueva("tipos");
+    p.escribir(LIB, "//! Bien.\nmod ffi;\n");
+    p.escribir(
+        FFI,
+        "pub type Crear = unsafe extern \"system\" fn(*const u8) -> i32;\n\
+         pub struct Tabla {\n    pub crear: unsafe extern \"system\" fn(u32),\n    pub otra: unsafe fn(u8),\n}\n\
+         pub unsafe fn sin_doc() {}\n",
+    );
+    // Los tipos pasan; la declaración de una `unsafe fn` sin `# Safety`, no.
+    assert_eq!(p.sitios("unsafe-acotado"), [format!("{FFI}:6")]);
+
+    // Fuera de ffi/, ni siquiera el tipo.
+    p.escribir(LIB, "//! Mal.\nmod ffi;\npub type F = unsafe fn();\n");
+    assert_eq!(p.sitios("unsafe-acotado"), [format!("{FFI}:6"), format!("{LIB}:3")]);
+}
+
+#[test]
 fn ffi_aislada_solo_en_ffi() {
     let p = Prueba::nueva("ffi");
     p.escribir(
         LIB,
         "//! Las declaraciones del sistema, fuera de ffi/.\nextern crate alloc;\nextern \"C\" fn llamada() {}\n#[link(name = \"kernel32\")]\nfn x() { let _ = LoadLibraryW; }\n",
     );
-    assert_eq!(
-        p.sitios("ffi-aislada"),
-        [format!("{LIB}:3"), format!("{LIB}:4"), format!("{LIB}:5")]
-    );
+    assert_eq!(p.sitios("ffi-aislada"), [format!("{LIB}:3"), format!("{LIB}:4"), format!("{LIB}:5")]);
 
     // Dentro de ffi/ es su sitio.
     p.escribir(LIB, "//! Bien.\nmod ffi;\n");
-    p.escribir(
-        FFI,
-        "extern \"C\" fn llamada() {}\nfn x() { let _ = GetProcAddress; }\n",
-    );
+    p.escribir(FFI, "extern \"C\" fn llamada() {}\nfn x() { let _ = GetProcAddress; }\n");
     assert_eq!(p.sitios("ffi-aislada"), Vec::<String>::new());
+
+    // Y la puerta no se exporta.
+    p.escribir(LIB, "//! Mal.\npub mod ffi;\npub use ffi::llamada;\n");
+    assert_eq!(p.sitios("ffi-aislada"), [format!("{LIB}:2"), format!("{LIB}:3")]);
+}
+
+/// Un crate con su `Cargo.toml` (y README y test, para que solo hable la regla que se prueba).
+fn crate_(p: &Prueba, nombre: &str, cargo: &str) {
+    p.escribir(&format!("crates/{nombre}/Cargo.toml"), &format!("[package]\nname = \"{nombre}\"\n{cargo}"));
+    p.escribir(&format!("crates/{nombre}/README.md"), "# x\n");
+    p.escribir(&format!("crates/{nombre}/src/lib.rs"), "#![no_std]\n");
+    p.escribir(&format!("crates/{nombre}/tests/a.rs"), "#[test]\nfn a() {}\n");
+}
+
+#[test]
+fn fronteras_solo_lo_declarado() {
+    let p = Prueba::nueva("fronteras");
+    crate_(&p, "telar-app", "\n[dependencies]\ntelar-gpu = { path = \"../telar-gpu\" }\n");
+    assert_eq!(p.sitios("fronteras"), ["crates/telar-app/Cargo.toml:5"]);
+
+    crate_(
+        &p,
+        "telar-app",
+        "\n[package.metadata.telar]\npuede-usar = [\"telar-ventana\", \"telar-gpu\"]\n\n[dependencies]\ntelar-gpu = { path = \"../telar-gpu\" }\n",
+    );
+    assert_eq!(p.sitios("fronteras"), Vec::<String>::new());
+}
+
+#[test]
+fn fronteras_ventana_y_gpu_aisladas_por_completo() {
+    let p = Prueba::nueva("aisladas");
+    // Aunque lo declare: la ventana no puede usar la GPU, ni al revés.
+    crate_(
+        &p,
+        "telar-ventana",
+        "\n[package.metadata.telar]\npuede-usar = [\"telar-gpu\"]\n\n[dependencies]\ntelar-gpu = { path = \"../telar-gpu\" }\n",
+    );
+    crate_(&p, "telar-gpu", "\n[dev-dependencies]\ntelar-ventana = { path = \"../telar-ventana\" }\n");
+    assert_eq!(p.sitios("fronteras"), ["crates/telar-gpu/Cargo.toml:5", "crates/telar-ventana/Cargo.toml:8"]);
+}
+
+#[test]
+fn fronteras_el_nucleo_solo_usa_el_nucleo() {
+    let p = Prueba::nueva("nucleo-fronteras");
+    crate_(
+        &p,
+        "nudo",
+        "\n[package.metadata.telar]\npuede-usar = [\"hilo\", \"telar-gpu\"]\n\n[dependencies]\nhilo = { path = \"../hilo\" }\ntelar-gpu = { path = \"../telar-gpu\" }\n",
+    );
+    assert_eq!(p.sitios("fronteras"), ["crates/nudo/Cargo.toml:9"]);
 }
 
 #[test]
@@ -211,12 +248,7 @@ fn sin_restos_de_depuracion() {
     );
     assert_eq!(
         p.sitios("sin-restos"),
-        [
-            format!("{LIB}:2"),
-            format!("{LIB}:3"),
-            format!("{LIB}:4"),
-            format!("{LIB}:6")
-        ]
+        [format!("{LIB}:2"), format!("{LIB}:3"), format!("{LIB}:4"), format!("{LIB}:6")]
     );
 }
 
@@ -236,9 +268,6 @@ fn crate_completo_exige_readme_y_tests() {
 
     // Los tests dentro de src/ también valen.
     p.escribir("crates/ejemplo/README.md", "# ejemplo\n");
-    p.escribir(
-        LIB,
-        "//! Con tests dentro.\n#[cfg(test)]\nmod tests {\n    #[test]\n    fn a() {}\n}\n",
-    );
+    p.escribir(LIB, "//! Con tests dentro.\n#[cfg(test)]\nmod tests {\n    #[test]\n    fn a() {}\n}\n");
     assert_eq!(p.sitios("crate-completo"), Vec::<String>::new());
 }

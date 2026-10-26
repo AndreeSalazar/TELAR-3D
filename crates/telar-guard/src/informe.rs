@@ -31,21 +31,13 @@ impl Problema {
     /// Un problema en una línea concreta.
     #[must_use]
     pub fn en(archivo: &str, linea: usize, detalle: impl Into<String>) -> Self {
-        Self {
-            archivo: archivo.to_owned(),
-            linea,
-            detalle: detalle.into(),
-        }
+        Self { archivo: archivo.to_owned(), linea, detalle: detalle.into() }
     }
 
     /// `archivo:línea` (o solo el archivo).
     #[must_use]
     pub fn sitio(&self) -> String {
-        if self.linea == 0 {
-            self.archivo.clone()
-        } else {
-            format!("{}:{}", self.archivo, self.linea)
-        }
+        if self.linea == 0 { self.archivo.clone() } else { format!("{}:{}", self.archivo, self.linea) }
     }
 }
 
@@ -61,38 +53,21 @@ pub struct Resultado {
 /// rota, sus problemas y el arreglo.
 #[must_use]
 pub fn texto(resultados: &[Resultado], archivos: usize) -> String {
-    let mut lineas = vec![format!(
-        "telar-guard · {} reglas · {archivos} archivos",
-        resultados.len()
-    )];
+    let mut lineas = vec![format!("telar-guard · {} reglas · {archivos} archivos", resultados.len())];
     for r in resultados {
         let marca = if r.problemas.is_empty() { '✔' } else { '✖' };
         lineas.push(format!("  {marca} {:<16} {}", r.regla.id, r.regla.titulo));
-        lineas.extend(
-            r.problemas
-                .iter()
-                .map(|p| format!("      {}  {}", p.sitio(), p.detalle)),
-        );
+        lineas.extend(r.problemas.iter().map(|p| format!("      {}  {}", p.sitio(), p.detalle)));
         if !r.problemas.is_empty() {
             lineas.push(format!("      → {}", r.regla.arreglo));
         }
     }
-    let rotas = resultados
-        .iter()
-        .filter(|r| !r.problemas.is_empty())
-        .count();
+    let rotas = resultados.iter().filter(|r| !r.problemas.is_empty()).count();
     lineas.push(String::new());
     lineas.push(if rotas == 0 {
         "✔ todo en orden".to_owned()
     } else {
-        format!(
-            "✖ {rotas} {}",
-            if rotas == 1 {
-                "regla rota"
-            } else {
-                "reglas rotas"
-            }
-        )
+        format!("✖ {rotas} {}", if rotas == 1 { "regla rota" } else { "reglas rotas" })
     });
     lineas.join("\n") + "\n"
 }

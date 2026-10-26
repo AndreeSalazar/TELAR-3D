@@ -25,10 +25,7 @@ impl Repo {
         let mut archivos = Vec::new();
         recorrer(raiz, raiz, &mut archivos)?;
         archivos.sort();
-        Ok(Self {
-            raiz: raiz.to_path_buf(),
-            archivos,
-        })
+        Ok(Self { raiz: raiz.to_path_buf(), archivos })
     }
 
     /// El texto de un archivo, o `None` si no existe o no es UTF-8.
@@ -62,9 +59,9 @@ impl Repo {
 
     /// Los archivos `.rs` que viven debajo de `prefijo`.
     pub fn rust_en<'a>(&'a self, prefijo: &'a str) -> impl Iterator<Item = &'a String> + 'a {
-        self.archivos.iter().filter(move |f| {
-            f.starts_with(prefijo) && Path::new(f).extension().is_some_and(|e| e == "rs")
-        })
+        self.archivos
+            .iter()
+            .filter(move |f| f.starts_with(prefijo) && Path::new(f).extension().is_some_and(|e| e == "rs"))
     }
 }
 
@@ -90,7 +87,6 @@ fn recorrer(raiz: &Path, dir: &Path, out: &mut Vec<String>) -> io::Result<()> {
 pub fn buscar_raiz(desde: &Path) -> Option<PathBuf> {
     desde.ancestors().find_map(|dir| {
         let toml = fs::read_to_string(dir.join("Cargo.toml")).ok()?;
-        (toml.lines().any(|l| l.trim() == "[workspace]") && dir.join("crates").is_dir())
-            .then(|| dir.to_path_buf())
+        (toml.lines().any(|l| l.trim() == "[workspace]") && dir.join("crates").is_dir()).then(|| dir.to_path_buf())
     })
 }

@@ -1,0 +1,4 @@
+# Líneas de hasta 120 columnas, y que rustfmt no parta en vertical lo que cabe
+# en una línea (las estructuras de Vulkan se leen mejor así).
+max_width = 120
+use_small_heuristics = "Max"

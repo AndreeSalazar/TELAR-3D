@@ -18,13 +18,9 @@ fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let comando = args.first().map_or("check", String::as_str);
 
-    let desde = std::env::var_os("CLAUDE_PROJECT_DIR")
-        .map(PathBuf::from)
-        .or_else(|| std::env::current_dir().ok());
+    let desde = std::env::var_os("CLAUDE_PROJECT_DIR").map(PathBuf::from).or_else(|| std::env::current_dir().ok());
     let Some(raiz) = desde.and_then(|d| repo::buscar_raiz(&d)) else {
-        eprintln!(
-            "telar-guard: no encuentro la raíz del repo (un Cargo.toml con [workspace] y una carpeta crates/)"
-        );
+        eprintln!("telar-guard: no encuentro la raíz del repo (un Cargo.toml con [workspace] y una carpeta crates/)");
         return ExitCode::from(2);
     };
 
@@ -77,18 +73,12 @@ fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         otro => {
-            eprintln!(
-                "telar-guard: comando desconocido «{otro}» (usa check, rules, verify, commit-msg o hook)"
-            );
+            eprintln!("telar-guard: comando desconocido «{otro}» (usa check, rules, verify, commit-msg o hook)");
             ExitCode::from(2)
         }
     }
 }
 
 fn salida(ok: bool) -> ExitCode {
-    if ok {
-        ExitCode::SUCCESS
-    } else {
-        ExitCode::FAILURE
-    }
+    if ok { ExitCode::SUCCESS } else { ExitCode::FAILURE }
 }

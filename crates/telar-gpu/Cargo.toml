@@ -1,0 +1,14 @@
+[package]
+name = "telar-gpu"
+description = "La GPU de TELAR 3D: Vulkan a mano, aislada de la ventana"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+# Aislada por completo (regla fronteras): no usa ningún crate nuestro, y de la
+# ventana solo recibe dos números (HINSTANCE, HWND). Los une telar-app.
+
+[lints]
+workspace = true

@@ -50,11 +50,7 @@ pub fn leer(texto: &str) -> Result<Valor, String> {
     let mut i = 0;
     let v = valor(&c, &mut i)?;
     espacios(&c, &mut i);
-    if i == c.len() {
-        Ok(v)
-    } else {
-        Err(format!("JSON: sobra texto en la posición {i}"))
-    }
+    if i == c.len() { Ok(v) } else { Err(format!("JSON: sobra texto en la posición {i}")) }
 }
 
 fn espacios(c: &[char], i: &mut usize) {
@@ -74,10 +70,7 @@ fn valor(c: &[char], i: &mut usize) -> Result<Valor, String> {
         Some('n') => palabra(c, i, "null", Valor::Nulo),
         Some(ch) if *ch == '-' || ch.is_ascii_digit() => {
             let inicio = *i;
-            while c
-                .get(*i)
-                .is_some_and(|ch| ch.is_ascii_digit() || "+-.eE".contains(*ch))
-            {
+            while c.get(*i).is_some_and(|ch| ch.is_ascii_digit() || "+-.eE".contains(*ch)) {
                 *i += 1;
             }
             Ok(Valor::Numero(c[inicio..*i].iter().collect()))
@@ -88,9 +81,7 @@ fn valor(c: &[char], i: &mut usize) -> Result<Valor, String> {
 
 fn palabra(c: &[char], i: &mut usize, p: &str, v: Valor) -> Result<Valor, String> {
     let fin = *i + p.chars().count();
-    if c.get(*i..fin)
-        .is_some_and(|s| s.iter().copied().eq(p.chars()))
-    {
+    if c.get(*i..fin).is_some_and(|s| s.iter().copied().eq(p.chars())) {
         *i = fin;
         Ok(v)
     } else {
@@ -115,14 +106,9 @@ fn cadena(c: &[char], i: &mut usize) -> Result<String, String> {
                     'b' => out.push('\u{8}'),
                     'f' => out.push('\u{c}'),
                     'u' => {
-                        let hex: String = c
-                            .get(*i..*i + 4)
-                            .ok_or("JSON: \\u cortado")?
-                            .iter()
-                            .collect();
+                        let hex: String = c.get(*i..*i + 4).ok_or("JSON: \\u cortado")?.iter().collect();
                         *i += 4;
-                        let code = u32::from_str_radix(&hex, 16)
-                            .map_err(|e| format!("JSON: \\u{hex}: {e}"))?;
+                        let code = u32::from_str_radix(&hex, 16).map_err(|e| format!("JSON: \\u{hex}: {e}"))?;
                         out.push(char::from_u32(code).unwrap_or('\u{fffd}'));
                     }
                     otro => out.push(otro), // \" \\ \/

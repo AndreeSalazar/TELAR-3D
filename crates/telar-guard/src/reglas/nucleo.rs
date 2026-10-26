@@ -10,20 +10,12 @@ pub(crate) const NUCLEO: [&str; 4] = ["nudo", "hilo", "hilo-spirv", "telar-nodos
 
 pub(crate) fn revisar(repo: &Repo) -> Vec<Problema> {
     let mut problemas = Vec::new();
-    for nombre in repo
-        .crates()
-        .iter()
-        .filter(|c| NUCLEO.contains(&c.as_str()))
-    {
+    for nombre in repo.crates().iter().filter(|c| NUCLEO.contains(&c.as_str())) {
         let raiz = format!("crates/{nombre}/src/lib.rs");
         match repo.leer(&raiz) {
             Some(src) if blanquear(&src).contains("#![no_std]") => {}
             Some(_) => problemas.push(Problema::en(&raiz, 1, "falta `#![no_std]`")),
-            None => problemas.push(Problema::en(
-                &raiz,
-                0,
-                "un crate del núcleo es una biblioteca: falta src/lib.rs",
-            )),
+            None => problemas.push(Problema::en(&raiz, 0, "un crate del núcleo es una biblioteca: falta src/lib.rs")),
         }
         let prefijo = format!("crates/{nombre}/src/");
         for archivo in repo.rust_en(&prefijo) {
@@ -32,11 +24,7 @@ pub(crate) fn revisar(repo: &Repo) -> Vec<Problema> {
             };
             let codigo = blanquear(&src);
             for n in buscar_seguida(&codigo, "std", "::") {
-                problemas.push(Problema::en(
-                    archivo,
-                    n,
-                    "usa `std::` (en el núcleo, solo `core::` y `alloc::`)",
-                ));
+                problemas.push(Problema::en(archivo, n, "usa `std::` (en el núcleo, solo `core::` y `alloc::`)"));
             }
             for n in buscar_seguida(&codigo, "crate", "std") {
                 problemas.push(Problema::en(archivo, n, "`extern crate std` en el núcleo"));
