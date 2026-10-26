@@ -6,14 +6,14 @@ Sistema 3D procedural de nodos en **Rust**, con el núcleo `no_std` y la GPU al 
 
 ```
 crates/
-  telar-guard/   ✅ los guardianes (9 reglas)                    std, sin crates
+  telar-guard/   ✅ los guardianes (10 reglas)                   std, sin crates
   telar-ventana/ ✅ Win32 a mano (unsafe SOLO en src/ffi/)       std · aislada: no usa nada nuestro
   telar-gpu/     ✅ Vulkan a mano (unsafe SOLO en src/ffi/)      std · aislada: no usa nada nuestro
   telar-app/     ✅ `telar`: une ventana, GPU y kernels (y, en la Fase 8, la interfaz de nodos)
-  nudo/          geometría, atributos y grafo que cocina        no_std + alloc
+  nudo/          ✅ geometría, atributos y grafo que cocina      no_std + alloc
   hilo/          lenguaje HILO: léxico, sintaxis, tipos, IR     no_std + alloc
   hilo-spirv/    ✅ SPIR-V emitido a mano (el primer kernel)       no_std + alloc
-  telar-nodos/   un nodo por carpeta (código, libreto, tests)   no_std + alloc
+  telar-nodos/   ✅ un nodo por carpeta (código, libreto, tests)  no_std + alloc · referencias/ con su etiqueta
 ```
 
 Cada crate declara a quién puede usar en su `Cargo.toml` (`[package.metadata.telar] puede-usar = [...]`, regla `fronteras`). Formato: `rustfmt` a 120 columnas (`rustfmt.toml`).

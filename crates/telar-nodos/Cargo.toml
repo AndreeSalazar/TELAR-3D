@@ -1,0 +1,18 @@
+[package]
+name = "telar-nodos"
+description = "La biblioteca de nodos de TELAR: una carpeta por nodo, en no_std"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+# Del núcleo (no_std + alloc): solo usa nudo (regla fronteras).
+[package.metadata.telar]
+puede-usar = ["nudo"]
+
+[dependencies]
+nudo = { path = "../nudo" }
+
+[lints]
+workspace = true

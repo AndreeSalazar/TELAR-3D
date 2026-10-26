@@ -8,13 +8,14 @@ mod deps;
 mod fronteras;
 mod higiene;
 mod inseguro;
+mod nodos;
 mod nucleo;
 
 use crate::informe::{Regla, Resultado};
 use crate::repo::Repo;
 
 /// Todas las reglas de código, en el orden en que se informan.
-pub static REGLAS: [Regla; 9] = [
+pub static REGLAS: [Regla; 10] = [
     Regla {
         id: "cero-deps",
         titulo: "Sin crates de terceros: solo dependencias por ruta dentro de crates/",
@@ -77,6 +78,13 @@ pub static REGLAS: [Regla; 9] = [
         motivo: "cada pieza se explica y se demuestra sola",
         arreglo: "añade crates/<crate>/README.md y tests (tests/*.rs o #[test] en src/)",
         revisar: higiene::crate_completo,
+    },
+    Regla {
+        id: "nodo-completo",
+        titulo: "Cada nodo con su código, su libreto, su test y su comparación con Houdini",
+        motivo: "cada nodo se explica y se demuestra solo; lo que no se ha comparado se dice",
+        arreglo: "añade mod.rs y libreto.md en su carpeta, tests/<nodo>.rs y referencias/<nodo>.md (con su etiqueta)",
+        revisar: nodos::revisar,
     },
 ];
 

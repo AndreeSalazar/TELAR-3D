@@ -271,3 +271,20 @@ fn crate_completo_exige_readme_y_tests() {
     p.escribir(LIB, "//! Con tests dentro.\n#[cfg(test)]\nmod tests {\n    #[test]\n    fn a() {}\n}\n");
     assert_eq!(p.sitios("crate-completo"), Vec::<String>::new());
 }
+
+#[test]
+fn nodo_completo_exige_codigo_libreto_test_y_referencia() {
+    let p = Prueba::nueva("nodos");
+    p.escribir("crates/telar-nodos/src/caja/mod.rs", "//! Caja.\n");
+    let carpeta = "crates/telar-nodos/src/caja/";
+    assert_eq!(p.sitios("nodo-completo"), [carpeta, carpeta, carpeta]);
+
+    p.escribir("crates/telar-nodos/src/caja/libreto.md", "# caja\n");
+    p.escribir("crates/telar-nodos/tests/caja.rs", "#[test]\nfn a() {}\n");
+    p.escribir("referencias/caja.md", "# caja · ABIERTO\n");
+    assert_eq!(p.sitios("nodo-completo"), Vec::<String>::new());
+
+    // Los archivos sueltos de src/ (lib.rs, parametros.rs) no son nodos.
+    p.escribir("crates/telar-nodos/src/lib.rs", "//! Nodos.\n");
+    assert_eq!(p.sitios("nodo-completo"), Vec::<String>::new());
+}

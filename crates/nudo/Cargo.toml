@@ -1,0 +1,13 @@
+[package]
+name = "nudo"
+description = "El núcleo de TELAR: geometría, atributos y el grafo que cocina, en no_std"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+# Del núcleo (no_std + alloc): no usa ningún crate.
+
+[lints]
+workspace = true

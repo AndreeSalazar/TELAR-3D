@@ -43,6 +43,14 @@ Puntos, vértices, primitivas y atributos; el grafo con marcas de sucio; los nod
 
 **Hecho cuando:** cambiar un parámetro recalcula solo lo que depende de él (hay un test que cuenta los nodos cocinados), y las estadísticas coinciden con Houdini (recuentos, caja y promedios).
 
+**✅ Hecha en TELAR; ABIERTA contra Houdini.**
+- **`nudo`** (`no_std`): geometría con el modelo de Houdini y el grafo con marcas de sucio. Con `sin`, `cos` y `raiz` propios: error < 2·10⁻⁷ frente a `std`.
+- **`telar-nodos`:** caja, rejilla, esfera, transformar y unir, una carpeta cada uno con su libreto.
+- **El contador de los tests:** mover la caja recocina solo `transformar` y `unir`, y dar detalle a la esfera, solo `esfera` y `unir`. Todas las caras miran hacia fuera.
+- **La regla nueva `nodo-completo`** exige código, libreto, test y referencia.
+
+Las referencias (`referencias/`) están en **ABIERTO**: hay que abrir Apprentice y anotar sus cifras.
+
 ## Fase 4 · El visor
 
 Rasterizar la geometría de NUDO en la GPU (vértices y fragmentos con `hilo-spirv`), con cámara orbital y la profundidad invertida.
