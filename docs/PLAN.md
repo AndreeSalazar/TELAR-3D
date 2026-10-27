@@ -163,6 +163,21 @@ Detalle (MacCormack, vorticidad y *curl noise*), luz (sombras, dispersión y *bl
 
 ## Fase 8 · El telar: la interfaz de nodos
 
+**Primera entrega adelantada:** estudio nativo de Vulkan con red fija seleccionable,
+inspector de controles de escena (amplitud, velocidad, pausa y color de vista
+previa), visor central y separación de eventos UI/cámara. La composición vive en
+`telar-ui`, sin dependencias del motor. Dos buffers UI mapeados se actualizan
+solo al cambiar la revisión; el cálculo de superficie continúa residente.
+
+Capturas Vulkan prueban que el deslizador modifica la superficie y que los
+paneles se dibujan. El test de ventana conserva 120 fotogramas y dos cambios de
+tamaño. Ver `docs/capturas/estudio-v0.png` y `crates/telar-ui/README.md`.
+
+**Pendiente:** edición real de nodos/cables, parámetros propios de cada nodo,
+inspector de atributos y resultados intermedios, guardar/abrir escenas,
+tipografía final, accesibilidad/DPI y materiales/iluminación de producción.
+La red actual no equivale al editor procedural completo.
+
 `telar-app`: nodos y cables elegantes, parámetros en vivo y el estilo neón de la casa (hielo, cian y rojo). Mientras tanto, las escenas se escriben como **libretos** (archivos de HILO en `libretos/`).
 
 **Hecho cuando:** la esfera de fuego se arma desde cero en la interfaz, sin escribir código, y mover un deslizador cambia el fuego en el siguiente fotograma.

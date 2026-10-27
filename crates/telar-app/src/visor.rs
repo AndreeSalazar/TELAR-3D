@@ -6,27 +6,20 @@
 
 use std::time::{Duration, Instant};
 
-use nudo::Camara;
+use crate::controles::Controles;
 use nudo::mate::normalizar;
 use telar_gpu::eleccion::hex;
-use telar_gpu::{Constantes, Gpu, Opciones, ParametrosProcedurales, Superficie};
-use telar_ventana::{Boton, Config, Evento, Tecla, Ventana};
+use telar_gpu::{Constantes, Gpu, Opciones, ParametrosProcedurales, Sombreadores, Superficie};
+use telar_ui::Distribucion;
+use telar_ventana::{Config, Evento, Tecla, Ventana};
 
 /// El negro del cosmos, la brasa (lo que un día será fuego) y la luz ambiente.
-const FONDO: u32 = 0x05_070a;
+const FONDO: u32 = 0x0b_1118;
 const BRASA: u32 = 0xff_8a3d;
 const CIELO: u32 = 0x4a_5a78;
 const SUELO: u32 = 0x20_1812;
 /// Fotogramas del modo `--prueba`.
 const CUADROS_DE_PRUEBA: u32 = 120;
-/// Grados que gira la cámara por píxel arrastrado.
-const GRADOS_POR_PIXEL: f32 = 0.3;
-/// Lo que acerca cada muesca de la rueda.
-const ZOOM_POR_MUESCA: f32 = 0.88;
-/// Sin tocar el ratón tanto tiempo, la cámara gira sola…
-const QUIETO: Duration = Duration::from_secs(3);
-/// … a tantos grados por segundo.
-const GIRO_SOLO: f32 = 12.0;
 
 /// Cómo se abre el visor.
 pub(crate) struct Modo {
@@ -62,51 +55,53 @@ pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
     let (capacidad, puntos) = crate::escena::preparar(&mut gpu, modo)?;
     let titulo = format!("TELAR 3D · {puntos} puntos · {}", gpu.dispositivo());
 
-    let mut camara = Camara::default();
+    if modo.procedural {
+        let (vertices, fragmentos) = (hilo_spirv::interfaz::vertices(), hilo_spirv::interfaz::fragmentos());
+        gpu.preparar_interfaz(Sombreadores { vertices: &vertices, fragmentos: &fragmentos })?;
+    }
+    let mut controles = Controles::nuevo(modo.procedural);
+    let mut tamano_ui = (0, 0);
     let luz = normalizar([0.45, 0.8, 0.4]);
-    let (mut arrastrando, mut raton, mut tocado) = (false, None::<(i32, i32)>, None::<Instant>);
     let (inicio, mut anterior, mut segundo) = (Instant::now(), Instant::now(), Instant::now());
     let (mut cuadros, mut en_este_segundo) = (0u32, 0u32);
     'principal: loop {
+        let diseno = Distribucion::nueva(gpu.imagenes().1);
         for evento in ventana.eventos() {
             match evento {
                 Evento::Cerrar | Evento::Tecla(Tecla::Escape) => break 'principal,
                 Evento::Tamano { ancho, alto } => gpu.redimensionar(ancho, alto),
-                Evento::Boton { boton: Boton::Izquierdo, pulsado } => {
-                    (arrastrando, tocado) = (pulsado, Some(Instant::now()));
-                }
-                Evento::Raton { x, y } => {
-                    if let (true, Some((x0, y0))) = (arrastrando, raton) {
-                        #[allow(clippy::cast_precision_loss, reason = "píxeles de un arrastre: caben en un f32")]
-                        let (dx, dy) = ((x - x0) as f32, (y - y0) as f32);
-                        camara.orbitar(-dx * GRADOS_POR_PIXEL, dy * GRADOS_POR_PIXEL);
-                        tocado = Some(Instant::now());
-                    }
-                    raton = Some((x, y));
-                }
-                Evento::Rueda(muescas) => {
-                    camara.acercar(ZOOM_POR_MUESCA.powf(muescas));
-                    tocado = Some(Instant::now());
-                }
-                Evento::Tecla(_) | Evento::Boton { .. } => {}
+                evento => controles.evento(evento, diseno),
             }
         }
         let dt = anterior.elapsed().as_secs_f32();
         anterior = Instant::now();
-        if !arrastrando && tocado.is_none_or(|t| t.elapsed() >= QUIETO) {
-            camara.orbitar(GIRO_SOLO * dt, 0.0);
-        }
+        controles.avanzar(dt);
         let (_, (ancho, alto)) = gpu.imagenes();
         #[allow(clippy::cast_precision_loss, reason = "el tamaño de la ventana cabe de sobra en un f32")]
-        let aspecto = ancho.max(1) as f32 / alto.max(1) as f32;
-        let constantes =
-            Constantes { matriz: camara.matriz(aspecto), luz, color: hex(BRASA), cielo: hex(CIELO), suelo: hex(SUELO) };
+        let aspecto = if modo.procedural {
+            diseno.visor.ancho / diseno.visor.alto
+        } else {
+            ancho.max(1) as f32 / alto.max(1) as f32
+        };
+        if modo.procedural && (controles.sucio || tamano_ui != (ancho, alto)) {
+            let triangulos = controles.estudio.dibujar(diseno, capacidad * capacidad);
+            gpu.actualizar_interfaz(&triangulos, diseno.area())?;
+            controles.sucio = false;
+            tamano_ui = (ancho, alto);
+        }
+        let constantes = Constantes {
+            matriz: controles.camara.matriz(aspecto),
+            luz,
+            color: if modo.procedural { controles.estudio.color() } else { hex(BRASA) },
+            cielo: hex(CIELO),
+            suelo: hex(SUELO),
+        };
         let dibujado = if modo.procedural {
             // La prueba cambia el tamaño lógico dentro de capacidad sin volver a
             // grabar compute. La GPU calcula los recuentos y todos los argumentos.
             let lado = if modo.prueba && (40..80).contains(&cuadros) { capacidad / 2 } else { capacidad };
             let parametros =
-                ParametrosProcedurales { lado, fase: inicio.elapsed().as_secs_f32() % 1000.0, amplitud: 0.35 };
+                ParametrosProcedurales { lado, fase: controles.fase, amplitud: controles.estudio.amplitud };
             gpu.dibujar_procedural(hex(FONDO), &constantes, parametros)?
         } else {
             gpu.dibujar_escena(hex(FONDO), &constantes)?

@@ -16,6 +16,39 @@ use crate::eleccion::{MEMORIA_COHERENTE, MEMORIA_CON_CACHE, MEMORIA_VISIBLE, nan
 use crate::{Constantes, DiagnosticoProcedural, FORMATO_CAPTURA, Sombreadores};
 
 impl Residente {
+    pub(crate) fn capturar_estudio(
+        &self,
+        ctx: &Contexto,
+        shaders: Sombreadores,
+        tamano: (u32, u32),
+        fondo: [f32; 4],
+        constantes: &Constantes,
+        capa: crate::CapaInterfaz,
+    ) -> Result<Vec<u8>, String> {
+        if self.actividad.pasos == 0 || self.pendiente {
+            return Err("primero hay que ejecutar un paso".to_owned());
+        }
+        if capa.area[0].checked_add(capa.area[2]).is_none_or(|fin| fin > tamano.0)
+            || capa.area[1].checked_add(capa.area[3]).is_none_or(|fin| fin > tamano.1)
+        {
+            return Err("área de estudio fuera de la captura".to_owned());
+        }
+        let pipeline = PipelineGrafico::nuevo(ctx, shaders.vertices, shaders.fragmentos, FORMATO_CAPTURA)?;
+        let mut ui = super::interfaz::InterfazGpu::nueva(ctx, capa.shaders, FORMATO_CAPTURA)?;
+        ui.actualizar(capa.vertices, capa.area)?;
+        let dibujo = ui.juego(0)?;
+        let ranura = &self.ranuras[0];
+        let plana = constantes.plana(FORMATO_CAPTURA);
+        let escena = super::dibujo::Escena {
+            pipeline: &pipeline,
+            malla: &ranura.malla,
+            constantes: &plana,
+            indirecto: Some(ranura.control.objeto),
+            calculo: None,
+        };
+        super::captura_interfaz::capturar(ctx, &escena, &dibujo, tamano, fondo)
+    }
+
     pub(crate) fn capturar(
         &self,
         ctx: &Contexto,

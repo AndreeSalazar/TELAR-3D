@@ -80,9 +80,12 @@ fn los_shaders_del_visor_pasan_spirv_val() {
         eprintln!("sin spirv-val en esta máquina (instala el SDK de Vulkan)");
         return;
     };
-    for (nombre, palabras) in
-        [("vertices", hilo_spirv::visor::vertices()), ("fragmentos", hilo_spirv::visor::fragmentos())]
-    {
+    for (nombre, palabras) in [
+        ("vertices", hilo_spirv::visor::vertices()),
+        ("fragmentos", hilo_spirv::visor::fragmentos()),
+        ("ui_vertices", hilo_spirv::interfaz::vertices()),
+        ("ui_fragmentos", hilo_spirv::interfaz::fragmentos()),
+    ] {
         let bytes: Vec<u8> = palabras.iter().flat_map(|w| w.to_le_bytes()).collect();
         let archivo = std::env::temp_dir().join(format!("telar-visor-{nombre}-{}.spv", std::process::id()));
         std::fs::write(&archivo, bytes).unwrap();

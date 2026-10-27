@@ -6,6 +6,7 @@
 use core::ffi::c_void;
 
 use super::funciones::FnDispositivo;
+use super::interfaz::DibujoInterfaz;
 use super::malla_gpu::MallaGpu;
 use super::pipeline_grafico::{PipelineGrafico, TAMANO_CONSTANTES};
 use super::residente::Ranura;
@@ -58,6 +59,7 @@ pub(crate) unsafe fn grabar(
     destino: &Destino,
     limpiar: [f32; 4],
     escena: Option<&Escena>,
+    interfaz: Option<&DibujoInterfaz>,
 ) {
     let color = Rango { aspecto: ASPECTO_COLOR, mip_base: 0, n_mips: 1, capa_base: 0, n_capas: 1 };
     let profundidad = Rango { aspecto: ASPECTO_PROFUNDIDAD, ..color };
@@ -116,9 +118,11 @@ pub(crate) unsafe fn grabar(
         (fd.barrera)(cmd, etapas_antes, etapas_antes, 0, 0, NULO, 0, NULO, 2, antes.as_ptr());
         (fg.empezar_renderizado)(cmd, &raw const info);
         if let Some(e) = escena {
+            let (viewport_escena, tijera_escena) =
+                interfaz.map_or_else(|| region([0, 0, ancho, alto]), |ui| region(ui.area));
             (fd.calculo.usar_pipeline)(cmd, PUNTO_GRAFICOS, e.pipeline.pipeline);
-            (fg.poner_viewport)(cmd, 0, 1, &raw const viewport);
-            (fg.poner_tijera)(cmd, 0, 1, &raw const area);
+            (fg.poner_viewport)(cmd, 0, 1, &raw const viewport_escena);
+            (fg.poner_tijera)(cmd, 0, 1, &raw const tijera_escena);
             let etapas = ETAPA_VERTICES | ETAPA_FRAGMENTOS;
             let constantes = e.constantes.as_ptr().cast();
             (fg.empujar_constantes)(cmd, e.pipeline.disposicion, etapas, 0, TAMANO_CONSTANTES, constantes);
@@ -131,9 +135,36 @@ pub(crate) unsafe fn grabar(
                 (fg.dibujar_indices)(cmd, e.malla.n_indices, 1, 0, 0, 0);
             }
         }
+        if let Some(ui) = interfaz {
+            (fd.calculo.usar_pipeline)(cmd, PUNTO_GRAFICOS, ui.pipeline.pipeline);
+            (fg.poner_viewport)(cmd, 0, 1, &raw const viewport);
+            (fg.poner_tijera)(cmd, 0, 1, &raw const area);
+            let desde = 0;
+            (fg.usar_vertices)(cmd, 0, 1, &raw const ui.buffer.buffer.objeto, &raw const desde);
+            (fg.dibujar)(cmd, ui.cantidad, 1, 0, 0);
+        }
         (fg.terminar_renderizado)(cmd);
         (fd.barrera)(cmd, ETAPA_SALIDA_COLOR, etapa, 0, 0, NULO, 0, NULO, 1, &raw const despues);
     }
+}
+
+#[allow(clippy::cast_precision_loss, reason = "dimensiones de ventana representables como viewport")]
+fn region(area: [u32; 4]) -> (Viewport, Rect2D) {
+    let [x, y, ancho, alto] = area;
+    (
+        Viewport {
+            x: x as f32,
+            y: y as f32,
+            ancho: ancho as f32,
+            alto: alto as f32,
+            profundidad_min: 0.0,
+            profundidad_max: 1.0,
+        },
+        Rect2D {
+            origen: [i32::try_from(x).unwrap_or(0), i32::try_from(y).unwrap_or(0)],
+            extension: Extension2D { ancho, alto },
+        },
+    )
 }
 
 /// Una barrera de imagen: `(acceso antes, acceso después)` y `(layout viejo, nuevo)`.

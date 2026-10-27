@@ -36,13 +36,28 @@ pub(crate) struct PipelineGrafico {
     pub(crate) pipeline: Objeto,
     /// El formato de color para el que se creó.
     pub(crate) formato: u32,
+    interfaz: bool,
 }
 
 impl PipelineGrafico {
     /// `vertices` y `fragmentos`: SPIR-V con la entrada `main`.
     pub(crate) fn nuevo(ctx: &Contexto, vertices: &[u32], fragmentos: &[u32], formato: u32) -> Result<Self, String> {
+        Self::crear_modo(ctx, vertices, fragmentos, formato, false)
+    }
+
+    pub(crate) fn interfaz(ctx: &Contexto, vertices: &[u32], fragmentos: &[u32], formato: u32) -> Result<Self, String> {
+        Self::crear_modo(ctx, vertices, fragmentos, formato, true)
+    }
+
+    fn crear_modo(
+        ctx: &Contexto,
+        vertices: &[u32],
+        fragmentos: &[u32],
+        formato: u32,
+        interfaz: bool,
+    ) -> Result<Self, String> {
         let fd = ctx.fd.ok_or("el contexto no tiene dispositivo")?;
-        let mut p = Self { fd, d: ctx.dispositivo, disposicion: 0, pipeline: 0, formato };
+        let mut p = Self { fd, d: ctx.dispositivo, disposicion: 0, pipeline: 0, formato, interfaz };
         let rango =
             RangoConstantes { etapas: ETAPA_VERTICES | ETAPA_FRAGMENTOS, desplazamiento: 0, tamano: TAMANO_CONSTANTES };
         let info = InfoDisposicionPipeline {
@@ -121,7 +136,12 @@ impl PipelineGrafico {
             atributos: atributos.as_ptr(),
         };
         let (ensamblado, viewport) = (ensamblado(), viewport());
-        let (rasterizado, muestreo, profundidad) = (rasterizado(), muestreo(), profundidad());
+        let (mut rasterizado, muestreo, mut profundidad) = (rasterizado(), muestreo(), profundidad());
+        if self.interfaz {
+            rasterizado.descartar_caras = 0;
+            profundidad.prueba = 0;
+            profundidad.escritura = 0;
+        }
         let adjunto =
             MezclaAdjunto { activa: 0, factores_color: [0; 3], factores_alfa: [0; 3], mascara: ESCRIBIR_RGBA };
         let mezcla = EstadoMezcla {

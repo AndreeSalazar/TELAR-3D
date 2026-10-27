@@ -11,6 +11,21 @@ let calculo = Calculo::nuevo(&Opciones::default())?; // sin ventana: para calcul
 
 ## Cómo está hecho
 
+La interfaz nativa se prepara con `preparar_interfaz` y se actualiza con
+`actualizar_interfaz` cuando cambia. `ffi/interfaz.rs` conserva un pipeline 2D
+sin profundidad y dos buffers visibles mapeados (120 000 vértices de capacidad
+cada uno). Tras esperar la valla del juego, solo escribe si la revisión cambió.
+El dibujo reserva un viewport central para la escena y restaura el área completa
+al pintar el overlay. La escena y la UI comparten la imagen de presentación.
+
+Son dos buffers y dos mapeos **adicionales**, separados de los 8 buffers y dos
+mapeos de la superficie. La interfaz añade su pipeline gráfico; los contadores
+de `ActividadProcedural` no incluyen recursos o triángulos UI. Al editar controles
+sí se escriben triángulos UI desde CPU; no se suben vértices procedurales.
+
+`Procedural::capturar_estudio` combina escena y `CapaInterfaz` en una captura
+diagnóstica fuera de pantalla. La implementación vive en `ffi/captura_interfaz.rs`.
+
 La ruta residente usa `preparar_procedural` y `dibujar_procedural` en la ventana,
 o `Calculo::procedural` para pruebas sin ventana. La API de tres SPIR-V se traduce
 al mismo ejecutor de planes; conserva buffers, pipelines, conjuntos y comandos.

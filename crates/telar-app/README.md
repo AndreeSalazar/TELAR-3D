@@ -1,5 +1,24 @@
 # telar-app
 
+El modo predeterminado muestra el estudio nativo de `telar-ui`: red fija a la
+izquierda, inspector de controles de escena a la derecha y visor central. Los
+deslizadores cambian amplitud y velocidad; Pausar o Espacio congela la fase.
+Los tres recuadros cambian el color difuso de vista previa. Solo el visor recibe
+órbita y zoom. La selección de nodo cambia el título, sin recocinar ni mostrar
+todavía una salida intermedia. Bajo 720×580 se ocultan los paneles.
+
+La geometría 3D sigue residente. La CPU compone triángulos UI al cambiar estado
+o tamaño; el backend mantiene dos buffers mapeados para ellos. Estos recursos
+y sus escrituras quedan fuera de `ActividadProcedural`, que mide la superficie.
+`tests/interfaz_gpu.rs` comprueba paneles y cambios reales en píxeles después de
+alterar amplitud. `src/controles.rs` separa entrada/cámara del bucle del visor.
+
+Captura reproducible sin ventana (RGBA8 1280×720):
+
+```bash
+cargo run -p telar-app --example capturar_estudio -- target/estudio.rgba
+```
+
 `telar`, la aplicación de TELAR 3D. Es **el único sitio que conoce a la vez la ventana, la GPU, los shaders y la geometría** (regla `fronteras`, declarado en su `Cargo.toml`):
 
 ```text

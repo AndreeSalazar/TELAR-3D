@@ -178,12 +178,19 @@ impl Gpu {
         parametros: ParametrosProcedurales,
     ) -> Result<bool, String> {
         let formato = self.presentacion.formato;
+        if let Some(interfaz) = &mut self.interfaz {
+            interfaz.formato(&self.contexto, formato)?;
+        }
         let plana = constantes.plana(formato);
         let visor = self.visor.as_mut().ok_or("falta el visor")?;
         let escena =
             visor.escena_procedural(&self.contexto, formato, &plana, self.presentacion.cuadro(), parametros)?;
-        let dibujado =
-            self.presentacion.dibujar(&self.contexto, crate::eleccion::color_para(formato, fondo), Some(&escena))?;
+        let dibujado = self.presentacion.dibujar(
+            &self.contexto,
+            crate::eleccion::color_para(formato, fondo),
+            Some(&escena),
+            self.interfaz.as_mut(),
+        )?;
         if dibujado {
             visor.contar_paso();
         }

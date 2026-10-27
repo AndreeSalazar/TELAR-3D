@@ -20,6 +20,7 @@ extern crate alloc;
 
 pub mod ejemplos;
 mod funcion;
+pub mod interfaz;
 mod modulo;
 pub mod op;
 pub mod rejilla;

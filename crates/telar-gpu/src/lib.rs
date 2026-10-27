@@ -17,12 +17,14 @@
 pub mod eleccion;
 mod escena;
 mod ffi;
+mod interfaz;
 mod plan;
 mod procedural;
 
 use core::sync::atomic::Ordering;
 
 pub use escena::{Constantes, Sombreadores};
+pub use interfaz::CapaInterfaz;
 pub use plan::{DominioProcedural, EtapaProcedural, PlanProcedural};
 pub use procedural::{
     ActividadProcedural, DiagnosticoProcedural, KernelsProcedurales, ParametrosProcedurales, Procedural,
@@ -62,6 +64,7 @@ pub struct Superficie {
 pub struct Gpu {
     // Orden de los campos = orden de destrucción: el visor y la presentación antes
     // que el dispositivo.
+    interfaz: Option<ffi::InterfazGpu>,
     visor: Option<ffi::Visor>,
     presentacion: ffi::Presentacion,
     contexto: ffi::Contexto,
@@ -81,7 +84,7 @@ impl Gpu {
             Some((superficie.instancia, superficie.ventana)),
         )?;
         let presentacion = ffi::Presentacion::nueva(&contexto, tamano)?;
-        Ok(Self { visor: None, presentacion, contexto })
+        Ok(Self { interfaz: None, visor: None, presentacion, contexto })
     }
 
     /// El nombre de la GPU elegida.
@@ -122,7 +125,7 @@ impl Gpu {
     /// Si Vulkan falla (no por cambiar de tamaño: eso se rehace solo).
     pub fn dibujar(&mut self, color: [f32; 4]) -> Result<bool, String> {
         let color = eleccion::color_para(self.presentacion.formato, color);
-        self.presentacion.dibujar(&self.contexto, color, None)
+        self.presentacion.dibujar(&self.contexto, color, None, None)
     }
 
     /// Prepara el visor con estos shaders (o los cambia, si ya estaba). El
@@ -165,7 +168,7 @@ impl Gpu {
             Some(visor) if formato != 0 => visor.escena(&self.contexto, formato, &plana)?,
             _ => None,
         };
-        self.presentacion.dibujar(&self.contexto, eleccion::color_para(formato, fondo), escena.as_ref())
+        self.presentacion.dibujar(&self.contexto, eleccion::color_para(formato, fondo), escena.as_ref(), None)
     }
 }
 

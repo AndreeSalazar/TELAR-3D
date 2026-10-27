@@ -27,6 +27,7 @@ dependencies = [
  "nudo",
  "telar-gpu",
  "telar-nodos",
+ "telar-ui",
  "telar-ventana",
 ]
 
@@ -44,6 +45,10 @@ version = "0.1.0"
 dependencies = [
  "nudo",
 ]
+
+[[package]]
+name = "telar-ui"
+version = "0.1.0"
 
 [[package]]
 name = "telar-ventana"

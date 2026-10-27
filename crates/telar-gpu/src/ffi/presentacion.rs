@@ -131,6 +131,7 @@ impl Presentacion {
         ctx: &Contexto,
         limpiar: [f32; 4],
         escena: Option<&Escena>,
+        interfaz: Option<&mut super::interfaz::InterfazGpu>,
     ) -> Result<bool, String> {
         if self.rehacer {
             self.crear_swapchain(ctx)?;
@@ -155,6 +156,7 @@ impl Presentacion {
         if r != VK_SUCCESS && r != VK_SUBOPTIMAL_KHR {
             ok(r, "adquirir una imagen")?;
         }
+        let interfaz = interfaz.map(|interfaz| interfaz.juego(f)).transpose()?;
         let i = indice as usize;
         let destino = Destino {
             imagen: sc.imagenes[i],
@@ -210,7 +212,7 @@ impl Presentacion {
         let r = unsafe {
             ok((self.fd.reiniciar_comandos)(cmd, 0), "reiniciar los comandos")?;
             ok((self.fd.empezar)(cmd, &raw const inicio), "empezar los comandos")?;
-            grabar(&self.fd, cmd, &destino, limpiar, escena);
+            grabar(&self.fd, cmd, &destino, limpiar, escena, interfaz.as_ref());
             ok((self.fd.terminar)(cmd), "terminar los comandos")?;
             ok((self.fd.reiniciar_vallas)(self.dispositivo, 1, &raw const self.vallas[f]), "reiniciar la valla")?;
             ok((self.fd.enviar)(self.cola, 1, &raw const envio, self.vallas[f]), "enviar a la GPU")?;

@@ -24,6 +24,7 @@ Es del núcleo (regla `nucleo-sin-std`): solo `core` y `alloc`, así que el mism
 | `src/funcion.rs` | el cuerpo de una función: bloques, cargas, aritmética, vectores (`construir`, `extraer`, `barajar`) e instrucciones de `GLSL.std.450` |
 | `src/ejemplos.rs` | el primer kernel: llena un buffer con `hash_pcg(i)`, con su referencia en la CPU |
 | `src/visor.rs` | los shaders del visor (Fase 4): vértices y fragmentos |
+| `src/interfaz.rs` | shaders 2D de posición y color para el overlay nativo |
 | `src/rejilla.rs` | productor de argumentos, generación y deformación de la rejilla residente |
 
 ## Los kernels residentes (Fase 4.5)

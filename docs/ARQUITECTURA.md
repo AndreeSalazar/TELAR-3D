@@ -16,6 +16,11 @@ Los grafos con recursos arbitrarios siguen pendientes. El relieve del visor se
 compila desde el IR HILO al preparar la escena. `hilo` usa `hilo-spirv` y la
 matemática pura de `nudo`; `telar-app` pasa los bytes al backend GPU aislado.
 
+Ya existe una primera interfaz: `telar-ui` es independiente y produce estado y
+triángulos; la app conecta sus controles con los parámetros GPU. El backend
+dibuja el overlay en un pipeline 2D y mantiene sus propios buffers por juego.
+La red es fija y seleccionable, todavía sin edición de conexiones ni atributos.
+
 ## La idea en una frase
 
 **Los datos nacen, viven y mueren en la GPU.** La CPU edita el grafo, lo compila y le pasa a la GPU unos pocos bytes de parámetros por fotograma. Todo lo demás (emitir, simular, decidir cuánto trabajo hay y renderizar) lo hace la GPU sin volver a preguntar.

@@ -208,7 +208,7 @@ pub(super) fn capturar_buffers(
         // viven hasta después de esperar a la GPU; el pipeline es RGBA8, como la imagen,
         // y el buffer mide justo una imagen.
         unsafe {
-            grabar(fd, cmd, &destino, limpiar, Some(&escena));
+            grabar(fd, cmd, &destino, limpiar, Some(&escena), None);
             (fd.grafico.copiar_imagen)(cmd, color.objeto, LAYOUT_TRANSFER_SRC, lectura.objeto, 1, &raw const copia);
             let b = (&raw const barrera).cast();
             (fd.barrera)(cmd, ETAPA_TRANSFER, ETAPA_HOST, 0, 1, b, 0, nulo, 0, nulo.cast());

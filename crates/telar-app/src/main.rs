@@ -17,6 +17,7 @@
 //! ```
 
 mod calculo;
+mod controles;
 mod escena;
 mod visor;
 

@@ -33,6 +33,7 @@ macro_rules! cargar {
 
 mod buffer;
 mod calculo;
+mod captura_interfaz;
 mod carga;
 mod contexto;
 mod dibujo;
@@ -40,6 +41,7 @@ mod funciones;
 mod funciones_calculo;
 mod funciones_grafico;
 mod imagen;
+mod interfaz;
 mod malla_gpu;
 mod pipeline_grafico;
 mod presentacion;
@@ -55,6 +57,7 @@ mod visor;
 
 pub(crate) use calculo::ejecutar;
 pub(crate) use contexto::{AVISOS, Contexto};
+pub(crate) use interfaz::InterfazGpu;
 pub(crate) use pipeline_grafico::TAMANO_CONSTANTES;
 pub(crate) use presentacion::Presentacion;
 pub(crate) use residente::Residente;
