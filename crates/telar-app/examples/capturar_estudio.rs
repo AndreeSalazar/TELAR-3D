@@ -6,6 +6,8 @@ use telar_gpu::{
 use telar_ui::Estudio;
 #[path = "../src/arranque.rs"]
 mod arranque;
+#[path = "../src/grafo_compilar.rs"]
+mod grafo_compilar;
 #[path = "../src/render.rs"]
 mod render;
 #[path = "../src/tipografia.rs"]
@@ -16,23 +18,38 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ruta = argumentos.next().unwrap_or_else(|| "target/estudio.rgba".to_owned());
     let ancho = argumentos.next().map(|v| v.parse::<u32>()).transpose()?.unwrap_or(1280);
     let alto = argumentos.next().map(|v| v.parse::<u32>()).transpose()?.unwrap_or(720);
-    let seleccionado = argumentos.next().map(|v| v.parse::<usize>()).transpose()?.unwrap_or(1).min(3);
+    let seleccionado = argumentos.next().map(|v| v.parse::<usize>()).transpose()?.unwrap_or(1);
     let muestreo = argumentos.next().unwrap_or_else(|| "4".to_owned());
     let muestras = if muestreo == "sin-msaa" { 1 } else { muestreo.parse::<u32>()? };
     let tamano = (ancho, alto);
     let gpu = Calculo::nuevo(&Opciones { muestras, ..Opciones::default() })?;
-    let codigo = [telar_kernel::compilar_con_cache(), hilo_spirv::rejilla::generar(), hilo_spirv::rejilla::deformar()];
+    let mut estudio = Estudio::default();
+    let variante = argumentos.next().unwrap_or_default();
+    if variante == "red" {
+        estudio.crear_nodo(telar_ui::TipoNodo::Onda)?;
+    }
+    estudio.seleccionado = seleccionado.min(estudio.cantidad_nodos() - 1);
+    estudio.salida.muestras = muestras;
+    estudio.salida.muestras_reales = gpu.muestras_de_captura()?;
+    let puntos = if estudio.red_activa() {
+        grafo_compilar::compilar(&estudio)?.compilar()
+    } else {
+        hilo_spirv::rejilla::deformar()
+    };
+    let codigo = [telar_kernel::compilar_con_cache(), hilo_spirv::rejilla::generar(), puntos];
     let relieve = hilo::ejemplos::relieve_dinamico()?.compilar();
     let mut etapas =
         KernelsProcedurales { preparar: &codigo[0], generar: &codigo[1], deformar: &codigo[2] }.etapas().to_vec();
-    etapas.push(EtapaProcedural { nombre: "relieve", codigo: &relieve, dominio: DominioProcedural::Puntos });
+    if !estudio.red_activa() {
+        etapas.push(EtapaProcedural { nombre: "relieve", codigo: &relieve, dominio: DominioProcedural::Puntos });
+    }
     let cabecera = arranque::crear(gpu.perfil(), 256, etapas.len())?;
     let mut residente = gpu.procedural_con_plan(256, PlanProcedural::nuevo(&etapas)?.con_arranque(&cabecera)?)?;
-    let mut estudio = Estudio::default();
-    estudio.seleccionado = seleccionado;
-    estudio.salida.muestras = muestras;
-    estudio.salida.muestras_reales = gpu.muestras_de_captura()?;
     let diseno = estudio.distribucion(tamano);
+    if variante == "numero" {
+        let campo = if seleccionado == 3 { diseno.numero_muestras() } else { diseno.valor(0) };
+        estudio.pulsar(diseno, campo.x + 4.0, campo.y + 4.0);
+    }
     residente.paso(ParametrosProcedurales { lado: 256, fase: 0.6, amplitud: estudio.onda.amplitud })?;
     let escena = [telar_render::vertices(), telar_render::fragmentos_rejilla(telar_render::LuzArea::default())?];
     let ui = [hilo_spirv::interfaz::vertices(), hilo_spirv::interfaz::fragmentos()];

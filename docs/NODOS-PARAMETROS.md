@@ -1,5 +1,10 @@
 # Configuración propia de los cuatro nodos
 
+Esta página describe el contrato histórico de cuatro etapas, conservado para v2.
+El [grafo editable v3](GRAFO-EDITABLE.md) añade instancias, conexiones y edición
+numérica; sus operaciones se fusionan en HILO con constantes al confirmar ediciones.
+La fase común continúa viva y los parámetros del render permanecen independientes.
+
 El inspector ya usa el estado del nodo seleccionado, no dos valores globales
 con títulos distintos. Seleccionar o arrastrar una tarjeta conserva su configuración.
 Tab recorre los nodos; el ratón modifica sus deslizadores. Pausa sigue siendo un
@@ -74,8 +79,7 @@ Vulkan. Siguen diez buffers, ocho pipelines compute, dos grabaciones y dos mapeo
 - SPIR-V validado con la herramienta oficial, incluyendo el último parámetro (3).
 - **ABIERTO:** rendimiento de grafos generales, caché por nodo, pico de VRAM y otras GPU.
 
-La red sigue siendo Rejilla → Onda → Relieve → Salida. No se pueden crear dos
-Ondas ni reconectar cables todavía; tampoco hay tablas de atributos o vista del
-resultado intermedio. [`.tlar` v2 ya conserva estos ajustes](ESCENAS.md), la cámara,
-fase y distribución. V1 mantiene su contrato de arranque/coordinador.
-La edición de topología e instancias de nodos sigue pendiente.
+La cadena anterior se conserva para escenas v2. El [grafo editable](GRAFO-EDITABLE.md)
+ya crea Ondas/Relieves independientes, conecta puertos y omite operaciones; v3
+guarda esa red. Los números del inspector se editan por teclado. Siguen pendientes
+las tablas de atributos, vistas intermedias y geometría general con varios objetos.

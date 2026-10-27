@@ -87,3 +87,8 @@ Las bases de SSA y las fuentes SPIR-V están en `docs/MATEMATICAS.md`, sección 
 `ejemplos::relieve_dinamico()` usa `Parametro(0)`. El intérprete admite los cuatro
 valores mediante `interpretar_con_parametros`; el método anterior usa los mismos
 valores de compatibilidad que el backend: [1,3; 0; 0; 0].
+
+Grafo editable de rejilla: instancias de Onda/Relieve, conexiones, omisión y
+serialización v3. El compilador HILO incorpora Seno/Coseno escalares y fusiona
+las operaciones alcanzables en un kernel por punto. La edición numérica aplica
+con Enter y cancela con Escape. [Contrato y costes](../../docs/GRAFO-EDITABLE.md).

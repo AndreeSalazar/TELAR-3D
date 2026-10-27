@@ -12,3 +12,8 @@ Limites: Buzón de una entrada, productores serializados, región/ABI verificado
 Evidencia: docs/ARRANQUE-GPU.md, docs/FORMATO-TLAR.md y pruebas de kernel/hilo/SPIR-V.
 
 Clasificación de riesgo, no certificación absoluta ni medición de rendimiento.
+
+Seno/Coseno escalares: validación y emisión del IR en CPU al preparar;
+intérprete CPU solo de referencia. El SPIR-V evalúa trigonometría por punto en GPU,
+sin añadir descriptores ni reservas propias. Hasta 256 instrucciones IR.
+Ver docs/GRAFO-EDITABLE.md y telar-app/tests/grafo_gpu.rs.

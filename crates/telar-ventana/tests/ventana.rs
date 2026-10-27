@@ -69,3 +69,12 @@ fn abre_una_ventana_de_verdad_y_la_cierra() {
     let otra = Ventana::nueva(&config).unwrap();
     assert_ne!(otra.manejadores().ventana, m.ventana);
 }
+#[test]
+fn texto_numerico_se_traduce_desde_caracteres_y_no_desde_teclas_virtuales() {
+    use telar_ventana::Evento;
+    use telar_ventana::evento::{WM_CHAR, traducir};
+    for c in ['0', '9', ',', '.', '-', 'e'] {
+        assert_eq!(traducir(WM_CHAR, c as usize, 0), Some(Evento::Texto(c)));
+    }
+    assert_eq!(traducir(WM_CHAR, 0xd800, 0), None);
+}

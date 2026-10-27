@@ -12,3 +12,11 @@ Limites: 32 B de parámetros procedurales por paso y 128 B de constantes de dibu
 Evidencia: tests/app.rs, archivo_tlar.rs, render_gpu.rs y docs/ARRANQUE-GPU.md.
 
 Clasificación de riesgo, no certificación absoluta ni medición de rendimiento.
+
+Grafo de rejilla y números: hasta diez identidades y 24 caracteres de edición.
+Validar/compilar SPIR-V y recortar triángulos UI consume CPU/RAM al editar;
+la evaluación de puntos sigue en GPU. Recompilar espera y reconstruye el plan;
+pico de VRAM no medido. Estado estable: diez buffers, dos grabaciones, dos
+mapeos y seis pipelines compute en la ruta fusionada (ocho en la histórica).
+La escena de datos v3 ocupa hasta 416 B; E/S solo explícita. Evidencia adicional:
+docs/GRAFO-EDITABLE.md, tests/grafo_gpu.rs y tests/red.rs de sus crates.

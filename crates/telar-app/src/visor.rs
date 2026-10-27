@@ -32,7 +32,7 @@ pub(crate) struct Modo {
     pub(crate) puntos: u32,
     /// Personalizaciones CSS cargadas una vez al abrir el estudio.
     pub(crate) estilo: Option<String>,
-    /// Escena de datos v2; se valida antes de preparar Vulkan.
+    /// Escena de datos v2/v3; se valida antes de preparar Vulkan.
     pub(crate) abrir: Option<String>,
     /// Guardar también al salir; sin esta opción solo se escribe por F5/botón.
     pub(crate) guardar: Option<String>,
@@ -47,7 +47,7 @@ pub(crate) struct Resumen {
 /// Abre la ventana y lleva el bucle del visor.
 pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
     if !modo.procedural && (modo.abrir.is_some() || modo.guardar.is_some()) {
-        return Err("las escenas .tlar v2 requieren el visor procedural".into());
+        return Err("las escenas .tlar v2/v3 requieren el visor procedural".into());
     }
     let inicial = modo.abrir.as_deref().map(|r| crate::proyecto::leer(std::path::Path::new(r))).transpose()?;
     let ruta = std::path::Path::new(modo.guardar.as_deref().or(modo.abrir.as_deref()).unwrap_or("escena.tlar"));
@@ -56,7 +56,7 @@ pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
     let m = ventana.manejadores();
     let opciones = Opciones {
         validacion: modo.validacion,
-        muestras: inicial.as_ref().map_or(4, |p| p.estudio[8]),
+        muestras: inicial.as_ref().map_or(2, |p| p.estudio[8]),
         ..Opciones::default()
     };
     let mut gpu = Gpu::nueva(&opciones, Superficie { instancia: m.instancia, ventana: m.ventana }, ventana.tamano())?;
@@ -84,12 +84,19 @@ pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
     println!("telar: escena activa {} · Guardar/F5 · Abrir/F9", ruta.display());
     let fondo = cargar_estilos(modo, &mut controles)?;
     let mut tamano_ui = (0, 0);
+    crate::grafo::sincronizar(&mut gpu, &mut controles)?;
+    let mut cuadros_plan = 0;
     let (inicio, mut anterior, mut segundo) = (Instant::now(), Instant::now(), Instant::now());
     let (mut cuadros, mut en_este_segundo) = (0u32, 0u32);
     'principal: loop {
         let diseno = controles.estudio.distribucion(gpu.imagenes().1);
         for evento in ventana.eventos() {
             match evento {
+                Evento::Tecla(Tecla::Escape)
+                    if controles.estudio.editando_numero() || controles.estudio.conectando() =>
+                {
+                    controles.evento(evento, diseno);
+                }
                 Evento::Cerrar | Evento::Tecla(Tecla::Escape) => break 'principal,
                 Evento::Tamano { ancho, alto } => gpu.redimensionar(ancho, alto),
                 evento => controles.evento(evento, diseno),
@@ -99,12 +106,16 @@ pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
         if modo.procedural {
             crate::sesion::procesar(ruta, &mut controles, &mut gpu);
             crate::calidad::sincronizar(&mut gpu, &mut controles, &mut muestras_aplicadas)?;
+            if crate::grafo::sincronizar(&mut gpu, &mut controles)? {
+                cuadros_plan = 0;
+            }
         }
         anterior = Instant::now();
         controles.avanzar(dt);
         let dibujado = dibujar_cuadro(&mut gpu, &mut controles, fuente.as_ref(), &mut tamano_ui, modo, cuadros, fondo)?;
         if dibujado {
             cuadros += 1;
+            cuadros_plan += 1;
             en_este_segundo += 1;
         } else {
             std::thread::sleep(Duration::from_millis(16)); // minimizada: no gastar la CPU
@@ -131,7 +142,7 @@ pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
     let (_, (ancho, alto)) = gpu.imagenes();
     println!("telar: swapchain creada {} veces · tamaño final {ancho}×{alto}", gpu.swapchains_creadas());
     if modo.procedural {
-        crate::escena::comprobar(&gpu, cuadros)?;
+        crate::escena::comprobar(&gpu, cuadros_plan, controles.estudio.red_activa())?;
     }
     // La GPU antes que la ventana: la superficie de Vulkan vive dentro de la ventana.
     drop(gpu);

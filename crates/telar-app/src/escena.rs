@@ -50,7 +50,7 @@ pub(crate) fn preparar(gpu: &mut Gpu, modo: &Modo, capacidad_guardada: Option<u3
     Ok((capacidad, puntos))
 }
 
-pub(crate) fn comprobar(gpu: &Gpu, cuadros: u32) -> Result<(), String> {
+pub(crate) fn comprobar(gpu: &Gpu, cuadros: u32, red: bool) -> Result<(), String> {
     let actividad = gpu.actividad_procedural();
     println!(
         "telar: residente · {} buffers · {} pipelines · {} grabaciones compute · {} pasos · {} bytes parámetros · {} bytes geometría subida · {} bytes descargados",
@@ -64,7 +64,7 @@ pub(crate) fn comprobar(gpu: &Gpu, cuadros: u32) -> Result<(), String> {
     );
     println!("telar: {} mapeos persistentes de parámetros", actividad.mapeos);
     if actividad.buffers != 10
-        || actividad.pipelines != 8
+        || actividad.pipelines != if red { 6 } else { 8 }
         || actividad.grabaciones != 2
         || actividad.mapeos != 2
         || actividad.pasos != u64::from(cuadros)

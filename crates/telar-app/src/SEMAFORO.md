@@ -25,3 +25,11 @@ síncrono y solo explícito; sin E/S de disco en cuadros estables. Reemplazo por
 temporal en el mismo directorio; guardado no sube geometría ni añade buffers GPU.
 La reapertura inicial reconstruye recursos; en vivo requiere igual capacidad.
 Ver docs/ESCENAS.md y pruebas proyecto.rs, proyecto_render.rs y estado.rs.
+
+Grafo de rejilla y números: hasta diez identidades y 24 caracteres de edición.
+Validar/compilar SPIR-V y recortar triángulos UI consume CPU/RAM al editar;
+la evaluación de puntos sigue en GPU. Recompilar espera y reconstruye el plan;
+pico de VRAM no medido. Estado estable: diez buffers, dos grabaciones, dos
+mapeos y seis pipelines compute en la ruta fusionada (ocho en la histórica).
+La escena de datos v3 ocupa hasta 416 B; E/S solo explícita. Evidencia adicional:
+docs/GRAFO-EDITABLE.md, tests/grafo_gpu.rs y tests/red.rs de sus crates.

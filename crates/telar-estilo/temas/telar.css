@@ -39,3 +39,5 @@
 .salida { background-color: var(--cobre); }
 .hilo { color: #678a88; border-width: 2px; }
 .puntos { color: #343946; gap: 20px; }
+.valor:checked { border-color: var(--acento); }
+.error { color: #f28b82; }

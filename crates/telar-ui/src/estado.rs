@@ -19,11 +19,12 @@ impl Estudio {
             self.salida.rugosidad.to_bits(),
             u32::try_from(self.salida.material).unwrap_or(u32::MAX),
             self.salida.muestras,
-            u32::try_from(self.seleccionado).unwrap_or(u32::MAX),
+            u32::try_from(if self.red.activa { self.seleccionado.min(3) } else { self.seleccionado })
+                .unwrap_or(u32::MAX),
             u32::from(self.pausado),
         ]);
         for (destino, origen) in estado[11..].iter_mut().zip(self.nodos.iter().flatten()) {
-            *destino = origen.to_bits();
+            *destino = (if self.red.activa { origen.clamp(0.0, 1.0) } else { *origen }).to_bits();
         }
         estado
     }
@@ -67,10 +68,12 @@ impl Estudio {
         };
         self.seleccionado = estado[9] as usize;
         self.pausado = estado[10] != 0;
-        self.nodos = nodos;
+        self.nodos = nodos.to_vec();
+        self.red = crate::red::Red::default();
         self.arrastre = None;
         self.encima = None;
         self.accion_proyecto = None;
+        self.edicion = None;
         Ok(())
     }
 }

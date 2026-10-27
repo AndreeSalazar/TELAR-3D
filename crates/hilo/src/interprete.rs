@@ -101,6 +101,8 @@ fn evaluar(operacion: Operacion, entrada: Entrada, parametros: [f32; 4], valores
         Operacion::Fase => Valor::Escalar(entrada.fase),
         Operacion::Amplitud => Valor::Escalar(entrada.amplitud),
         Operacion::Parametro(indice) => Valor::Escalar(parametros[indice as usize]),
+        Operacion::Seno(id) => Valor::Escalar(nudo::mate::sin_cos(valor(id).componente(0)).0),
+        Operacion::Coseno(id) => Valor::Escalar(nudo::mate::sin_cos(valor(id).componente(0)).1),
         Operacion::Sumar(a, b) => binaria(valor(a), valor(b), |a, b| a + b),
         Operacion::Restar(a, b) => binaria(valor(a), valor(b), |a, b| a - b),
         Operacion::Multiplicar(a, b) => binaria(valor(a), valor(b), |a, b| a * b),

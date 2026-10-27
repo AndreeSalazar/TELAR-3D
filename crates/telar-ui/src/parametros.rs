@@ -64,22 +64,51 @@ impl Estudio {
             (2, 0) => ("Factor de altura", self.relieve.factor, 0.0, 3.0),
             (3, 0) => ("Exposición", self.salida.exposicion, 0.25, 4.0),
             (3, 1) => ("Rugosidad", self.salida.rugosidad, 0.08, 1.0),
-            _ => return None,
+            _ => match (self.operacion_nodo(self.seleccionado)?, indice) {
+                (crate::OperacionRed::Onda { amplitud, .. }, 0) => ("Amplitud", amplitud, 0.0, 0.8),
+                (crate::OperacionRed::Onda { velocidad, .. }, 1) => ("Velocidad", velocidad, 0.0, 2.0),
+                (crate::OperacionRed::Relieve { factor }, 0) => ("Factor de altura", factor, 0.0, 3.0),
+                _ => return None,
+            },
         };
         Some(Control { nombre, valor, minimo, maximo })
     }
 
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss, reason = "valor limitado a [2,1024]")]
+    #[allow(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        clippy::cast_precision_loss,
+        reason = "valor limitado a [2,1024]"
+    )]
     pub(crate) fn ajustar(&mut self, indice: usize, fraccion: f32) -> bool {
         let Some(control) = self.control(indice) else { return false };
         let valor = control.minimo + fraccion * (control.maximo - control.minimo);
+        let valor = if self.seleccionado == 0 { (valor + 0.5) as u32 as f32 } else { valor };
+        self.poner_control(indice, valor)
+    }
+
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss, reason = "entero validado en [2,1024]")]
+    pub(crate) fn poner_control(&mut self, indice: usize, valor: f32) -> bool {
+        let Some(control) = self.control(indice) else { return false };
+        if !valor.is_finite()
+            || !(control.minimo..=control.maximo).contains(&valor)
+            || (self.seleccionado == 0 && valor % 1.0 != 0.0)
+        {
+            return false;
+        }
         match (self.seleccionado, indice) {
-            (0, 0) => self.rejilla.lado = (valor + 0.5) as u32,
+            (0, 0) => self.rejilla.lado = valor as u32,
             (1, 0) => self.onda.amplitud = valor,
             (1, 1) => self.onda.velocidad = valor,
             (2, 0) => self.relieve.factor = valor,
             (3, 0) => self.salida.exposicion = valor,
             (3, 1) => self.salida.rugosidad = valor,
+            (id, indice) if id >= 4 => match (self.red.extras.get_mut(id - 4), indice) {
+                (Some(crate::OperacionRed::Onda { amplitud, .. }), 0) => *amplitud = valor,
+                (Some(crate::OperacionRed::Onda { velocidad, .. }), 1) => *velocidad = valor,
+                (Some(crate::OperacionRed::Relieve { factor }), 0) => *factor = valor,
+                _ => return false,
+            },
             _ => return false,
         }
         true

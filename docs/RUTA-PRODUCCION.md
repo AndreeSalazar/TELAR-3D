@@ -1,6 +1,6 @@
 # Ruta hacia el estudio VFX y el render de producción
 
-Estado del **27 de octubre de 2026**, con parámetros por nodo, MSAA 1x/2x/4x y persistencia del estudio en .tlar v2.
+Estado del **27 de octubre de 2026**, con edición numérica, MSAA 2x inicial y grafo editable guardable en .tlar v3.
 Objetivo personal: TELAR 3D con un flujo procedural inspirado en Houdini y una
 dirección visual cinematográfica inspirada en RenderMan. Código y contratos propios;
 no se afirma compatibilidad ni equivalencia con esos productos.
@@ -8,8 +8,8 @@ no se afirma compatibilidad ni equivalencia con esos productos.
 ## Dónde estamos y por qué
 
 Estamos en un **prototipo funcional de estudio procedural y visor interactivo**.
-La base ya ejecuta geometría en GPU, pero la escena está limitada a cuatro etapas
-fijas. Una superficie bonita y fluida no demuestra transporte de luz completo,
+La base ejecuta geometría en GPU y conecta hasta ocho operaciones geométricas
+sobre una rejilla, con instancias independientes. Una superficie bonita y fluida no demuestra transporte de luz completo,
 fiabilidad de una producción ni un editor de grafos general.
 
 Se construyó primero esta ruta pequeña para verificar los contratos: SPIR-V válido,
@@ -21,11 +21,11 @@ de añadir escenas, efectos y millones de rayos con dependencias complejas.
 |---|---|---|
 | Ventana y backend | Win32, Vulkan, validación y pruebas con redimensionado | Otras plataformas y fabricantes requieren integración/pruebas |
 | Kernel GPU | Arranque TLAR, servicios, indirectos y caché | Sin cola general ni asignador de regiones todavía |
-| Geometría residente | Rejilla → Onda → Relieve | No es un grafo GPU de recursos arbitrarios |
+| Geometría residente | Rejilla y hasta ocho Ondas/Relieves conectables, compilados a HILO | Un único campo de alturas; sin mallas/recursos arbitrarios |
 | HILO | IR tipado, intérprete y SPIR-V; escalares vivos | Sin lenguaje textual ni atributos generales |
-| Interfaz | CSS nativo e inspector propio por nodo | No crea instancias ni reconecta cables aún |
+| Interfaz | CSS nativo, números editables, instancias, puertos y omisión | Sin borrado/deshacer ni mezcla de geometrías |
 | Render | GGX, luz de área, autosombra de campo de alturas | Sin BVH, GI, trazado de caminos ni acumulación HDR |
-| `.tlar` | V1 arranque; V2 conserva parámetros, cámara, fase y posiciones del estudio | V2 representa las cuatro etapas fijas, no escenas arbitrarias |
+| `.tlar` | V1 arranque; V2 cadena histórica; V3 grafo editable, cámara y parámetros | Un dominio de rejilla, sin recursos externos de producción |
 | Bordes | MSAA nativo seleccionable 1x/2x/4x; ver CALIDAD-RENDER.md | Reduce aliasing de cobertura; no aumenta detalle geométrico |
 
 ## Orden propuesto y criterios de aceptación
@@ -40,9 +40,10 @@ de añadir escenas, efectos y millones de rayos con dependencias complejas.
 | P6 | Salida de producción | Texturas, gestión de color, exportación HDR, pases, secuencias y recuperación de errores producen entregables reproducibles |
 | P7 | Efectos y materiales avanzados | Partículas, humo/fuego y materiales adicionales tienen contratos, referencias y presupuestos; un efecto completo se construye desde la interfaz |
 
-P1 avanza en dos partes: **persistencia del estudio implementada** (Guardar/F5,
-Abrir/F9, .tlar v2; ver ESCENAS.md). Quedan identificadores estables, instancias
-independientes y conexiones editables: P1 completo sigue abierto.
+**P1 básico implementado en el dominio de rejilla:** identidades estables, dos
+Ondas con valores propios, creación/conexión/omisión y reapertura v3. Ver
+GRAFO-EDITABLE.md. Esto no cierra todavía escenas generales con varios objetos,
+mezcla de geometrías, atributos o recursos externos.
 P2 sigue siendo la prioridad técnica del kernel (H2/H3 en RUMBO-KERNEL.md).
 Ambas vías se coordinan: el compilador prepara un plan válido y el kernel decide
 trabajo dentro de él. No hace falta terminar un administrador GPU general para
@@ -58,8 +59,7 @@ que cualquier escena de producción converja en tiempo real en una RTX 3060.
 
 Decisión del usuario: usar **MSAA 2x como referencia para el visor interactivo**
 y permitir más trabajo GPU en la salida de producción. El selector actual sigue
-ofreciendo 1x/2x/4x; su valor inicial todavía es 4x. Esta decisión queda anotada
-como dirección del perfil, sin afirmar que ya existe un modo final.
+ofreciendo 1x/2x/4x; su valor inicial es ahora 2x. El modo final sigue pendiente.
 
 La propuesta de «16x» se divide en dos controles con unidades diferentes:
 

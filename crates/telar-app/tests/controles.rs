@@ -8,6 +8,24 @@ use telar_ui::Distribucion;
 use telar_ventana::{Boton, Evento, Tecla};
 
 #[test]
+fn escribir_no_activa_atajos_y_escape_no_cambia_parametros() {
+    let mut control = Controles::nuevo(true);
+    let d = control.estudio.distribucion((1280, 720));
+    let r = d.valor(0);
+    control.estudio.pulsar(d, r.x + 4.0, r.y + 4.0);
+    for c in "0.42".chars() {
+        control.evento(Evento::Texto(c), d);
+    }
+    control.evento(Evento::Tecla(Tecla::Otra(13)), d);
+    assert_eq!(control.estudio.onda.amplitud, 0.42);
+    control.estudio.pulsar(d, r.x + 4.0, r.y + 4.0);
+    control.evento(Evento::Texto('0'), d);
+    control.evento(Evento::Tecla(Tecla::Escape), d);
+    assert!(!control.estudio.editando_numero());
+    assert_eq!(control.estudio.onda.amplitud, 0.42);
+}
+
+#[test]
 fn restaurar_interaccion_corta_arrastre_y_atajos_no_modifican_la_escena() {
     let mut control = Controles::nuevo(true);
     let diseno = control.estudio.distribucion((1280, 720));

@@ -25,15 +25,16 @@ conecta eventos, parámetros y renderizado. No se modifica la geometría 3D en C
 - Bajo 720×600 se ocultan paneles para conservar un visor utilizable.
 
 Guardar/Abrir solicitan E/S a la app; el codec puro de estado conserva los
-parámetros y posiciones. Ver [escenas v2](../../docs/ESCENAS.md).
-La red todavía no permite reconectar cables, crear operaciones
-ni inspeccionar tablas de atributos. Los colores de vista
+parámetros y posiciones. Ver [escenas v2/v3](../../docs/ESCENAS.md).
+La red ya crea Ondas/Relieves, reconecta puertos y omite operaciones; hasta ocho
+operaciones sobre una rejilla. Los campos del inspector admiten edición por teclado.
+Ver [grafo editable](../../docs/GRAFO-EDITABLE.md). Siguen pendientes las tablas de atributos. Los colores de vista
 previa seleccionan perfiles GGX opacos del renderizador, todavía sin transmisión
 ni asignaciones de material por objeto. Faltan escalado DPI completo, composición de texto
 Unicode más allá del alfabeto latino, accesibilidad y navegación por teclado de
 todos los controles. Espacio pausa/reanuda desde la ventana.
-Mover un nodo cambia la disposición visual; el orden y las conexiones de las
-cuatro etapas de ejecución siguen fijos. No se presenta como edición de topología.
+Mover una tarjeta cambia su disposición; conectar puertos define el orden de
+composición. Solo se compila el camino alcanzable desde Salida.
 
 ## Responsabilidades
 
@@ -77,6 +78,11 @@ Salida expone calidad MSAA 1x/2x/4x. El backend acepta `Opciones::muestras`
 y `Gpu::configurar_muestras`; el inspector muestra la cantidad efectiva.
 [Contrato, pruebas y coste](../../docs/CALIDAD-RENDER.md).
 
-Persistencia del estudio: `.tlar` v2, Guardar/F5 y Abrir/F9; la E/S queda en
+Persistencia del estudio: `.tlar` v2/v3, Guardar/F5 y Abrir/F9; la E/S queda en
 la app y el estado portable en UI. `--abrir-escena` reconstruye capacidad y
 `--guardar-escena` elige destino y guarda al salir. [Contrato](../../docs/ESCENAS.md).
+
+Grafo editable de rejilla: instancias de Onda/Relieve, conexiones, omisión y
+serialización v3. El compilador HILO incorpora Seno/Coseno escalares y fusiona
+las operaciones alcanzables en un kernel por punto. La edición numérica aplica
+con Enter y cancela con Escape. [Contrato y costes](../../docs/GRAFO-EDITABLE.md).

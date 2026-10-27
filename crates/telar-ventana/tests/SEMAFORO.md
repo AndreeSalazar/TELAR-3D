@@ -12,3 +12,8 @@ Limites: ABIERTO: tiempos y pico global; no atribuir una medición a una etiquet
 Evidencia: crates/telar-ventana/tests y contratos SAFETY de src/ffi/.
 
 Clasificación de riesgo, no certificación absoluta ni medición de rendimiento.
+
+WM_CHAR: traduce un carácter por evento para edición numérica; CPU O(1),
+memoria de la cola de eventos existente. No reserva ni envía recursos GPU ni
+realiza E/S de archivos. Se descartan sustitutos UTF-16 aislados.
+Evidencia adicional: tests/ventana.rs y docs/GRAFO-EDITABLE.md.

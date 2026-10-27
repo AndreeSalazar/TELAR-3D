@@ -24,6 +24,7 @@ pub struct Distribucion {
     control: [f32; 3],
     boton: [f32; 2],
     muestra: [f32; 2],
+    valor: [f32; 2],
 }
 
 impl Distribucion {
@@ -92,9 +93,9 @@ impl Distribucion {
         let relleno = (panel.relleno + panel.grosor).clamp(8.0, 24.0);
         let grafo = Rectangulo {
             x: red.x + relleno,
-            y: red.y + barra_alto + relleno,
+            y: red.y + barra_alto + relleno + 28.0,
             ancho: red.ancho - relleno * 2.0,
-            alto: (red.alto - barra_alto - relleno * 2.0).max(1.0),
+            alto: (red.alto - barra_alto - relleno * 2.0 - 28.0).max(1.0),
         };
         Self {
             tamano,
@@ -125,6 +126,7 @@ impl Distribucion {
             ],
             boton: [boton.ancho.unwrap_or(98.0).clamp(72.0, 104.0), boton.alto.unwrap_or(30.0).clamp(24.0, 32.0)],
             muestra: [muestra.espacio.clamp(4.0, 12.0), muestra.alto.unwrap_or(30.0).clamp(24.0, 32.0)],
+            valor: [estilo("valor").ancho.unwrap_or(64.0), estilo("valor").alto.unwrap_or(26.0)],
         }
     }
 
@@ -144,6 +146,20 @@ impl Distribucion {
 
     /// Selector discreto de MSAA, visible únicamente en Salida.
     #[must_use]
+    pub fn valor(self, indice: usize) -> Rectangulo {
+        let rect = self.control(indice);
+        let ancho = self.valor[0].clamp(32.0, rect.ancho * 0.3);
+        Rectangulo { x: rect.x + rect.ancho - ancho, y: rect.y - 28.0, ancho, alto: self.valor[1].clamp(16.0, 28.0) }
+    }
+
+    /// Campo editable del máximo de muestras solicitado.
+    #[must_use]
+    pub fn numero_muestras(self) -> Rectangulo {
+        Rectangulo { x: self.pausa().x, y: self.calidad(0).y, ancho: 82.0, alto: 24.0 }
+    }
+
+    /// Selector discreto de MSAA, visible únicamente en Salida.
+    #[must_use]
     #[allow(clippy::cast_precision_loss, reason = "tres botones")]
     pub fn calidad(self, indice: usize) -> Rectangulo {
         let ancho = (self.ajustes.ancho - self.relleno * 2.0 - 88.0 - 12.0) / 3.0;
@@ -153,6 +169,14 @@ impl Distribucion {
             ancho,
             alto: 24.0,
         }
+    }
+
+    /// Botón de guardar o abrir en la cabecera.
+    #[must_use]
+    #[allow(clippy::cast_precision_loss, reason = "tres acciones")]
+    pub fn accion_red(self, indice: usize) -> Rectangulo {
+        let ancho = (self.grafo.ancho - 12.0) / 3.0;
+        Rectangulo { x: self.grafo.x + indice.min(2) as f32 * (ancho + 6.0), y: self.grafo.y - 28.0, ancho, alto: 24.0 }
     }
 
     /// Botón de guardar o abrir en la cabecera.

@@ -1,4 +1,4 @@
-# .tlar · arranque v1 y escena v2 de TELAR 3D
+# .tlar · arranque v1, escena v2 y grafo v3 de TELAR 3D
 
 ## Arranque v1 (conservado)
 
@@ -61,3 +61,41 @@ es puro (`telar-ui/src/estado.rs`); cámara, contenedor y E/S están en la app
 Uso y límites: [ESCENAS.md](ESCENAS.md). V2 representa la cadena fija, no un grafo
 general ni un archivo de producción con texturas/volúmenes. Una futura extensión
 requiere contrato y versión propios; no se interpretan bytes adicionales como código.
+
+## Grafo v3
+
+Contenedor separado con el mismo prefijo de cuatro u32: firma TLAR, versión 3,
+cantidad total de palabras de contenido y CRC32 del contenido completo. Las primeras
+28 palabras conservan los parámetros base, cámara y fase de v2. Sigue una extensión
+de `2 + 7N` palabras, donde `N` es el número de identidades en 4..10. Tamaño total
+248..416 bytes; el lector de escena está limitado a 417 bytes para detectar exceso.
+V2 conserva su tamaño exacto de 128 bytes y se escribe si la red no ha sido editada.
+
+La extensión empieza por `N` y la selección actual (0..N-1). Cada registro, en
+orden de identidad estable, contiene siete palabras:
+
+| Palabra del registro | Dato |
+|---|---|
+| 0 | Productor de entrada; `u32::MAX` solo para Rejilla (ID 0) |
+| 1 | Habilitado 0/1; Rejilla y Salida siempre 1 |
+| 2..3 | Posición f32: x en 0..1; y en 0..16 unidades de lienzo de 80 px |
+| 4 | Tipo: 0 Rejilla, 1 Onda, 2 Relieve, 3 Salida |
+| 5..6 | Onda: amplitud/velocidad; Relieve: factor/0; fuente/salida: 0/0 |
+
+Los IDs 0/1/2/3 mantienen tipos Rejilla/Onda/Relieve/Salida. Los demás solo pueden
+ser Onda o Relieve. Los parámetros de 1/2 deben coincidir con el prefijo; los rangos
+son los de sus inspectores. Las posiciones y selección completas de la extensión
+son autoritativas; el prefijo conserva una selección máxima de 3 y posiciones
+limitadas a 0..1 para mantener el dominio del registro base. No se guardan pan,
+arrastres ni texto de edición pendiente. El pan arranca en cero al reabrir.
+
+Cada nodo salvo Rejilla debe tener un productor existente distinto de Salida;
+todas las cadenas deben terminar en Rejilla sin ciclos. La comprobación incluye
+ramas no alcanzables desde Salida. Los campos reservados deben ser cero y todos
+los flotantes deben ser finitos. El visor compila solo el camino de Salida;
+omitir un nodo conserva sus datos y deja pasar su entrada.
+
+V3 contiene únicamente datos. El SPIR-V se construye con el compilador incorporado
+tras validar el grafo; no se deserializa código del archivo. El CRC no autentica
+el archivo. La fase v3 es el reloj común; cada Onda aplica su multiplicador de
+velocidad. V2 mantiene su semántica de fase histórica. Ver [GRAFO-EDITABLE.md](GRAFO-EDITABLE.md).

@@ -15,6 +15,8 @@ pub enum Evento {
     },
     /// Una tecla pulsada.
     Tecla(Tecla),
+    /// Carácter generado por el teclado; independiente del código virtual.
+    Texto(char),
     /// El ratón se movió (coordenadas del área de dibujo; pueden ser negativas).
     Raton {
         /// Horizontal.
@@ -62,6 +64,8 @@ pub const WM_SIZE: u32 = 0x0005;
 pub const WM_CLOSE: u32 = 0x0010;
 /// `WM_KEYDOWN`.
 pub const WM_KEYDOWN: u32 = 0x0100;
+/// `WM_CHAR`: los campos numéricos solo necesitan caracteres del plano básico.
+pub const WM_CHAR: u32 = 0x0102;
 /// `WM_MOUSEMOVE`.
 pub const WM_MOUSEMOVE: u32 = 0x0200;
 /// `WM_LBUTTONDOWN`; `UP` es el siguiente. Los del derecho y el de en medio van
@@ -92,6 +96,7 @@ pub fn traducir(mensaje: u32, w: usize, l: isize) -> Option<Evento> {
         WM_CLOSE => Some(Evento::Cerrar),
         WM_SIZE if w == SIZE_MINIMIZED => Some(Evento::Tamano { ancho: 0, alto: 0 }),
         WM_SIZE => Some(Evento::Tamano { ancho: u32::from(bajo(l)), alto: u32::from(alto(l)) }),
+        WM_CHAR => u32::try_from(w).ok().and_then(char::from_u32).map(Evento::Texto),
         WM_KEYDOWN => Some(Evento::Tecla(match w {
             0x1B => Tecla::Escape,
             0x7A => Tecla::F11,

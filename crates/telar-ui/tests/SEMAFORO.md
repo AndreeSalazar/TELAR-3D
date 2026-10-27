@@ -23,3 +23,9 @@ síncrono y solo explícito; sin E/S de disco en cuadros estables. Reemplazo por
 temporal en el mismo directorio; guardado no sube geometría ni añade buffers GPU.
 La reapertura inicial reconstruye recursos; en vivo requiere igual capacidad.
 Ver docs/ESCENAS.md y pruebas proyecto.rs, proyecto_render.rs y estado.rs.
+
+Números y red: hasta diez identidades y 24 caracteres por edición. Validación,
+serialización de datos y recorte de triángulos UI consumen CPU/RAM al editar.
+No evalúa puntos 3D ni reserva recursos GPU; la app recibe peticiones de recompilar
+y de E/S. La extensión de escena ocupa hasta 72 palabras; sin código ejecutable.
+Ver docs/GRAFO-EDITABLE.md y tests/numeros.rs, red.rs y estado.rs.

@@ -136,6 +136,8 @@ impl Emisor {
             Operacion::Fase => self.entradas[2],
             Operacion::Amplitud => self.entradas[3],
             Operacion::Parametro(indice) => self.parametros[indice as usize],
+            Operacion::Seno(id) => funcion.glsl(self.real, 13, &[valor(id)]),
+            Operacion::Coseno(id) => funcion.glsl(self.real, 14, &[valor(id)]),
             Operacion::Sumar(a, b) => funcion.binaria(op::F_ADD, tipo, valor(a), valor(b)),
             Operacion::Restar(a, b) => funcion.binaria(op::F_SUB, tipo, valor(a), valor(b)),
             Operacion::Multiplicar(a, b) => match (tipos[a.0], tipos[b.0]) {

@@ -1,13 +1,15 @@
 //! Controles discretos del muestreo gráfico, sin acceder a Vulkan.
-use crate::{Distribucion, Estudio, Objetivo, Rectangulo, lienzo::Lienzo};
+use crate::{Distribucion, Estudio, Objetivo, lienzo::Lienzo, numero::Campo};
 use alloc::format;
 
 impl Estudio {
     pub(crate) fn dibujar_calidad(&self, lienzo: &mut Lienzo, diseno: Distribucion) {
-        let primera = diseno.calidad(0);
-        let estilo = self.estilo("etiqueta", false, false);
+        let estilo = self.estilo_numero(Campo::Muestras);
         let texto = format!("MSAA {}x", self.salida.muestras_reales);
-        lienzo.etiqueta(Rectangulo { x: diseno.pausa().x, y: primera.y, ancho: 82.0, alto: 24.0 }, &texto, &estilo);
+        let texto = self.texto_numero(Campo::Muestras, &texto);
+        let rect = diseno.numero_muestras();
+        lienzo.caja(rect, &estilo);
+        lienzo.etiqueta(rect.interior(4.0), &texto, &estilo);
         for (indice, (muestras, texto)) in [(1, "1x"), (2, "2x"), (4, "4x")].into_iter().enumerate() {
             let estilo = self.estilo(
                 "calidad",

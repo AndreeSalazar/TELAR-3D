@@ -128,6 +128,11 @@ Salida expone calidad MSAA 1x/2x/4x. El backend acepta `Opciones::muestras`
 y `Gpu::configurar_muestras`; el inspector muestra la cantidad efectiva.
 [Contrato, pruebas y coste](../../docs/CALIDAD-RENDER.md).
 
-Persistencia del estudio: `.tlar` v2, Guardar/F5 y Abrir/F9; la E/S queda en
+Persistencia del estudio: `.tlar` v2/v3, Guardar/F5 y Abrir/F9; la E/S queda en
 la app y el estado portable en UI. `--abrir-escena` reconstruye capacidad y
 `--guardar-escena` elige destino y guarda al salir. [Contrato](../../docs/ESCENAS.md).
+
+Grafo editable de rejilla: instancias de Onda/Relieve, conexiones, omisión y
+serialización v3. El compilador HILO incorpora Seno/Coseno escalares y fusiona
+las operaciones alcanzables en un kernel por punto. La edición numérica aplica
+con Enter y cancela con Escape. [Contrato y costes](../../docs/GRAFO-EDITABLE.md).

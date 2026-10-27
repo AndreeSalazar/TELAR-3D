@@ -5,10 +5,16 @@
     clippy::cast_possible_truncation,
     reason = "verificación explícita y coordenadas de ventana pequeñas"
 )]
+#[path = "../src/arranque.rs"]
+mod arranque;
 #[path = "../src/calidad.rs"]
 mod calidad;
 #[path = "../src/controles.rs"]
 mod controles;
+#[path = "../src/grafo.rs"]
+mod grafo;
+#[path = "../src/grafo_compilar.rs"]
+mod grafo_compilar;
 #[allow(dead_code, reason = "comparte codec con la CLI; sus argumentos se prueban en proyecto.rs")]
 #[path = "../src/proyecto.rs"]
 mod proyecto;
@@ -94,9 +100,70 @@ fn selector_de_salida_cambia_msaa_en_vivo_con_redimensionado() {
     );
     assert_eq!(finalizado.geometria_subida, 0);
     comprobar_sesion(&mut control, &mut gpu);
+    comprobar_red(&mut control, &mut gpu);
     drop(gpu);
     drop(ventana);
     assert_eq!(telar_gpu::avisos_de_validacion(), 0);
+}
+
+fn comprobar_red(control: &mut controles::Controles, gpu: &mut Gpu) {
+    let ruta = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join(format!("../../target/red-visor-{}.tlar", std::process::id()));
+    let legado = ruta.with_file_name(format!("legado-visor-{}.tlar", std::process::id()));
+    sesion::guardar(&legado, control).unwrap();
+    let d = control.estudio.distribucion(gpu.imagenes().1);
+    let r = d.accion_red(0);
+    control.evento(Evento::Raton { x: (r.x + 5.0) as i32, y: (r.y + 5.0) as i32 }, d);
+    control.evento(Evento::Boton { boton: Boton::Izquierdo, pulsado: true }, d);
+    control.evento(Evento::Boton { boton: Boton::Izquierdo, pulsado: false }, d);
+    assert_eq!(control.estudio.cantidad_nodos(), 5);
+    assert!(grafo::sincronizar(gpu, control).unwrap());
+    assert_eq!(gpu.actividad_procedural().pipelines, 6);
+    let campo = d.valor(0);
+    control.evento(Evento::Raton { x: (campo.x + 4.0) as i32, y: (campo.y + 4.0) as i32 }, d);
+    control.evento(Evento::Boton { boton: Boton::Izquierdo, pulsado: true }, d);
+    control.evento(Evento::Boton { boton: Boton::Izquierdo, pulsado: false }, d);
+    for c in "0.31".chars() {
+        control.evento(Evento::Texto(c), d);
+    }
+    control.evento(Evento::Tecla(telar_ventana::Tecla::Otra(13)), d);
+    assert!(grafo::sincronizar(gpu, control).unwrap());
+    assert!(!grafo::sincronizar(gpu, control).unwrap(), "no recompila en cuadros estables");
+    sesion::guardar(&ruta, control).unwrap();
+    let red_guardada = control.estudio.guardar_red();
+    control.estudio.habilitar_nodo(4, false).unwrap();
+    assert!(grafo::sincronizar(gpu, control).unwrap());
+    for archivo in [&ruta, &legado] {
+        control.estudio.solicitar_proyecto(telar_ui::AccionProyecto::Abrir);
+        sesion::procesar(archivo, control, gpu);
+        assert!(grafo::sincronizar(gpu, control).unwrap());
+        if archivo == &ruta {
+            assert_eq!(control.estudio.guardar_red(), red_guardada);
+            assert_eq!(gpu.actividad_procedural().pipelines, 6);
+        } else {
+            assert!(!control.estudio.red_activa());
+            assert_eq!(gpu.actividad_procedural().pipelines, 8);
+        }
+        let constantes = Constantes {
+            matriz: control.camara.matriz(1.0),
+            luz: [0.0, 1.0, 0.0],
+            color: [1.0; 4],
+            cielo: [0.1; 4],
+            suelo: [0.0; 4],
+        };
+        for _ in 0..3 {
+            assert!(
+                gpu.dibujar_procedural(
+                    [0.0, 0.0, 0.0, 1.0],
+                    &constantes,
+                    ParametrosProcedurales { lado: 19, fase: 0.6, amplitud: 0.35 }
+                )
+                .unwrap()
+            );
+        }
+        assert_eq!(gpu.actividad_procedural().geometria_subida, 0);
+        std::fs::remove_file(archivo).unwrap();
+    }
 }
 
 fn comprobar_sesion(control: &mut controles::Controles, gpu: &mut Gpu) {

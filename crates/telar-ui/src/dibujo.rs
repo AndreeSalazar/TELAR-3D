@@ -84,7 +84,7 @@ impl Estudio {
         texto(
             &mut lienzo,
             [diseno.red.x, alto - diseno.pie, diseno.red.ancho, diseno.pie],
-            &format!("{puntos} puntos · 4 etapas"),
+            &format!("{puntos} puntos · {} nodos", self.cantidad_nodos()),
             &pie,
         );
         lienzo.vertices
@@ -131,18 +131,25 @@ fn inspector(estudio: &Estudio, lienzo: &mut Lienzo, diseno: Distribucion) {
     lienzo.caja(diseno.ajustes, &panel);
     marco(estudio, lienzo, diseno.ajustes, "Propiedades", None);
     let contenido = diseno.ajustes.contenido(&panel);
-    let titulo = ["Rejilla", "Onda", "Relieve", "Salida"][estudio.seleccionado.min(3)];
+    let tipo = estudio.tipo_nodo(estudio.seleccionado).unwrap_or(crate::TipoNodo::Salida);
+    let indice_tipo = match tipo {
+        crate::TipoNodo::Rejilla => 0,
+        crate::TipoNodo::Onda => 1,
+        crate::TipoNodo::Relieve => 2,
+        crate::TipoNodo::Salida => 3,
+    };
+    let titulo = format!("{} · {}", ["Rejilla", "Onda", "Relieve", "Salida"][indice_tipo], estudio.seleccionado);
     texto(
         lienzo,
         [contenido.x, diseno.ajustes.y + 44.0, contenido.ancho, 28.0],
-        titulo,
+        &titulo,
         &estudio.estilo("titulo", false, false),
     );
     texto(
         lienzo,
         [contenido.x, diseno.ajustes.y + 74.0, contenido.ancho, 18.0],
         ["Generador · GPU residente", "Deformación · animación", "Altura y normales · HILO", "Material · render GPU"]
-            [estudio.seleccionado.min(3)],
+            [indice_tipo],
         &etiqueta,
     );
     for indice in 0..2 {
@@ -151,15 +158,14 @@ fn inspector(estudio: &Estudio, lienzo: &mut Lienzo, diseno: Distribucion) {
         let fraccion = ((valor - parametro.minimo) / (parametro.maximo - parametro.minimo).max(1.0e-6)).clamp(0.0, 1.0);
         let rect = diseno.control(indice);
         let control = estudio.estilo("control", estudio.encima == Some(Objetivo::Control(indice)), false);
-        let campo = estudio.estilo("valor", false, false);
-        let ancho_valor = campo.ancho.unwrap_or(64.0).min(rect.ancho * 0.3);
-        let alto_valor = campo.alto.unwrap_or(26.0).min(28.0);
-        let valor_rect =
-            Rectangulo { x: rect.x + rect.ancho - ancho_valor, y: rect.y - 28.0, ancho: ancho_valor, alto: alto_valor };
+        let campo = estudio.estilo_numero(crate::numero::Campo::Control(indice));
+        let valor_rect = diseno.valor(indice);
+        let ancho_valor = valor_rect.ancho;
         texto(lienzo, [rect.x, rect.y - 26.0, rect.ancho - ancho_valor - 8.0, 22.0], nombre, &etiqueta);
         lienzo.caja(valor_rect, &campo);
-        let valor_texto = if estudio.seleccionado == 0 { format!("{valor:.0}") } else { format!("{valor:.2}") };
-        lienzo.etiqueta(valor_rect.interior(8.0), &valor_texto, &campo);
+        let valor_texto = format!("{valor}");
+        let valor_texto = estudio.texto_numero(crate::numero::Campo::Control(indice), &valor_texto);
+        lienzo.etiqueta(valor_rect.interior(4.0), &valor_texto, &campo);
         let y = rect.y + rect.alto * 0.5;
         let barra = Rectangulo { x: rect.x, y, ancho: rect.ancho, alto: 3.0 };
         lienzo.redondo(barra, control.radio, control.fondo);
@@ -194,6 +200,8 @@ fn grafo(estudio: &Estudio, lienzo: &mut Lienzo, diseno: Distribucion) {
     let puntos = estudio.estilo("puntos", false, false);
     lienzo.caja(diseno.red, &panel);
     marco(estudio, lienzo, diseno.red, "Red procedural", None);
+    estudio.dibujar_acciones_red(lienzo, diseno);
+    let inicio_recorte = lienzo.vertices.len();
     let area = diseno.grafo;
     let mut y = area.y;
     while y < area.y + area.alto {
@@ -205,9 +213,10 @@ fn grafo(estudio: &Estudio, lienzo: &mut Lienzo, diseno: Distribucion) {
         y += puntos.espacio.max(8.0);
     }
     let hilo = estudio.estilo("hilo", false, false);
-    for indice in 0..3 {
-        let desde = estudio.nodo(diseno, indice);
-        let hasta = estudio.nodo(diseno, indice + 1);
+    for indice in 1..estudio.cantidad_nodos() {
+        let Some(origen) = estudio.entrada_nodo(indice) else { continue };
+        let desde = estudio.nodo(diseno, origen);
+        let hasta = estudio.nodo(diseno, indice);
         lienzo.hilo(
             [desde.x + desde.ancho * 0.5, desde.y + desde.alto],
             [hasta.x + hasta.ancho * 0.5, hasta.y],
@@ -215,22 +224,41 @@ fn grafo(estudio: &Estudio, lienzo: &mut Lienzo, diseno: Distribucion) {
             hilo.grosor,
         );
     }
-    let seleccionado = estudio.seleccionado.min(3);
-    for indice in (0..4).filter(|i| *i != seleccionado).chain(core::iter::once(seleccionado)) {
+    let seleccionado = estudio.seleccionado.min(estudio.cantidad_nodos() - 1);
+    for indice in (0..estudio.cantidad_nodos()).filter(|i| *i != seleccionado).chain(core::iter::once(seleccionado)) {
         nodo(estudio, lienzo, diseno, indice);
     }
+    #[allow(clippy::cast_precision_loss, reason = "dimensiones de ventana")]
+    let (ancho, alto) = (diseno.tamano.0 as f32, diseno.tamano.1 as f32);
+    crate::recorte::recortar(
+        &mut lienzo.vertices,
+        inicio_recorte,
+        [
+            area.x * 2.0 / ancho - 1.0,
+            area.y * 2.0 / alto - 1.0,
+            (area.x + area.ancho) * 2.0 / ancho - 1.0,
+            (area.y + area.alto) * 2.0 / alto - 1.0,
+        ],
+    );
 }
 
 fn nodo(estudio: &Estudio, lienzo: &mut Lienzo, diseno: Distribucion, indice: usize) {
-    let (titulo, detalle) =
-        [("Rejilla", "Geometría"), ("Onda", "Deformación"), ("Relieve", "HILO / IR"), ("Salida", "Superficie")][indice];
+    let tipo = estudio.tipo_nodo(indice).unwrap_or(crate::TipoNodo::Salida);
+    let (nombre, detalle) = match tipo {
+        crate::TipoNodo::Rejilla => ("Rejilla", "Geometría"),
+        crate::TipoNodo::Onda => ("Onda", "Deformación"),
+        crate::TipoNodo::Relieve => ("Relieve", "HILO / IR"),
+        crate::TipoNodo::Salida => ("Salida", "Superficie"),
+    };
+    let titulo = format!("{nombre} · {indice}");
+    let detalle = if estudio.nodo_habilitado(indice) { detalle } else { "Paso directo" };
     let rect = estudio.nodo(diseno, indice);
     let estilo = estudio.estilo("nodo", estudio.encima == Some(Objetivo::Nodo(indice)), estudio.seleccionado == indice);
     lienzo.caja(rect, &estilo);
     let contenido = rect.contenido(&estilo);
     let acento = estudio.estilo("acento", false, false);
     nudo(lienzo, contenido.x, contenido.y + 2.0, acento.color);
-    texto(lienzo, [contenido.x + 23.0, rect.y + 7.0, contenido.ancho - 23.0, estilo.linea], titulo, &estilo);
+    texto(lienzo, [contenido.x + 23.0, rect.y + 7.0, contenido.ancho - 23.0, estilo.linea], &titulo, &estilo);
     texto(
         lienzo,
         [contenido.x + 23.0, rect.y + 7.0 + estilo.linea + estilo.espacio, contenido.ancho - 23.0, 16.0],

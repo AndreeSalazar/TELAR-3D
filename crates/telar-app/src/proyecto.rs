@@ -1,4 +1,4 @@
-//! Escena .tlar v2: datos acotados, sin shaders ejecutables ni identidad de GPU.
+//! Escenas .tlar v2/v3: datos acotados y grafo, sin código de archivo ni identidad GPU.
 use nudo::Camara;
 use std::{
     fs,
@@ -11,22 +11,28 @@ use telar_ui::{Estudio, PALABRAS_ESTUDIO};
 const FIRMA: u32 = 0x5241_4c54;
 const PALABRAS: usize = PALABRAS_ESTUDIO + 9;
 const BYTES: usize = 16 + PALABRAS * 4;
+const MAX_BYTES: usize = 416;
 static TEMPORALES: AtomicU64 = AtomicU64::new(0);
 
-/// Datos de la ruta procedural actual; no es un grafo arbitrario todavía.
+/// Datos de una rejilla y sus operaciones conectables; sin recursos arbitrarios.
 pub(crate) struct Proyecto {
     pub(crate) estudio: [u32; PALABRAS_ESTUDIO],
     pub(crate) camara: Camara,
     pub(crate) fase: f32,
+    pub(crate) red: Vec<u32>,
 }
 
 impl Proyecto {
     pub(crate) fn capturar(estudio: &Estudio, camara: &Camara, fase: f32) -> Self {
-        Self { estudio: estudio.guardar_estado(), camara: camara.clone(), fase }
+        Self { estudio: estudio.guardar_estado(), camara: camara.clone(), fase, red: estudio.guardar_red() }
     }
 
     pub(crate) fn validar(&self) -> Result<(), String> {
-        Estudio::default().restaurar_estado(&self.estudio)?;
+        let mut estudio = Estudio::default();
+        estudio.restaurar_estado(&self.estudio)?;
+        if !self.red.is_empty() {
+            estudio.restaurar_red(&self.red)?;
+        }
         let c = &self.camara;
         let valido = |v: f32, a, b| v.is_finite() && (a..=b).contains(&v);
         if !c.objetivo.iter().all(|v| valido(*v, -1.0e6, 1.0e6))
@@ -58,8 +64,15 @@ impl Proyecto {
             c.cerca,
             self.fase,
         ];
-        let mut bytes = Vec::with_capacity(BYTES);
-        for palabra in [FIRMA, 2, 28, 0].into_iter().chain(self.estudio).chain(camara.map(f32::to_bits)) {
+        let cantidad = u32::try_from(PALABRAS + self.red.len()).map_err(|_| "escena excesiva")?;
+        let version = if self.red.is_empty() { 2 } else { 3 };
+        let mut bytes = Vec::with_capacity(BYTES + self.red.len() * 4);
+        for palabra in [FIRMA, version, cantidad, 0]
+            .into_iter()
+            .chain(self.estudio)
+            .chain(camara.map(f32::to_bits))
+            .chain(self.red.iter().copied())
+        {
             bytes.extend(palabra.to_le_bytes());
         }
         let crc = crc32(&bytes[16..]);
@@ -68,15 +81,17 @@ impl Proyecto {
     }
 
     pub(crate) fn decodificar(bytes: &[u8]) -> Result<Self, String> {
-        if bytes.len() != BYTES {
-            return Err("tamaño de escena .tlar v2 inválido".into());
+        if !(BYTES..=MAX_BYTES).contains(&bytes.len()) || !bytes.len().is_multiple_of(4) {
+            return Err("tamaño de escena .tlar inválido".into());
         }
-        let palabras: [u32; BYTES / 4] = core::array::from_fn(|i| {
-            let b = &bytes[i * 4..i * 4 + 4];
-            u32::from_le_bytes([b[0], b[1], b[2], b[3]])
-        });
-        if palabras[..3] != [FIRMA, 2, 28] {
-            return Err("se requiere escena .tlar v2; el arranque v1 no es una escena".into());
+        let palabras: Vec<u32> = bytes.as_chunks::<4>().0.iter().map(|b| u32::from_le_bytes(*b)).collect();
+        if palabras[0] != FIRMA
+            || !matches!(palabras[1], 2 | 3)
+            || palabras[2] as usize != palabras.len() - 4
+            || (palabras[1] == 2 && bytes.len() != BYTES)
+            || (palabras[1] == 3 && bytes.len() == BYTES)
+        {
+            return Err("se requiere escena .tlar v2/v3; el arranque v1 no es una escena".into());
         }
         if palabras[3] != crc32(&bytes[16..]) {
             return Err("CRC de escena incorrecto".into());
@@ -94,6 +109,7 @@ impl Proyecto {
                 cerca: v(7),
             },
             fase: v(8),
+            red: palabras[4 + PALABRAS..].to_vec(),
         };
         proyecto.validar()?;
         Ok(proyecto)
@@ -123,7 +139,7 @@ pub(crate) fn leer(ruta: &Path) -> Result<Proyecto, String> {
     let mut bytes = Vec::new();
     fs::File::open(ruta)
         .map_err(|e| format!("abrir {}: {e}", ruta.display()))?
-        .take(129)
+        .take(417)
         .read_to_end(&mut bytes)
         .map_err(|e| format!("leer escena: {e}"))?;
     Proyecto::decodificar(&bytes)

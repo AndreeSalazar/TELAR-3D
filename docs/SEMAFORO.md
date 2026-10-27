@@ -19,3 +19,8 @@ síncrono y solo explícito; sin E/S de disco en cuadros estables. Reemplazo por
 temporal en el mismo directorio; guardado no sube geometría ni añade buffers GPU.
 La reapertura inicial reconstruye recursos; en vivo requiere igual capacidad.
 Ver docs/ESCENAS.md y pruebas proyecto.rs, proyecto_render.rs y estado.rs.
+
+La entrega de grafo agrega documentación de v3 (hasta 416 B de datos de escena),
+edición numérica y contratos de ocho operaciones geométricas. El documento no
+ejecuta el grafo; los costes de compilación/ejecución se describen por separado
+en GRAFO-EDITABLE.md y los semáforos de UI, HILO y app.

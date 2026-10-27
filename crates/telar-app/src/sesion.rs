@@ -10,6 +10,10 @@ use telar_ui::AccionProyecto;
 pub(crate) fn aplicar(controles: &mut Controles, proyecto: &Proyecto) -> Result<(), String> {
     proyecto.validar()?;
     controles.estudio.restaurar_estado(&proyecto.estudio)?;
+    if !proyecto.red.is_empty() {
+        controles.estudio.restaurar_red(&proyecto.red)?;
+    }
+    controles.estudio.solicitar_plan();
     controles.camara = proyecto.camara.clone();
     controles.fase = proyecto.fase;
     controles.restaurar_interaccion();

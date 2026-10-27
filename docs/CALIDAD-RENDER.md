@@ -10,12 +10,14 @@ valida y aplica la cantidad. Los otros tres inspectores mantienen sus controles.
 El botón seleccionado indica la petición; la etiqueta `MSAA Nx` muestra las
 muestras efectivas. El backend elige el mayor valor admitido que no exceda la
 petición, según los formatos de color y profundidad. Solicitar 2x nunca activa 4x.
-El valor predeterminado continúa siendo 4x. No se presume soporte por fabricante.
+El estudio nuevo solicita 2x; las escenas conservan su elección. La API del backend
+y los diagnósticos conservan 4x por defecto. No se presume soporte por fabricante.
 
 Dirección acordada: **2x para el perfil de edición** y mayor presupuesto para
 producción. El perfil final y sus controles de muestras por píxel siguen siendo
 un plan; [distinción entre MSAA 16x y muestreo de producción](RUTA-PRODUCCION.md#dos-perfiles-de-calidad-edición-y-producción).
-No se amplió la API actual a 8x/16x ni se cambió su valor inicial en esta anotación.
+No se amplió la API actual a 8x/16x. El valor inicial del estudio se cambió después
+a 2x al incorporar la [edición numérica](GRAFO-EDITABLE.md).
 
 ## Contrato y coste del cambio
 
@@ -84,6 +86,6 @@ cargo run -p telar-app --example capturar_estudio -- target/salida.rgba 1280 720
 
 La reutilización de una imagen completa en reposo sigue pendiente; existe caché
 de geometría, pero el visor continúa dibujando. Reconstrucción temporal/FSR y
-acumulación HDR son trabajos posteriores. El grafo aún tiene cuatro etapas fijas
-y [`.tlar` v2 ya guarda estos parámetros](ESCENAS.md). El siguiente paso de uso
-es crear instancias y conectar el grafo, según RUTA-PRODUCCION.md.
+acumulación HDR son trabajos posteriores. El [grafo editable](GRAFO-EDITABLE.md) permite instancias y conexiones sobre una
+rejilla; [`.tlar` v2/v3 guarda sus parámetros](ESCENAS.md). Geometría general y
+trazado progresivo siguen pendientes, según RUTA-PRODUCCION.md.

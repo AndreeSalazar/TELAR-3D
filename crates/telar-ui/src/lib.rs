@@ -1,5 +1,5 @@
 //! Interfaz nativa de TELAR: estado y triángulos 2D, sin Vulkan ni Windows.
-//! Red fija de cuatro etapas, inspector, controles y materiales de vista previa.
+//! Grafo de rejilla editable, inspectores numéricos y materiales de vista previa.
 #![no_std]
 extern crate alloc;
 
@@ -9,10 +9,17 @@ mod estado;
 pub use estado::PALABRAS_ESTUDIO;
 mod proyecto;
 pub use proyecto::AccionProyecto;
+mod estado_red;
 mod fuente;
 mod lienzo;
+mod numero;
+mod recorte;
+mod red;
+mod red_interaccion;
+pub use red::{OperacionRed, TipoNodo};
 mod parametros;
 pub use fuente::Fuente;
+pub use numero::EntradaNumero;
 pub use parametros::{Control, Onda, Rejilla, Relieve, Salida};
 
 pub use telar_estilo::Caja as Rectangulo;
@@ -34,11 +41,13 @@ pub struct Estudio {
     /// Pausa la fase; la cámara continúa siendo interactiva.
     pub pausado: bool,
     arrastre: Option<Arrastre>,
-    nodos: [[f32; 2]; 4],
+    nodos: alloc::vec::Vec<[f32; 2]>,
+    red: red::Red,
     encima: Option<Objetivo>,
     hoja: telar_estilo::Hoja,
     accion_proyecto: Option<AccionProyecto>,
     mensaje_proyecto: alloc::string::String,
+    edicion: Option<numero::Edicion>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -49,6 +58,7 @@ enum Objetivo {
     Material(usize),
     Calidad(usize),
     Proyecto(usize),
+    AccionRed(usize),
 }
 
 #[derive(Clone, Copy)]
@@ -64,14 +74,16 @@ impl Default for Estudio {
             rejilla: Rejilla { lado: 256, capacidad: 256 },
             onda: Onda { amplitud: 0.35, velocidad: 1.0 },
             relieve: Relieve { factor: 1.3 },
-            salida: Salida { exposicion: 1.4, rugosidad: 0.3, material: 0, muestras: 4, muestras_reales: 4 },
+            salida: Salida { exposicion: 1.4, rugosidad: 0.3, material: 0, muestras: 2, muestras_reales: 2 },
             pausado: false,
             arrastre: None,
-            nodos: [[0.03, 0.02], [0.97, 0.31], [0.03, 0.62], [0.97, 0.99]],
+            nodos: alloc::vec![[0.03, 0.02], [0.97, 0.31], [0.03, 0.62], [0.97, 0.99]],
+            red: red::Red::default(),
             encima: None,
             hoja: telar_estilo::Hoja::analizar(telar_estilo::TEMA_TELAR).unwrap_or_default(),
             accion_proyecto: None,
             mensaje_proyecto: "Escena sin guardar".into(),
+            edicion: None,
         }
     }
 }
@@ -105,11 +117,12 @@ impl Estudio {
         let anterior = self.encima;
         self.encima = None;
         if diseno.completa {
-            let preferido = self.seleccionado.min(3);
+            let preferido = self.seleccionado.min(self.cantidad_nodos() - 1);
             self.encima = core::iter::once(preferido)
-                .chain((0..4).rev().filter(|i| *i != preferido))
-                .find(|i| self.nodo(diseno, *i).contiene(x, y))
+                .chain((0..self.cantidad_nodos()).rev().filter(|i| *i != preferido))
+                .find(|i| diseno.grafo.contiene(x, y) && self.nodo(diseno, *i).contiene(x, y))
                 .map(Objetivo::Nodo)
+                .or_else(|| (0..3).find(|i| diseno.accion_red(*i).contiene(x, y)).map(Objetivo::AccionRed))
                 .or_else(|| (0..2).find(|i| diseno.proyecto(*i).contiene(x, y)).map(Objetivo::Proyecto))
                 .or_else(|| {
                     (0..2)
@@ -130,11 +143,12 @@ impl Estudio {
     /// Tarjeta del nodo; la posición se conserva al redimensionar el lienzo.
     #[must_use]
     pub fn nodo(&self, diseno: Distribucion, indice: usize) -> Rectangulo {
-        let posicion = self.nodos[indice.min(3)];
+        let posicion = self.nodos[indice.min(self.cantidad_nodos() - 1)];
         let [ancho, alto] = diseno.dimensiones_nodo();
         Rectangulo {
             x: diseno.grafo.x + posicion[0] * (diseno.grafo.ancho - ancho).max(0.0),
-            y: diseno.grafo.y + posicion[1] * (diseno.grafo.alto - alto).max(0.0),
+            y: diseno.grafo.y + posicion[1] * if self.red.activa { 80.0 } else { (diseno.grafo.alto - alto).max(1.0) }
+                - self.red.desplazamiento,
             ancho,
             alto,
         }
@@ -150,6 +164,15 @@ impl Estudio {
         if !diseno.completa {
             return false;
         }
+        if !self.confirmar_numero() {
+            return true;
+        }
+        if self.pulsar_numero(diseno, x, y) {
+            return true;
+        }
+        if self.pulsar_red(diseno, x, y) {
+            return true;
+        }
         for (indice, accion) in [AccionProyecto::Guardar, AccionProyecto::Abrir].into_iter().enumerate() {
             if diseno.proyecto(indice).contiene(x, y) {
                 self.soltar();
@@ -157,10 +180,10 @@ impl Estudio {
                 return true;
             }
         }
-        let preferido = self.seleccionado.min(3);
-        for indice in core::iter::once(preferido).chain((0..4).rev().filter(|i| *i != preferido)) {
+        let preferido = self.seleccionado.min(self.cantidad_nodos() - 1);
+        for indice in core::iter::once(preferido).chain((0..self.cantidad_nodos()).rev().filter(|i| *i != preferido)) {
             let rect = self.nodo(diseno, indice);
-            if rect.contiene(x, y) {
+            if diseno.grafo.contiene(x, y) && rect.contiene(x, y) {
                 self.seleccionado = indice;
                 self.arrastre = Some(Arrastre::Nodo { indice, desplazamiento: [x - rect.x, y - rect.y] });
                 return true;
@@ -211,7 +234,7 @@ impl Estudio {
     }
 
     /// Mueve un nodo dentro del grafo o actualiza el deslizador activo.
-    /// Las conexiones y el orden de ejecución permanecen fijos en esta entrega.
+    /// La disposición visual se edita independientemente de los puertos de conexión.
     pub fn mover_en(&mut self, diseno: Distribucion, x: f32, y: f32) -> bool {
         if !diseno.completa {
             self.soltar();
@@ -221,7 +244,9 @@ impl Estudio {
             let rect = self.nodo(diseno, indice);
             self.nodos[indice] = [
                 ((x - desplazamiento[0] - diseno.grafo.x) / (diseno.grafo.ancho - rect.ancho).max(1.0)).clamp(0.0, 1.0),
-                ((y - desplazamiento[1] - diseno.grafo.y) / (diseno.grafo.alto - rect.alto).max(1.0)).clamp(0.0, 1.0),
+                ((y + self.red.desplazamiento - desplazamiento[1] - diseno.grafo.y)
+                    / if self.red.activa { 80.0 } else { (diseno.grafo.alto - rect.alto).max(1.0) })
+                .clamp(0.0, if self.red.activa { 16.0 } else { 1.0 }),
             ];
             true
         } else {
@@ -231,6 +256,9 @@ impl Estudio {
 
     /// Termina cualquier arrastre, también al soltar fuera del control.
     pub fn soltar(&mut self) {
+        if matches!(self.arrastre, Some(Arrastre::Control { .. })) {
+            self.marcar_red();
+        }
         self.arrastre = None;
     }
 }
