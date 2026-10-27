@@ -127,6 +127,7 @@ fn comprobar_red(control: &mut controles::Controles, gpu: &mut Gpu) {
         control.evento(Evento::Texto(c), d);
     }
     control.evento(Evento::Tecla(telar_ventana::Tecla::Otra(13)), d);
+    control.evento(Evento::Texto('\r'), d);
     assert!(grafo::sincronizar(gpu, control).unwrap());
     assert!(!grafo::sincronizar(gpu, control).unwrap(), "no recompila en cuadros estables");
     sesion::guardar(&ruta, control).unwrap();

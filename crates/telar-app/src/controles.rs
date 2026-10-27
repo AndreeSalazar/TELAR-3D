@@ -123,10 +123,12 @@ impl Controles {
             return false;
         }
         let entrada = match evento {
+            // El texto traducido puede llegar después de WM_KEYDOWN ya encolados.
+            // Enter/retroceso se aplican en el mismo flujo que los caracteres.
+            Evento::Texto('\r' | '\n') => N::Confirmar,
+            Evento::Texto('\u{8}') => N::Retroceso,
             Evento::Texto(c) => N::Caracter(c),
             Evento::Tecla(Tecla::Escape) => N::Cancelar,
-            Evento::Tecla(Tecla::Otra(13)) => N::Confirmar,
-            Evento::Tecla(Tecla::Otra(8)) => N::Retroceso,
             Evento::Tecla(Tecla::Otra(46)) => N::Borrar,
             Evento::Tecla(Tecla::Otra(9 | 116 | 120)) => {
                 self.estudio.editar_numero(N::Confirmar);

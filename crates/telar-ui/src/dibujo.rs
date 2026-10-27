@@ -145,11 +145,18 @@ fn inspector(estudio: &Estudio, lienzo: &mut Lienzo, diseno: Distribucion) {
         &titulo,
         &estudio.estilo("titulo", false, false),
     );
+    let ayuda = estudio.ayuda_numero();
     texto(
         lienzo,
         [contenido.x, diseno.ajustes.y + 74.0, contenido.ancho, 18.0],
-        ["Generador · GPU residente", "Deformación · animación", "Altura y normales · HILO", "Material · render GPU"]
-            [indice_tipo],
+        ayuda.as_deref().unwrap_or(
+            [
+                "Generador · GPU residente",
+                "Deformación · animación",
+                "Altura y normales · HILO",
+                "Material · render GPU",
+            ][indice_tipo],
+        ),
         &etiqueta,
     );
     for indice in 0..2 {

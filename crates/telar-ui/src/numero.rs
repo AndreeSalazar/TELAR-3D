@@ -131,6 +131,21 @@ impl Estudio {
             .map_or_else(|| normal.into(), |e| format!("{}|", e.texto))
     }
 
+    pub(crate) fn ayuda_numero(&self) -> Option<String> {
+        self.edicion.as_ref().map(|edicion| {
+            if !edicion.error {
+                return "Enter: aplicar · Esc: cancelar".into();
+            }
+            match edicion.campo {
+                Campo::Muestras => "MSAA válido: 1, 2 o 4 · Esc: cancelar".into(),
+                Campo::Control(indice) => self.control(indice).map_or_else(
+                    || "Parámetro no disponible · Esc: cancelar".into(),
+                    |c| format!("Rango: {}..{} · Enter: aplicar", c.minimo, c.maximo),
+                ),
+            }
+        })
+    }
+
     pub(crate) fn estilo_numero(&self, campo: Campo) -> telar_estilo::Estilo {
         let edicion = self.edicion.as_ref().filter(|e| e.campo == campo && e.nodo == self.seleccionado);
         let mut estilo = self.estilo("valor", false, edicion.is_some());

@@ -1,11 +1,58 @@
 //! Los controles del inspector no deben mover la cámara ni la fase pausada.
-#![allow(clippy::float_cmp, reason = "estado exacto y ausencia de cambios tras eventos")]
+#![allow(clippy::float_cmp, clippy::expect_used, reason = "estado exacto y mensajes de prueba conocidos")]
 #[path = "../src/controles.rs"]
 mod controles;
 
 use controles::Controles;
 use telar_ui::Distribucion;
 use telar_ventana::{Boton, Evento, Tecla};
+
+#[test]
+fn enter_confirma_despues_del_texto_pendiente_de_windows() {
+    use telar_ventana::evento::{WM_CHAR, WM_KEYDOWN, traducir};
+    let mut control = Controles::nuevo(true);
+    let d = control.estudio.distribucion((1280, 720));
+    let r = d.valor(0);
+    control.estudio.pulsar(d, r.x + 4.0, r.y + 4.0);
+    // TranslateMessage puede dejar WM_CHAR detrás de teclas ya encoladas.
+    control.evento(traducir(WM_KEYDOWN, 13, 0).expect("Enter traducido"), d);
+    for c in ['0', '.', '4', '2', '\r'] {
+        control.evento(traducir(WM_CHAR, c as usize, 0).expect("carácter traducido"), d);
+    }
+    assert_eq!(control.estudio.onda.amplitud, 0.42);
+    assert!(!control.estudio.editando_numero());
+}
+
+#[test]
+fn enter_numerico_y_retroceso_respetan_el_orden_y_no_aplican_valores_invalidos() {
+    use telar_ventana::evento::{WM_CHAR, WM_KEYDOWN, traducir};
+    for extendido in [0, 1 << 24] {
+        let mut control = Controles::nuevo(true);
+        let d = control.estudio.distribucion((1280, 720));
+        let r = d.valor(0);
+        control.estudio.pulsar(d, r.x + 4.0, r.y + 4.0);
+        control.evento(traducir(WM_KEYDOWN, 8, 0).expect("retroceso"), d);
+        control.evento(traducir(WM_KEYDOWN, 13, extendido).expect("Enter principal/numérico"), d);
+        for c in ['0', '.', '4', '2', '\u{8}', '1', '\r'] {
+            control.evento(traducir(WM_CHAR, c as usize, 0).expect("carácter"), d);
+        }
+        assert_eq!(control.estudio.onda.amplitud, 0.41);
+        assert!(!control.estudio.editando_numero());
+        control.estudio.seleccionado = 3;
+        let r = d.numero_muestras();
+        control.estudio.pulsar(d, r.x + 4.0, r.y + 4.0);
+        control.evento(Evento::Texto('3'), d);
+        control.evento(Evento::Tecla(Tecla::Otra(13)), d);
+        control.evento(Evento::Texto('\r'), d);
+        assert_eq!(control.estudio.salida.muestras, 2);
+        assert!(control.estudio.editando_numero());
+        control.evento(Evento::Tecla(Tecla::Otra(46)), d);
+        control.evento(Evento::Texto('4'), d);
+        control.evento(Evento::Texto('\r'), d);
+        assert_eq!(control.estudio.salida.muestras, 4);
+        assert!(!control.estudio.editando_numero());
+    }
+}
 
 #[test]
 fn escribir_no_activa_atajos_y_escape_no_cambia_parametros() {
@@ -17,6 +64,7 @@ fn escribir_no_activa_atajos_y_escape_no_cambia_parametros() {
         control.evento(Evento::Texto(c), d);
     }
     control.evento(Evento::Tecla(Tecla::Otra(13)), d);
+    control.evento(Evento::Texto('\r'), d);
     assert_eq!(control.estudio.onda.amplitud, 0.42);
     control.estudio.pulsar(d, r.x + 4.0, r.y + 4.0);
     control.evento(Evento::Texto('0'), d);

@@ -15,6 +15,12 @@ de F5/F9/Tab. Si el texto es inválido, el borde se vuelve rojo y el campo manti
 el foco: se corrige o cancela antes de continuar. La escena conserva su último
 valor válido durante la edición. Los atajos globales quedan suspendidos al escribir.
 
+El inspector muestra `Enter: aplicar · Esc: cancelar` mientras se escribe. Si
+el valor no es válido, muestra el rango o los niveles MSAA admitidos. Enter
+(principal o numérico) y retroceso se procesan desde sus caracteres traducidos
+de Windows, para conservar el orden con el texto pendiente de la misma ráfaga.
+La regresión de este orden se verifica en `telar-app/tests/controles.rs`.
+
 Se admiten decimales, coma decimal y notación científica en los parámetros reales.
 Rejilla exige un entero en 2..capacidad. Se rechazan NaN, infinitos, exceso y valores
 fuera del dominio. La representación muestra el valor f32 almacenado sin forzar
