@@ -54,14 +54,14 @@ fn msaa_es_editable_pero_no_confunde_muestras_de_trazado_con_cobertura() {
     estudio.seleccionado = 3;
     let diseno = estudio.distribucion((1280, 720));
     let caja = diseno.numero_muestras();
-    for muestras in ["2", "256", "3", "16", "1", "4"] {
+    for muestras in ["2", "256", "3", "16", "32", "64", "8", "1", "4"] {
         estudio.pulsar(diseno, caja.x + 5.0, caja.y + 5.0);
         for c in muestras.chars() {
             estudio.editar_numero(N::Caracter(c));
         }
         let anterior = estudio.salida.muestras;
         estudio.editar_numero(N::Confirmar);
-        if let Ok(valido @ (1 | 2 | 4)) = muestras.parse::<u32>() {
+        if let Ok(valido @ (1 | 2 | 4 | 8 | 16 | 32 | 64)) = muestras.parse::<u32>() {
             assert_eq!(estudio.salida.muestras, valido);
         } else {
             assert_eq!(estudio.salida.muestras, anterior);

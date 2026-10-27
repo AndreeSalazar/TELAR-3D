@@ -32,11 +32,11 @@ pub(crate) fn procesar(args: &[String]) -> Option<Result<(), String>> {
                 .take(4_194_453)
                 .read_to_end(&mut bytes)
                 .map_err(|e| format!("leer {ruta}: {e}"))?;
-            if bytes.get(4..8).is_some_and(|v| v == 2u32.to_le_bytes() || v == 3u32.to_le_bytes()) {
+            if bytes.get(4..8).is_some_and(|v| [2u32, 3, 4].iter().any(|n| v == n.to_le_bytes())) {
                 let escena = crate::proyecto::Proyecto::decodificar(&bytes)?;
                 println!(
                     "telar: .tlar v{} · escena procedural · lado {} · capacidad {} · MSAA solicitado {}x · fase {}",
-                    if escena.red.is_empty() { 2 } else { 3 },
+                    escena.version(),
                     escena.estudio[0],
                     escena.estudio[1],
                     escena.estudio[8],

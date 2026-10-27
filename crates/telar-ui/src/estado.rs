@@ -49,7 +49,7 @@ impl Estudio {
         let relieve = Relieve { factor: valor(4, 0.0, 3.0)? };
         let exposicion = valor(5, 0.25, 4.0)?;
         let rugosidad = valor(6, 0.08, 1.0)?;
-        if estado[7] > 2 || !matches!(estado[8], 1 | 2 | 4) || estado[9] > 3 || estado[10] > 1 {
+        if estado[7] > 2 || !matches!(estado[8], 1 | 2 | 4 | 8 | 16 | 32 | 64) || estado[9] > 3 || estado[10] > 1 {
             return Err("opción de escena desconocida");
         }
         let mut nodos = [[0.0; 2]; 4];

@@ -28,9 +28,10 @@ dos decimales; no promete precisión decimal ilimitada. El editor admite 24 cara
 y reemplazo/retroceso, todavía sin portapapeles, selección arbitraria ni cursores laterales.
 
 El recuadro MSAA también es editable; los botones 1x/2x/4x permanecen como atajos.
-**MSAA acepta exclusivamente 1, 2 o 4** en este backend. El recuadro sin foco informa
-el nivel efectivo; al editar muestra la petición. Escribir 16 o 256 no inventa
-soporte ni activa un trazador inexistente. El estudio nuevo arranca solicitando
+**MSAA admite peticiones 1/2/4/8/16/32/64**. El recuadro conserva la petición
+y el subtítulo muestra el nivel efectivo que admite la GPU. Si se pide 32 y solo
+se admiten 8, se informa `pedido 32x · GPU 8x`. 256 corresponde al plan de muestras
+del trazador, todavía pendiente. [Contrato y evidencia](CALIDAD-RENDER.md#solicitud-32-y-soporte-real). El estudio nuevo arranca solicitando
 **2x**, según la preferencia del usuario; las escenas guardadas conservan su petición.
 `Opciones::default()` del backend y los ejemplos diagnósticos siguen solicitando 4x.
 

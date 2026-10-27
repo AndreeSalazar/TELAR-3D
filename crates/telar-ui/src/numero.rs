@@ -92,10 +92,12 @@ impl Estudio {
         let texto = edicion.texto.clone();
         let aplicar = valido
             && match campo {
-                Campo::Muestras => texto.parse::<u32>().ok().filter(|n| matches!(n, 1 | 2 | 4)).is_some_and(|n| {
-                    self.salida.muestras = n;
-                    true
-                }),
+                Campo::Muestras => {
+                    texto.parse::<u32>().ok().filter(|n| matches!(n, 1 | 2 | 4 | 8 | 16 | 32 | 64)).is_some_and(|n| {
+                        self.salida.muestras = n;
+                        true
+                    })
+                }
                 Campo::Control(indice) => texto.parse::<f32>().is_ok_and(|n| self.poner_control(indice, n)),
             };
         if aplicar {
@@ -132,17 +134,19 @@ impl Estudio {
     }
 
     pub(crate) fn ayuda_numero(&self) -> Option<String> {
-        self.edicion.as_ref().map(|edicion| {
-            if !edicion.error {
-                return "Enter: aplicar · Esc: cancelar".into();
-            }
-            match edicion.campo {
-                Campo::Muestras => "MSAA válido: 1, 2 o 4 · Esc: cancelar".into(),
-                Campo::Control(indice) => self.control(indice).map_or_else(
-                    || "Parámetro no disponible · Esc: cancelar".into(),
-                    |c| format!("Rango: {}..{} · Enter: aplicar", c.minimo, c.maximo),
-                ),
-            }
+        let Some(edicion) = self.edicion.as_ref() else {
+            return (self.seleccionado == 3)
+                .then(|| format!("MSAA: pedido {}x · GPU {}x", self.salida.muestras, self.salida.muestras_reales));
+        };
+        if !edicion.error {
+            return Some("Enter: aplicar · Esc: cancelar".into());
+        }
+        Some(match edicion.campo {
+            Campo::Muestras => "MSAA: 1/2/4/8/16/32/64 · Esc: cancelar".into(),
+            Campo::Control(indice) => self.control(indice).map_or_else(
+                || "Parámetro no disponible · Esc: cancelar".into(),
+                |c| format!("Rango: {}..{} · Enter: aplicar", c.minimo, c.maximo),
+            ),
         })
     }
 

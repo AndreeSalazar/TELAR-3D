@@ -46,9 +46,9 @@ pub struct Opciones {
     pub nombre: String,
     /// Activar las capas de validación si están instaladas (vienen con el SDK).
     pub validacion: bool,
-    /// MSAA hasta 4x según soporte real de color/profundidad; false conserva 1x.
+    /// MSAA según soporte real y máximo solicitado; false conserva 1x.
     pub antialias: bool,
-    /// Máximo de muestras solicitado: 1, 2 o 4; antialias=false fuerza 1x.
+    /// Máximo solicitado: potencia de dos entre 1 y 64; antialias=false fuerza 1x.
     pub muestras: u32,
 }
 

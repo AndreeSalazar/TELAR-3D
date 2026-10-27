@@ -26,7 +26,7 @@ de añadir escenas, efectos y millones de rayos con dependencias complejas.
 | Interfaz | CSS nativo, números editables, instancias, puertos y omisión | Sin borrado/deshacer ni mezcla de geometrías |
 | Render | GGX, luz de área, autosombra de campo de alturas | Sin BVH, GI, trazado de caminos ni acumulación HDR |
 | `.tlar` | V1 arranque; V2 cadena histórica; V3 grafo editable, cámara y parámetros | Un dominio de rejilla, sin recursos externos de producción |
-| Bordes | MSAA nativo seleccionable 1x/2x/4x; ver CALIDAD-RENDER.md | Reduce aliasing de cobertura; no aumenta detalle geométrico |
+| Bordes | MSAA 2x inicial, peticiones numéricas hasta 64x según soporte; ver CALIDAD-RENDER.md | Reduce aliasing de cobertura; no aumenta detalle geométrico |
 
 ## Orden propuesto y criterios de aceptación
 
@@ -65,14 +65,16 @@ La propuesta de «16x» se divide en dos controles con unidades diferentes:
 
 | Control | Qué mejora | Plan |
 |---|---|---|
-| Muestras MSAA | Cobertura rasterizada de bordes | 2x para editar; estudiar 8x/16x solo si los formatos y la GPU lo admiten y la comparación demuestra utilidad |
+| Muestras MSAA | Cobertura rasterizada de bordes | 2x para editar; solicitudes hasta 64 implementadas con límite real de GPU; estudiar calidad/coste de niveles altos |
 | Muestras por píxel (spp) del trazador | Estimación del transporte de luz, con integración de cámara y materiales | Acumular en HDR; 16 spp puede ser un punto inicial de prueba, no un techo ni una garantía de calidad |
 
 MSAA 16x no equivale a 16 caminos por píxel y no añade iluminación global,
 reflejos, profundidad de campo o desenfoque de movimiento por sí solo.
 Vulkan permite consultar las cantidades admitidas para cada configuración de
 imagen; no debe activarse una cantidad que la GPU no anuncie. El backend actual
-de TELAR acepta exclusivamente 1/2/4; 8x y 16x aún no están implementados.
+de TELAR acepta peticiones 1/2/4/8/16/32/64 y aplica el mayor nivel admitido que
+no las exceda. En la RTX 3060 probada el visor aplica hasta 8; pedir 32 se conserva
+como petición y se muestra junto a los 8 efectivos. No se implementó aún el trazador.
 
 Para el nodo Salida del futuro modo de producción se propone exponer:
 

@@ -1,4 +1,4 @@
-//! Escenas .tlar v2/v3: datos acotados y grafo, sin código de archivo ni identidad GPU.
+//! Escenas .tlar v2/v3/v4: datos acotados y grafo, sin código de archivo ni identidad GPU.
 use nudo::Camara;
 use std::{
     fs,
@@ -23,6 +23,16 @@ pub(crate) struct Proyecto {
 }
 
 impl Proyecto {
+    pub(crate) fn version(&self) -> u32 {
+        if self.estudio[8] > 4 {
+            4
+        } else if self.red.is_empty() {
+            2
+        } else {
+            3
+        }
+    }
+
     pub(crate) fn capturar(estudio: &Estudio, camara: &Camara, fase: f32) -> Self {
         Self { estudio: estudio.guardar_estado(), camara: camara.clone(), fase, red: estudio.guardar_red() }
     }
@@ -65,7 +75,7 @@ impl Proyecto {
             self.fase,
         ];
         let cantidad = u32::try_from(PALABRAS + self.red.len()).map_err(|_| "escena excesiva")?;
-        let version = if self.red.is_empty() { 2 } else { 3 };
+        let version = self.version();
         let mut bytes = Vec::with_capacity(BYTES + self.red.len() * 4);
         for palabra in [FIRMA, version, cantidad, 0]
             .into_iter()
@@ -86,12 +96,12 @@ impl Proyecto {
         }
         let palabras: Vec<u32> = bytes.as_chunks::<4>().0.iter().map(|b| u32::from_le_bytes(*b)).collect();
         if palabras[0] != FIRMA
-            || !matches!(palabras[1], 2 | 3)
+            || !matches!(palabras[1], 2..=4)
             || palabras[2] as usize != palabras.len() - 4
             || (palabras[1] == 2 && bytes.len() != BYTES)
             || (palabras[1] == 3 && bytes.len() == BYTES)
         {
-            return Err("se requiere escena .tlar v2/v3; el arranque v1 no es una escena".into());
+            return Err("se requiere escena .tlar v2/v3/v4; el arranque v1 no es una escena".into());
         }
         if palabras[3] != crc32(&bytes[16..]) {
             return Err("CRC de escena incorrecto".into());
@@ -112,6 +122,9 @@ impl Proyecto {
             red: palabras[4 + PALABRAS..].to_vec(),
         };
         proyecto.validar()?;
+        if proyecto.version() != palabras[1] {
+            return Err("versión incompatible con los niveles MSAA de la escena".into());
+        }
         Ok(proyecto)
     }
 }

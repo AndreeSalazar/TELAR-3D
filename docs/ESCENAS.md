@@ -1,7 +1,8 @@
-# Escenas guardables del estudio · .tlar v2/v3
+# Escenas guardables del estudio · .tlar v2/v3/v4
 
 El estudio guarda la cadena histórica en v2 y los nodos instanciados/conectados
-en v3. [Controles, contratos y límites del grafo editable](GRAFO-EDITABLE.md).
+en v3; v4 conserva también solicitudes MSAA superiores a 4.
+[Controles, contratos y límites del grafo editable](GRAFO-EDITABLE.md).
 Tampoco introduce trazado de caminos ni controles de 256 spp sin un trazador real.
 
 ![Guardar y abrir en la cabecera del estudio](capturas/escena-guardable.png)
@@ -45,7 +46,7 @@ V2 ocupa exactamente **128 bytes**; v3 añade una red acotada y ocupa hasta
 Se comprueban todos los parámetros, finitud de flotantes, rangos de cámara,
 posiciones y opciones conocidas antes de aplicar cambios. El lector de escena
 solo lee hasta 417 bytes para detectar sobrantes sin cargar archivos enormes.
-La inspección general sigue admitiendo arranques v1 y escenas v2/v3; no crea GPU.
+La inspección general sigue admitiendo arranques v1 y escenas v2/v3/v4; no crea GPU.
 
 El guardado escribe un temporal exclusivo en el mismo directorio, lo sincroniza,
 cierra y reemplaza el destino mediante `std::fs::rename`. Un error previo al
@@ -59,7 +60,7 @@ abrir/guardar se informan en cabecera y consola; la ventana permanece abierta.
 Los errores de carga inicial o guardado explícito al salir retornan fallo.
 El modo histórico `--esfera-cpu` no participa en este formato procedural.
 
-CRC32 detecta corrupción accidental, no autentica archivos. V2/v3 contienen datos,
+CRC32 detecta corrupción accidental, no autentica archivos. V2/v3/v4 contienen datos,
 no código SPIR-V; abrir una escena no ejecuta código proporcionado por el archivo.
 Los arranques v1 siguen siendo un tipo distinto: no se convierten automáticamente.
 

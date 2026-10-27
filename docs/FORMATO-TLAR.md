@@ -1,4 +1,4 @@
-# .tlar · arranque v1, escena v2 y grafo v3 de TELAR 3D
+# .tlar · arranque v1, escena v2, grafo v3 y MSAA ampliado v4
 
 ## Arranque v1 (conservado)
 
@@ -99,3 +99,21 @@ V3 contiene únicamente datos. El SPIR-V se construye con el compilador incorpor
 tras validar el grafo; no se deserializa código del archivo. El CRC no autentica
 el archivo. La fase v3 es el reloj común; cada Onda aplica su multiplicador de
 velocidad. V2 mantiene su semántica de fase histórica. Ver [GRAFO-EDITABLE.md](GRAFO-EDITABLE.md).
+
+## Escena v4 · solicitudes MSAA superiores a 4
+
+V4 amplía el dominio del máximo MSAA solicitado a **8/16/32/64**. Mantiene el
+prefijo, CRC, registro base de 28 palabras y extensión opcional de red ya descritos.
+Sin red ocupa 128 B; con red, 248..416 B. La fase conserva la semántica de la cadena
+histórica o de la red según la presencia de esa extensión.
+
+El escritor usa v4 solo para solicitudes superiores a 4; para 1/2/4 conserva v2
+(cadena histórica) o v3 (red editable). Los lectores nuevos rechazan muestras altas
+etiquetadas como v2/v3 y v4 con muestras bajas: la versión debe coincidir con el
+dominio de datos. Los lectores antiguos rechazan v4 antes de preparar recursos.
+
+Solo se guarda la **petición**, nunca el soporte ni el resultado de otra GPU.
+Al abrir se consulta el soporte de color y profundidad en el dispositivo destino y
+se elige el mayor nivel admitido que no exceda la petición. Por ejemplo, una petición
+32 puede dar 8 efectivos y se conserva como 32 al volver a guardar. El visor muestra
+ambos números. V4 sigue siendo datos acotados, sin shaders proporcionados por archivo.

@@ -32,7 +32,7 @@ pub(crate) struct Modo {
     pub(crate) puntos: u32,
     /// Personalizaciones CSS cargadas una vez al abrir el estudio.
     pub(crate) estilo: Option<String>,
-    /// Escena de datos v2/v3; se valida antes de preparar Vulkan.
+    /// Escena de datos v2/v3/v4; se valida antes de preparar Vulkan.
     pub(crate) abrir: Option<String>,
     /// Guardar también al salir; sin esta opción solo se escribe por F5/botón.
     pub(crate) guardar: Option<String>,
@@ -47,7 +47,7 @@ pub(crate) struct Resumen {
 /// Abre la ventana y lleva el bucle del visor.
 pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
     if !modo.procedural && (modo.abrir.is_some() || modo.guardar.is_some()) {
-        return Err("las escenas .tlar v2/v3 requieren el visor procedural".into());
+        return Err("las escenas .tlar v2/v3/v4 requieren el visor procedural".into());
     }
     let inicial = modo.abrir.as_deref().map(|r| crate::proyecto::leer(std::path::Path::new(r))).transpose()?;
     let ruta = std::path::Path::new(modo.guardar.as_deref().or(modo.abrir.as_deref()).unwrap_or("escena.tlar"));

@@ -2,8 +2,8 @@
 use crate::{Calculo, Gpu};
 
 pub(crate) fn validar_muestras(muestras: u32) -> Result<(), String> {
-    if !matches!(muestras, 1 | 2 | 4) {
-        return Err("MSAA requiere 1, 2 o 4 muestras".to_owned());
+    if !matches!(muestras, 1 | 2 | 4 | 8 | 16 | 32 | 64) {
+        return Err("MSAA requiere 1, 2, 4, 8, 16, 32 o 64 muestras".to_owned());
     }
     Ok(())
 }
@@ -22,7 +22,7 @@ impl Gpu {
     /// Recrea adjuntos gráficos solo si cambia la cantidad efectiva; conserva compute.
     ///
     /// # Errors
-    /// Rechaza valores distintos de 1/2/4 o errores de capacidades/recursos Vulkan.
+    /// Rechaza valores distintos de potencias de dos entre 1 y 64 o errores Vulkan.
     pub fn configurar_muestras(&mut self, muestras: u32) -> Result<u32, String> {
         validar_muestras(muestras)?;
         let formato = self.presentacion.formato;

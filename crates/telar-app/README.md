@@ -136,3 +136,7 @@ Grafo editable de rejilla: instancias de Onda/Relieve, conexiones, omisión y
 serialización v3. El compilador HILO incorpora Seno/Coseno escalares y fusiona
 las operaciones alcanzables en un kernel por punto. La edición numérica aplica
 con Enter y cancela con Escape. [Contrato y costes](../../docs/GRAFO-EDITABLE.md).
+
+El campo MSAA admite solicitudes 1/2/4/8/16/32/64. Muestra por separado petición
+y resultado efectivo; el backend elige por capacidades reales. Las solicitudes
+altas se guardan en .tlar v4; ver docs/CALIDAD-RENDER.md.

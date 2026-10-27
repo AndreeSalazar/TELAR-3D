@@ -1,14 +1,15 @@
 # Calidad de render como parámetro de Salida
 
 El inspector de **Salida** expone exposición, rugosidad, material y selección
-MSAA **1x / 2x / 4x**. Cada ajuste conserva su valor al seleccionar otros nodos.
+MSAA con atajos **1x / 2x / 4x** y entrada numérica **1/2/4/8/16/32/64**.
+Cada ajuste conserva su valor al seleccionar otros nodos.
 La interfaz no reserva recursos Vulkan: entrega el valor a la app y el backend
 valida y aplica la cantidad. Los otros tres inspectores mantienen sus controles.
 
 ![Inspector real con MSAA 2x](capturas/salida-calidad.png)
 
-El botón seleccionado indica la petición; la etiqueta `MSAA Nx` muestra las
-muestras efectivas. El backend elige el mayor valor admitido que no exceda la
+El campo `MSAA Nx` conserva la petición. El subtítulo muestra explícitamente
+`pedido Nx · GPU Mx`; M es la cantidad efectiva. Los botones son atajos de petición. El backend elige el mayor valor admitido que no exceda la
 petición, según los formatos de color y profundidad. Solicitar 2x nunca activa 4x.
 El estudio nuevo solicita 2x; las escenas conservan su elección. La API del backend
 y los diagnósticos conservan 4x por defecto. No se presume soporte por fabricante.
@@ -16,12 +17,12 @@ y los diagnósticos conservan 4x por defecto. No se presume soporte por fabrican
 Dirección acordada: **2x para el perfil de edición** y mayor presupuesto para
 producción. El perfil final y sus controles de muestras por píxel siguen siendo
 un plan; [distinción entre MSAA 16x y muestreo de producción](RUTA-PRODUCCION.md#dos-perfiles-de-calidad-edición-y-producción).
-No se amplió la API actual a 8x/16x. El valor inicial del estudio se cambió después
-a 2x al incorporar la [edición numérica](GRAFO-EDITABLE.md).
+La API ya admite solicitudes hasta 64x según soporte. El valor inicial del estudio
+es 2x. El trazador y sus muestras por píxel siguen pendientes.
 
 ## Contrato y coste del cambio
 
-`Opciones::muestras` acepta 1, 2 o 4. `antialias = false` conserva la forma antigua
+`Opciones::muestras` acepta 1, 2, 4, 8, 16, 32 o 64. `antialias = false` conserva la forma antigua
 de forzar 1x. `Gpu::configurar_muestras` permite cambiar en vivo y devuelve el
 valor efectivo; rechaza otros valores. Las capacidades se guardan por formato
 para evitar consultas repetidas al controlador en cada fotograma.
@@ -89,3 +90,31 @@ de geometría, pero el visor continúa dibujando. Reconstrucción temporal/FSR y
 acumulación HDR son trabajos posteriores. El [grafo editable](GRAFO-EDITABLE.md) permite instancias y conexiones sobre una
 rejilla; [`.tlar` v2/v3 guarda sus parámetros](ESCENAS.md). Geometría general y
 trazado progresivo siguen pendientes, según RUTA-PRODUCCION.md.
+
+## Solicitud 32 y soporte real
+
+El fallo observado al escribir 32 era el dominio antiguo del campo (solo 1/2/4).
+Ahora se admite 32; Enter confirma y el campo conserva la petición. La GPU solo
+recibe una cantidad que anuncien los formatos de color y profundidad. La lista
+nativa se define en [VkSampleCountFlagBits](https://docs.vulkan.org/refpages/latest/refpages/source/VkSampleCountFlagBits.html)
+y se consulta mediante [VkImageFormatProperties](https://docs.vulkan.org/refpages/latest/refpages/source/VkImageFormatProperties.html).
+
+![Petición 32, resultado 8 en la GPU de prueba](capturas/msaa-solicitado-real.png)
+
+RTX 3060 / Windows: 8 solicitados → 8 efectivos; 16/32/64 solicitados → 8 efectivos,
+tanto en la prueba de ventana como en la captura RGBA8 de 32. No demuestra el mismo
+límite para otros formatos o dispositivos. Las pruebas cambian niveles mediante
+el campo, Enter y la ruta real de GPU; conservan el plan compute y no suben geometría.
+No se ha ejecutado MSAA nativo 16/32/64 en este equipo; se verificó su fallback.
+
+El coste depende del nivel efectivo. Para N > 1, RGBA8/D32 añade lógicamente
+`8*N - 4` bytes/píxel frente a 1x. A 8 efectivos son 60 B/píxel, 52,73 MiB a
+1280×720; pedir 32 con fallback a 8 conserva ese coste de adjuntos. No incluye
+alineación ni pico durante el reemplazo. El tiempo de 8x no se comparó en esta
+entrega; las mediciones anteriores corresponden a 1/2/4.
+
+Las solicitudes superiores a 4 se guardan en `.tlar` v4, con y sin red; se conserva
+32 al guardar aunque el dispositivo solo aplique 8. Una escena v4 pausada pasa
+120 fotogramas y vuelve a guardarse byte por byte. V2/v3 siguen siendo legibles.
+Los controles de 32/256 muestras por píxel para transporte de luz pertenecen al
+futuro trazador; no son estos niveles de cobertura MSAA.

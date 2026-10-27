@@ -5,7 +5,7 @@ use alloc::format;
 impl Estudio {
     pub(crate) fn dibujar_calidad(&self, lienzo: &mut Lienzo, diseno: Distribucion) {
         let estilo = self.estilo_numero(Campo::Muestras);
-        let texto = format!("MSAA {}x", self.salida.muestras_reales);
+        let texto = format!("MSAA {}x", self.salida.muestras);
         let texto = self.texto_numero(Campo::Muestras, &texto);
         let rect = diseno.numero_muestras();
         lienzo.caja(rect, &estilo);

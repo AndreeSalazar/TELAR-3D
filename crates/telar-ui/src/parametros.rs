@@ -22,7 +22,7 @@ pub struct Relieve {
 }
 /// Presentación del resultado; no modifica geometría.
 pub struct Salida {
-    /// Máximo MSAA elegido: 1, 2 o 4.
+    /// Máximo MSAA elegido: potencia de dos entre 1 y 64; puede superar el soporte real.
     pub muestras: u32,
     /// Cantidad efectiva informada por el backend, que puede ser menor.
     pub muestras_reales: u32,

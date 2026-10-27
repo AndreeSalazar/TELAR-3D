@@ -29,3 +29,9 @@ el modo efectivo espera trabajo GPU y reemplaza adjuntos/pipelines gráficos.
 Compute se conserva. Incremento lógico 2x: 12 B/píxel; 4x: 28 B/píxel
 (RGBA8/D32). El pico durante el reemplazo no se midió.
 Evidencia adicional: docs/CALIDAD-RENDER.md y tests/calidad_visor.rs de telar-app.
+
+MSAA ampliado: peticiones 1..64 en potencias de dos, limitadas por la intersección
+de formatos color/profundidad. La petición no obliga a reservar muestras que
+la GPU no soporte. Para N efectivo > 1, sobrecoste lógico RGBA8/D32 de 8*N-4 B
+por píxel; 8x añade 52,73 MiB a 1280x720. Pico físico y tiempo de niveles altos
+no medidos. Evidencia: tests/calidad_visor.rs y docs/CALIDAD-RENDER.md.

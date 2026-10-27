@@ -32,7 +32,10 @@ impl Contexto {
             self.formatos_muestras.borrow_mut().push((formato, mascara));
             mascara
         };
-        Ok([4, 2, 1].into_iter().find(|m| *m <= self.muestras_solicitadas && disponibles & m != 0).unwrap_or(1))
+        Ok([64, 32, 16, 8, 4, 2, 1]
+            .into_iter()
+            .find(|m| *m <= self.muestras_solicitadas && disponibles & m != 0)
+            .unwrap_or(1))
     }
 
     fn consultar_muestras(&self, formato: u32) -> Result<u32, String> {

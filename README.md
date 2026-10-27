@@ -108,3 +108,7 @@ El guardián bloquea carpetas sin informe. [Política](docs/SEMAFOROS.md),
 AMD Ryzen 5 5600X · NVIDIA GeForce RTX 3060 · Windows 11 · Vulkan 1.4 (SDK 1.4.350) · Rust 1.99.
 
 Todas las cifras de rendimiento se miden aquí y se publican con la máquina al lado.
+
+MSAA numérico ampliado: peticiones 1/2/4/8/16/32/64, conservadas en .tlar v4
+si superan 4. El inspector separa el pedido del resultado real de la GPU.
+[Ejemplo de 32 solicitado y 8 efectivos](docs/CALIDAD-RENDER.md#solicitud-32-y-soporte-real).

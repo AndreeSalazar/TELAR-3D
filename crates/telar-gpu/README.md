@@ -179,3 +179,7 @@ Coste y comparación: [ANTIALIAS.md](../../docs/ANTIALIAS.md).
 Salida expone calidad MSAA 1x/2x/4x. El backend acepta `Opciones::muestras`
 y `Gpu::configurar_muestras`; el inspector muestra la cantidad efectiva.
 [Contrato, pruebas y coste](../../docs/CALIDAD-RENDER.md).
+
+El campo MSAA admite solicitudes 1/2/4/8/16/32/64. Muestra por separado petición
+y resultado efectivo; el backend elige por capacidades reales. Las solicitudes
+altas se guardan en .tlar v4; ver docs/CALIDAD-RENDER.md.

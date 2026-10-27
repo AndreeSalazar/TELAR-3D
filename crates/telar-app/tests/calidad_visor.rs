@@ -99,11 +99,61 @@ fn selector_de_salida_cambia_msaa_en_vivo_con_redimensionado() {
         (inicial.buffers, inicial.pipelines, inicial.grabaciones, inicial.mapeos)
     );
     assert_eq!(finalizado.geometria_subida, 0);
+    comprobar_muestras_altas(&mut control, &mut gpu);
     comprobar_sesion(&mut control, &mut gpu);
     comprobar_red(&mut control, &mut gpu);
     drop(gpu);
     drop(ventana);
     assert_eq!(telar_gpu::avisos_de_validacion(), 0);
+}
+
+fn comprobar_muestras_altas(control: &mut controles::Controles, gpu: &mut Gpu) {
+    let inicial = gpu.actividad_procedural();
+    let mut aplicadas = control.estudio.salida.muestras;
+    for solicitud in [8, 16, 32, 64, 2] {
+        control.estudio.seleccionado = 3;
+        let d = control.estudio.distribucion(gpu.imagenes().1);
+        let r = d.numero_muestras();
+        control.evento(Evento::Raton { x: (r.x + 4.0) as i32, y: (r.y + 4.0) as i32 }, d);
+        control.evento(Evento::Boton { boton: Boton::Izquierdo, pulsado: true }, d);
+        control.evento(Evento::Boton { boton: Boton::Izquierdo, pulsado: false }, d);
+        for c in solicitud.to_string().chars() {
+            control.evento(Evento::Texto(c), d);
+        }
+        control.evento(Evento::Tecla(telar_ventana::Tecla::Otra(13)), d);
+        control.evento(Evento::Texto('\r'), d);
+        assert!(!control.estudio.editando_numero());
+        assert_eq!(control.estudio.salida.muestras, solicitud);
+        calidad::sincronizar(gpu, control, &mut aplicadas).unwrap();
+        let real = gpu.muestras().unwrap();
+        assert!(real.is_power_of_two() && real <= solicitud);
+        assert_eq!(control.estudio.salida.muestras_reales, real);
+        let vertices = control.estudio.dibujar(d, 33 * 33);
+        gpu.actualizar_interfaz(&vertices, d.area()).unwrap();
+        let constantes = Constantes {
+            matriz: control.camara.matriz(1.0),
+            luz: [0.0, 1.0, 0.0],
+            color: [1.0; 4],
+            cielo: [0.1; 4],
+            suelo: [0.0; 4],
+        };
+        for _ in 0..2 {
+            assert!(
+                gpu.dibujar_procedural(
+                    [0.0, 0.0, 0.0, 1.0],
+                    &constantes,
+                    ParametrosProcedurales { lado: 33, fase: 0.4, amplitud: 0.35 }
+                )
+                .unwrap()
+            );
+        }
+    }
+    let actividad = gpu.actividad_procedural();
+    assert_eq!(
+        (actividad.buffers, actividad.pipelines, actividad.grabaciones, actividad.mapeos),
+        (inicial.buffers, inicial.pipelines, inicial.grabaciones, inicial.mapeos)
+    );
+    assert_eq!(actividad.geometria_subida, 0);
 }
 
 fn comprobar_red(control: &mut controles::Controles, gpu: &mut Gpu) {

@@ -13,7 +13,7 @@
 //! cargo run -p telar-app -- --puntos N        rejilla de unos N puntos (máximo 1024²)
 //! cargo run -p telar-app -- --esfera-cpu      esfera de referencia, cocinada en CPU
 //! cargo run -p telar-app -- --estilo tema.css personaliza la interfaz nativa
-//! cargo run -p telar-app -- --abrir-escena escena.tlar  abre datos de escena v2/v3
+//! cargo run -p telar-app -- --abrir-escena escena.tlar  abre datos de escena v2/v3/v4
 //! cargo run -p telar-app -- --guardar-escena escena.tlar guarda al salir; F5/F9 en vivo
 //! cargo run -p telar-app --release -- --calculo [--elementos N]
 //!                                             Fase 2: el primer kernel en la GPU, bit a bit contra la CPU

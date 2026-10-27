@@ -27,7 +27,7 @@ pub struct AtlasInterfaz<'a> {
 
 /// Diagnóstico fuera de pantalla; los tiempos excluyen preparación y descarga.
 pub struct CapturaEstudio {
-    /// Muestras MSAA reales de color/profundidad: 1, 2 o 4.
+    /// Muestras MSAA reales de color/profundidad, según soporte: 1..64 en potencias de dos.
     pub muestras: u32,
     /// Píxeles RGBA8 de la captura.
     pub pixeles: Vec<u8>,

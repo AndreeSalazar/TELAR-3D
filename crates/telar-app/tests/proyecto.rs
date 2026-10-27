@@ -40,6 +40,63 @@ fn ida_y_vuelta_determinista_conserva_todos_los_campos() {
 }
 
 #[test]
+fn msaa_alto_usa_version_cuatro_y_conserva_solicitud_sin_guardar_soporte_gpu() {
+    let mut estudio = Estudio::default();
+    for grafo in [false, true] {
+        if grafo {
+            estudio.crear_nodo(telar_ui::TipoNodo::Onda).unwrap();
+        }
+        for muestras in [8, 16, 32, 64] {
+            estudio.salida.muestras = muestras;
+            estudio.salida.muestras_reales = 2;
+            let p = Proyecto::capturar(&estudio, &nudo::Camara::default(), 0.6);
+            let bytes = p.codificar().unwrap();
+            assert_eq!(p.version(), 4);
+            assert_eq!(&bytes[4..8], &4u32.to_le_bytes());
+            let copia = Proyecto::decodificar(&bytes).unwrap();
+            assert_eq!(copia.estudio[8], muestras);
+            assert_eq!(copia.red, p.red);
+            assert_eq!(copia.codificar().unwrap(), bytes);
+            let mut version_antigua = bytes;
+            version_antigua[4..8].copy_from_slice(&(if grafo { 3u32 } else { 2 }).to_le_bytes());
+            assert!(Proyecto::decodificar(&version_antigua).is_err());
+        }
+        estudio.salida.muestras = 4;
+        assert_eq!(Proyecto::capturar(&estudio, &nudo::Camara::default(), 0.0).version(), if grafo { 3 } else { 2 });
+    }
+}
+
+#[test]
+fn ejecutable_inspecciona_y_reabre_msaa32_sin_reemplazar_la_peticion_por_el_fallback() {
+    let entrada = ruta();
+    let salida = ruta();
+    let mut p = escena();
+    p.estudio[8] = 32;
+    proyecto::guardar(&entrada, &p).unwrap();
+    let inspeccion = std::process::Command::new(env!("CARGO_BIN_EXE_telar"))
+        .arg("--inspeccionar-tlar")
+        .arg(&entrada)
+        .output()
+        .unwrap();
+    assert!(inspeccion.status.success());
+    let texto = String::from_utf8_lossy(&inspeccion.stdout);
+    assert!(texto.contains(".tlar v4 · escena procedural") && texto.contains("MSAA solicitado 32x"), "{texto}");
+    let proceso = std::process::Command::new(env!("CARGO_BIN_EXE_telar"))
+        .args(["--prueba", "--abrir-escena"])
+        .arg(&entrada)
+        .arg("--guardar-escena")
+        .arg(&salida)
+        .output()
+        .unwrap();
+    assert!(proceso.status.success(), "{}", String::from_utf8_lossy(&proceso.stderr));
+    assert!(String::from_utf8_lossy(&proceso.stdout).contains("120 fotogramas · 0 avisos de validación"));
+    assert_eq!(fs::read(&entrada).unwrap(), fs::read(&salida).unwrap());
+    assert_eq!(proyecto::leer(&salida).unwrap().estudio[8], 32);
+    fs::remove_file(entrada).unwrap();
+    fs::remove_file(salida).unwrap();
+}
+
+#[test]
 fn rechaza_truncamiento_sobrantes_corrupcion_y_version_de_arranque() {
     let bytes = escena().codificar().unwrap();
     for longitud in 0..bytes.len() {
