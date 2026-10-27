@@ -25,6 +25,7 @@ type EmpujarConstantes = unsafe extern "system" fn(Comandos, Objeto, u32, u32, u
 type UsarVertices = unsafe extern "system" fn(Comandos, u32, u32, *const Objeto, *const u64);
 type UsarIndices = unsafe extern "system" fn(Comandos, Objeto, u64, u32);
 type DibujarIndices = unsafe extern "system" fn(Comandos, u32, u32, u32, i32, u32);
+type DibujarIndirecto = unsafe extern "system" fn(Comandos, Objeto, u64, u32, u32);
 type CopiarImagen = unsafe extern "system" fn(Comandos, Objeto, u32, Objeto, u32, *const CopiaImagen);
 
 /// Las funciones de dibujo del dispositivo.
@@ -45,6 +46,7 @@ pub(crate) struct FnGrafico {
     pub(crate) usar_vertices: UsarVertices,
     pub(crate) usar_indices: UsarIndices,
     pub(crate) dibujar_indices: DibujarIndices,
+    pub(crate) dibujar_indirecto: DibujarIndirecto,
     pub(crate) copiar_imagen: CopiarImagen,
 }
 
@@ -67,6 +69,7 @@ impl FnGrafico {
             usar_vertices: cargar!(buscar, "vkCmdBindVertexBuffers", UsarVertices),
             usar_indices: cargar!(buscar, "vkCmdBindIndexBuffer", UsarIndices),
             dibujar_indices: cargar!(buscar, "vkCmdDrawIndexed", DibujarIndices),
+            dibujar_indirecto: cargar!(buscar, "vkCmdDrawIndexedIndirect", DibujarIndirecto),
             copiar_imagen: cargar!(buscar, "vkCmdCopyImageToBuffer", CopiarImagen),
         })
     }

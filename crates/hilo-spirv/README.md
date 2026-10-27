@@ -24,6 +24,30 @@ Es del núcleo (regla `nucleo-sin-std`): solo `core` y `alloc`, así que el mism
 | `src/funcion.rs` | el cuerpo de una función: bloques, cargas, aritmética, vectores (`construir`, `extraer`, `barajar`) e instrucciones de `GLSL.std.450` |
 | `src/ejemplos.rs` | el primer kernel: llena un buffer con `hash_pcg(i)`, con su referencia en la CPU |
 | `src/visor.rs` | los shaders del visor (Fase 4): vértices y fragmentos |
+| `src/rejilla.rs` | productor de argumentos, generación y deformación de la rejilla residente |
+
+## Los kernels residentes (Fase 4.5)
+
+`rejilla::preparar`, `generar` y `deformar` emiten tres programas independientes.
+El productor tiene un hilo; los otros usan grupos de 64 y comprueban el índice
+contra el recuento activo. Cada hilo posee su vértice y, al generar, una celda de
+índices como máximo. La deformación es `y = A sin(2x + fase) cos(2z)`; su normal
+es la normalización de `(-2A cos(2x+fase) cos(2z), 1, 2A sin(2x+fase) sin(2z))`.
+Es diferenciación analítica de esa superficie, sin reducción ni atómicos.
+
+ABI del conjunto 0, todos buffers de almacenamiento:
+
+| Enlace | Contenido |
+|---|---|
+| 0 | cuatro u32: lado pedido, bits f32 de fase y amplitud, capacidad validada por el ejecutor |
+| 1 | f32[], posición xyz y normal xyz por vértice |
+| 2 | u32[], seis índices por celda, caras hacia +Y |
+| 3 | u32[12]: dispatch [0..3), draw [3..8), lado seguro [8], puntos [9], error [10], reservado [11] |
+
+Un lado menor que 2 da salida vacía. Un lado mayor que capacidad da salida
+vacía y error 1. Las barreras entre kernels y antes del dibujo las graba el
+ejecutor Vulkan. Los tres programas pasan `spirv-val`; las pruebas de integración
+en `telar-app` comparan datos y píxeles. Esto aún no incorpora el lenguaje HILO.
 
 ## Los shaders del visor
 

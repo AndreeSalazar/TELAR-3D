@@ -106,6 +106,11 @@ impl Recursos {
 
     /// Módulo, disposición del conjunto (un buffer de almacenamiento) y pipeline de cálculo.
     pub(super) fn pipeline(&mut self, spirv: &[u32]) -> Result<(), String> {
+        self.pipeline_enlaces(spirv, 1)
+    }
+
+    /// Pipeline de cálculo con `cantidad` buffers de almacenamiento consecutivos.
+    pub(super) fn pipeline_enlaces(&mut self, spirv: &[u32], cantidad: u32) -> Result<(), String> {
         let fc = self.fd.calculo;
         let modulo = InfoModulo {
             s_type: ST_SHADER_MODULE_CREATE_INFO,
@@ -114,19 +119,21 @@ impl Recursos {
             tamano: core::mem::size_of_val(spirv),
             codigo: spirv.as_ptr(),
         };
-        let enlace = Enlace {
-            numero: 0,
-            tipo: DESCRIPTOR_ALMACEN,
-            cantidad: 1,
-            etapas: ETAPA_SHADER_CALCULO,
-            muestreadores: core::ptr::null(),
-        };
+        let enlaces: Vec<Enlace> = (0..cantidad)
+            .map(|numero| Enlace {
+                numero,
+                tipo: DESCRIPTOR_ALMACEN,
+                cantidad: 1,
+                etapas: ETAPA_SHADER_CALCULO,
+                muestreadores: core::ptr::null(),
+            })
+            .collect();
         let disposicion = InfoDisposicion {
             s_type: ST_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
             p_next: core::ptr::null(),
             flags: 0,
-            n_enlaces: 1,
-            enlaces: &raw const enlace,
+            n_enlaces: cantidad,
+            enlaces: enlaces.as_ptr(),
         };
         let nulo = core::ptr::null();
         // SAFETY: el SPIR-V vive durante la llamada (Vulkan lo copia); las demás
@@ -176,9 +183,15 @@ impl Recursos {
 
     /// El conjunto de descriptores: el buffer 0, entero, en el enlace 0.
     pub(super) fn descriptores(&mut self, tamano: u64) -> Result<(), String> {
+        self.descriptores_buffers(&[(self.buffers[0], tamano)])
+    }
+
+    /// Vincula buffers externos residentes; su propietario mantiene su vida útil.
+    pub(super) fn descriptores_buffers(&mut self, buffers: &[(Objeto, u64)]) -> Result<(), String> {
         let fc = self.fd.calculo;
         let nulo = core::ptr::null();
-        let tamanos = TamanoPool { tipo: DESCRIPTOR_ALMACEN, cantidad: 1 };
+        let cantidad = u32::try_from(buffers.len()).map_err(|_| "demasiados enlaces")?;
+        let tamanos = TamanoPool { tipo: DESCRIPTOR_ALMACEN, cantidad };
         let pool = InfoPoolDescriptores {
             s_type: ST_DESCRIPTOR_POOL_CREATE_INFO,
             p_next: nulo,
@@ -197,30 +210,37 @@ impl Recursos {
             n_conjuntos: 1,
             disposiciones: &raw const self.disposicion,
         };
-        let buffer = InfoBufferDescriptor { buffer: self.buffers[0], desplazamiento: 0, rango: tamano };
         // SAFETY: pool y disposición existen; el conjunto se escribe antes de usarse
         // y `buffer` vive durante la escritura.
         unsafe {
             ok((fc.reservar_conjuntos)(self.d, &raw const reserva, &raw mut self.conjunto), "reservar el conjunto")?;
-            let escritura = EscrituraDescriptor {
-                s_type: ST_WRITE_DESCRIPTOR_SET,
-                p_next: nulo,
-                conjunto: self.conjunto,
-                enlace: 0,
-                elemento: 0,
-                cantidad: 1,
-                tipo: DESCRIPTOR_ALMACEN,
-                imagenes: nulo,
-                buffers: &raw const buffer,
-                vistas: nulo,
-            };
-            (fc.escribir_descriptores)(self.d, 1, &raw const escritura, 0, nulo);
+            for (enlace, &(objeto, rango)) in (0u32..).zip(buffers) {
+                let buffer = InfoBufferDescriptor { buffer: objeto, desplazamiento: 0, rango };
+                let escritura = EscrituraDescriptor {
+                    s_type: ST_WRITE_DESCRIPTOR_SET,
+                    p_next: nulo,
+                    conjunto: self.conjunto,
+                    enlace,
+                    elemento: 0,
+                    cantidad: 1,
+                    tipo: DESCRIPTOR_ALMACEN,
+                    imagenes: nulo,
+                    buffers: &raw const buffer,
+                    vistas: nulo,
+                };
+                (fc.escribir_descriptores)(self.d, 1, &raw const escritura, 0, nulo);
+            }
         }
         Ok(())
     }
 
     /// El pool de comandos, la valla, las consultas de tiempo (si se mide) y el búfer de comandos.
     pub(super) fn preparar(&mut self, ctx: &Contexto, medir: bool) -> Result<Comandos, String> {
+        self.preparar_consultas(ctx, if medir { 2 } else { 0 })
+    }
+
+    /// Un comando primario reutilizable y el número solicitado de consultas.
+    pub(super) fn preparar_consultas(&mut self, ctx: &Contexto, cantidad: u32) -> Result<Comandos, String> {
         let (fd, fc, nulo) = (self.fd, self.fd.calculo, core::ptr::null());
         let pool = InfoSimple { s_type: ST_COMMAND_POOL_CREATE_INFO, p_next: nulo, flags: 0, familia: ctx.familia };
         let valla = InfoSimple { s_type: ST_FENCE_CREATE_INFO, p_next: nulo, flags: 0, familia: 0 };
@@ -229,7 +249,7 @@ impl Recursos {
             p_next: nulo,
             flags: 0,
             tipo: CONSULTA_TIEMPO,
-            cantidad: 2,
+            cantidad,
             estadisticas: 0,
         };
         let mut cmd: Comandos = core::ptr::null_mut();
@@ -241,7 +261,7 @@ impl Recursos {
                 "crear el pool de comandos",
             )?;
             ok((fd.crear_valla)(self.d, &raw const valla, nulo, &raw mut self.valla), "crear la valla")?;
-            if medir {
+            if cantidad > 0 {
                 ok(
                     (fc.crear_consultas)(self.d, &raw const consultas, nulo, &raw mut self.consultas),
                     "crear las consultas",

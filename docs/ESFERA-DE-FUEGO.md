@@ -42,7 +42,7 @@ Cada paso es un kernel (o varios fusionados por HILO). La CPU no interviene.
    - disipación suave del hollín.
 5. **Proyectar:** calcular la divergencia (descontando la expansión deseada), resolver la presión y restar su gradiente. Es el paso más caro: primero Jacobi con iteraciones fijas, multigrid después.
 6. **Bordes:** abiertos, para que el humo salga sin rebotar.
-7. **(Después) Ladrillos activos:** un kernel cuenta dónde hay algo y escribe él mismo cuánto trabajo lanzar en el paso siguiente (despacho indirecto). La GPU decide.
+7. **(Después) Ladrillos activos:** un kernel cuenta dónde hay algo y escribe él mismo cuánto trabajo lanzar en el paso siguiente. Reutiliza el ejecutor residente y el despacho indirecto de la Fase 4.5; aquí se añade la estructura dispersa.
 
 ## Un fotograma de render
 
@@ -88,6 +88,6 @@ Las cifras reales se medirán con temporizadores de la GPU y se publicarán con 
 3. **Fuego:** combustión, divergencia y color de cuerpo negro.
 4. **Detalle:** MacCormack, vorticidad y *curl noise*.
 5. **Luz:** sombras propias, dispersión y *bloom*.
-6. **La GPU decide:** ladrillos activos con despacho indirecto.
+6. **Ladrillos activos:** estructura dispersa sobre el despacho indirecto demostrado desde la Fase 4.5.
 7. **Final:** 256³ o más con multigrid, y comparación publicada contra Houdini.
 8. **(P2) Chispas:** partículas que nacen donde más arde.

@@ -69,6 +69,40 @@ Cómo está hecho:
 
 Las capturas fuera de pantalla (`Calculo::capturar`) dejan probar el dibujo píxel a píxel, sin ventana: arriba es arriba, se descartan las caras traseras y no las delanteras, y lo de delante tapa lo de atrás aunque se dibuje antes. `telar --prueba --puntos 1000000` repite la meta, y `telar --segundos 6` mide los fps.
 
+## Fase 4.5 · El cocinado reside en GPU
+
+**Demo residente implementada y probada.** La revisión de `b8f4109` confirmó que la Fase 4 genera
+y triangula en CPU y después dibuja en GPU. El kernel de la Fase 2 descarga su
+resultado al terminar. Ninguna de las dos demuestra aún autonomía procedural.
+
+Se han construido recursos persistentes, parámetros por fotograma y la cadena
+productor → despacho indirecto → generación → deformación → dibujo indirecto.
+El visor predeterminado muestra una rejilla cuyos vértices, normales, índices y
+argumentos nacen en GPU; cambiar parámetros no recocina geometría en CPU.
+
+**Verificado en la RTX 3060:** 120 pasos sin recrear recursos ni regrabar compute;
+8 buffers residentes, 6 pipelines de compute y 2 grabaciones para dos juegos en
+vuelo; 16 bytes de parámetros de superficie por paso, cero geometría subida y
+cero descargas en vivo. Además, 128 bytes de constantes de cámara/iluminación
+en el dibujo. Tests pequeños contra CPU, repetición bit a bit en la misma GPU,
+capturas con cambios visibles y caso máximo de 1024² puntos. Sin avisos Vulkan,
+también con validación de sincronización habilitada en las pruebas de cálculo.
+
+**Pendiente de generalización:** adaptar nodos al ejecutor, notificar errores de
+capacidad asíncronamente, medir rasterización GPU por separado y publicar medidas
+repetidas. Los tiempos GPU disponibles separan preparar, generar y deformar;
+todavía no representan el coste total de dibujar un fotograma.
+
+**Hecho cuando:** 120 pasos sin recrear recursos ni regrabar compute en estado
+estable, argumentos indirectos escritos por GPU, cero descargas intermedias,
+límites y desbordamiento comprobados, referencia CPU en tests pequeños y cero
+avisos Vulkan. Medir creación de recursos, transferencias y tiempos por etapa.
+La presentación puede seguir grabándose por imagen adquirida.
+
+El contrato completo, la evidencia y el orden de implementación están en
+[REVISION-GPU.md](REVISION-GPU.md). La CPU mantiene ventana, recursos y envíos;
+las decisiones basadas en resultados intermedios permanecen en GPU.
+
 ## Fase 5 · HILO v0
 
 El lenguaje, por punto como un *wrangle*:
@@ -77,7 +111,7 @@ El lenguaje, por punto como un *wrangle*:
 @P += @N * ruido(@P * 2.0) * 0.1
 ```
 
-Léxico, sintaxis, tipos, IR en SSA, fusión de nodos y SPIR-V, más el **intérprete en la CPU** como referencia. Las reglas `memoria-gpu`, `barreras`, `limites` y `determinismo` viven en su comprobador de tipos.
+Léxico, sintaxis, tipos, IR en SSA, fusión de nodos y SPIR-V, más el **intérprete en la CPU** como referencia. El código generado usa el ejecutor residente de la Fase 4.5. Las reglas `memoria-gpu`, `barreras`, `limites` y `determinismo` viven en su comprobador de tipos.
 
 **Hecho cuando:** el mismo programa da el mismo resultado en la GPU y en el intérprete, y un kernel con una carrera o con una suma atómica de `float` no compila, con un mensaje que dice por qué.
 
@@ -93,9 +127,9 @@ Humo 2D, humo 3D con marcha de rayos y fuego (combustión y color de cuerpo negr
 
 ## Fase 7 · La esfera, hitos 4 a 6
 
-Detalle (MacCormack, vorticidad y *curl noise*), luz (sombras, dispersión y *bloom*) y **la GPU decide** (ladrillos activos con despacho indirecto).
+Detalle (MacCormack, vorticidad y *curl noise*), luz (sombras, dispersión y *bloom*) y ladrillos activos que aprovechan la infraestructura de despacho indirecto probada desde la Fase 4.5.
 
-**Hecho cuando:** la CPU solo escribe los parámetros por fotograma (se comprueba contando sus llamadas a Vulkan por fotograma), y el resultado se compara con un Pyro de Houdini, con su etiqueta.
+**Hecho cuando:** la CPU escribe parámetros y atiende envíos y presentación; la GPU decide los ladrillos activos sin descargas intermedias. Se comprueba con contadores de recursos, grabaciones, transferencias y envíos de la Fase 4.5, y el resultado se compara con un Pyro de Houdini, con su etiqueta.
 
 ## Fase 8 · El telar: la interfaz de nodos
 

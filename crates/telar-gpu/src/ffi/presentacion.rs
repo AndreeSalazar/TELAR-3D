@@ -45,6 +45,10 @@ pub(crate) struct Presentacion {
 }
 
 impl Presentacion {
+    pub(crate) fn cuadro(&self) -> usize {
+        self.cuadro
+    }
+
     pub(crate) fn nueva(ctx: &Contexto, ventana: (u32, u32)) -> Result<Self, String> {
         let fd = ctx.fd.ok_or("el contexto no tiene dispositivo")?;
         let fs = fd.swapchain.ok_or("el dispositivo no tiene swapchain (se creó sin ventana)")?;
@@ -160,6 +164,15 @@ impl Presentacion {
             despues: (LAYOUT_PRESENT_SRC, ETAPA_BOTTOM_OF_PIPE, 0),
         };
         let (cmd, listo, nulo) = (self.comandos[f], sc.listos[i], core::ptr::null());
+        let mut comandos = [cmd; 2];
+        let n_comandos = if let Some((ranura, parametros)) = escena.and_then(|e| e.calculo) {
+            // La valla del juego f ya terminó; ahora se pueden actualizar sus 16 bytes.
+            ranura.actualizar(parametros)?;
+            comandos = [ranura.comando, cmd];
+            2
+        } else {
+            1
+        };
         let inicio = InfoInicioComandos {
             s_type: ST_COMMAND_BUFFER_BEGIN_INFO,
             p_next: nulo,
@@ -174,8 +187,8 @@ impl Presentacion {
             n_esperas: 1,
             esperas: &raw const self.adquiridas[f],
             etapas_espera: &raw const etapa,
-            n_comandos: 1,
-            comandos: &raw const cmd,
+            n_comandos,
+            comandos: comandos.as_ptr(),
             n_senales: 1,
             senales: &raw const listo,
         };

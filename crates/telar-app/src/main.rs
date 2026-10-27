@@ -2,20 +2,22 @@
 //!
 //! Es el único sitio que conoce a la vez la ventana, la GPU, los shaders y la
 //! geometría (regla `fronteras`): abre la ventana, le pasa a la GPU sus dos
-//! manejadores como números y lleva el bucle. Fase 4: el visor, una esfera de
-//! NUDO rasterizada en la GPU con cámara orbital, con cero avisos de validación.
+//! manejadores como números y lleva el bucle. La ruta predeterminada genera y
+//! deforma una rejilla en GPU; --esfera-cpu conserva el visor de referencia.
 //!
 //! ```text
 //! cargo run -p telar-app --release            el visor (Esc o la X para salir)
 //! cargo run -p telar-app -- --prueba          ventana oculta, 120 fotogramas; sale con 1 si hay avisos
 //! cargo run -p telar-app -- --sin-validacion  sin las capas de validación (más rápido)
 //! cargo run -p telar-app -- --segundos 5      visible, y se cierra sola a los 5 s (para medir los fps)
-//! cargo run -p telar-app -- --puntos N        la esfera con unos N puntos (un millón; 40 000 en la prueba)
+//! cargo run -p telar-app -- --puntos N        rejilla de unos N puntos (máximo 1024²)
+//! cargo run -p telar-app -- --esfera-cpu      esfera de referencia, cocinada en CPU
 //! cargo run -p telar-app --release -- --calculo [--elementos N]
 //!                                             Fase 2: el primer kernel en la GPU, bit a bit contra la CPU
 //! ```
 
 mod calculo;
+mod escena;
 mod visor;
 
 use std::process::ExitCode;
@@ -51,6 +53,7 @@ fn main() -> ExitCode {
         validacion,
         limite: valor("--segundos").map(|s| Duration::from_secs(u64::from(s))),
         puntos: valor("--puntos").unwrap_or(if prueba { PUNTOS_DE_PRUEBA } else { PUNTOS }),
+        procedural: !args.iter().any(|a| a == "--esfera-cpu"),
     };
     match visor::ejecutar(&modo) {
         Ok(r) => {

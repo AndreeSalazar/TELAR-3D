@@ -11,6 +11,30 @@ let calculo = Calculo::nuevo(&Opciones::default())?; // sin ventana: para calcul
 
 ## Cómo está hecho
 
+La ruta residente usa `preparar_procedural` y `dibujar_procedural` en la ventana,
+o `Calculo::procedural` para pruebas sin ventana. Recibe tres SPIR-V y conserva
+buffers, pipelines, conjuntos y comandos. Su ABI actual es el de la demostración
+de rejilla; todavía no es un ejecutor de grafos arbitrarios.
+
+| Módulo residente | Responsabilidad |
+|---|---|
+| `src/procedural.rs` | API segura, parámetros, actividad y diagnóstico |
+| `src/ffi/residente.rs` | recursos persistentes y juegos por fotograma |
+| `src/ffi/residente_comandos.rs` | grabación única, barreras y despachos indirectos |
+| `src/ffi/residente_lectura.rs` | descargas, capturas y tiempos explícitos de diagnóstico |
+
+La presentación espera su valla antes de escribir parámetros y envía el lote
+de compute pregrabado seguido del dibujo. El dibujo usa argumentos GPU desde
+el byte 12 del buffer de control. No se consulta un contador desde CPU.
+Al exceder capacidad, el productor emite trabajo cero y marca error; evita
+producir geometría truncada. El modo vivo no descarga ese estado: la notificación
+asíncrona a la interfaz queda pendiente.
+
+`ActividadProcedural` cuenta recursos residentes y parámetros de superficie;
+las constantes de cámara y los recursos temporales de diagnóstico quedan fuera
+de esos contadores. `descargados` contabiliza la inspección de geometría; las
+capturas se solicitan aparte. En la ruta viva no se ejecuta ninguna de ellas.
+
 | Dónde | Qué |
 |---|---|
 | `src/eleccion.rs` | las decisiones puras, sin `unsafe` y probadas sin GPU: qué dispositivo (la dedicada primero), qué formato (sRGB), qué tamaño, cuántas imágenes y el color en luz lineal |

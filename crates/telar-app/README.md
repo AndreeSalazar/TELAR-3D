@@ -11,14 +11,32 @@ hilo-spirv ──(SPIR-V como &[u32])──────────────�
 Ninguno de esos crates sabe que existen los otros.
 
 ```bash
-cargo run -p telar-app --release            # el visor: la esfera de un millón de puntos (Esc o la X para salir)
+cargo run -p telar-app --release            # rejilla animada de un millón de puntos, generada y deformada en GPU
 cargo run -p telar-app -- --prueba          # oculta, 120 fotogramas y dos cambios de tamaño; sale con 1 si hay avisos
 cargo run -p telar-app -- --segundos 5      # visible, y se cierra sola (para medir los fps)
-cargo run -p telar-app -- --puntos 250000   # otra esfera (por defecto, un millón; en la prueba, 40 000)
+cargo run -p telar-app -- --puntos 250000   # rejilla de 500×500 (máximo 1024²; por defecto un millón)
+cargo run -p telar-app --release -- --esfera-cpu # esfera histórica, cocinada en CPU
 cargo run -p telar-app -- --sin-validacion  # sin las capas de validación
 ```
 
-## El visor (Fase 4)
+## El visor residente (Fase 4.5)
+
+La ruta predeterminada no llama a `Nodo::cocinar`, no triangula en CPU y no sube
+vértices. La GPU prepara los argumentos, genera la rejilla y deforma la altura
+`A sin(2x + fase) cos(2z)` con su normal analítica. Dibuja desde los mismos
+buffers mediante `vkCmdDrawIndexedIndirect`.
+
+Cada fotograma escribe 16 bytes de parámetros de superficie; además se graban
+128 bytes de constantes de cámara e iluminación. Dos juegos residentes evitan
+sobrescribir los datos en vuelo. Al finalizar, informa de 8 buffers residentes,
+6 pipelines de compute, 2 grabaciones de compute, los pasos y transferencias.
+La prueba cambia las dimensiones dentro de capacidad sin crear recursos nuevos.
+
+`src/escena.rs` prepara y comprueba la escena; `src/visor.rs` atiende la ventana
+y la cámara. Los kernels viven en `hilo-spirv`, y el ejecutor Vulkan en
+`telar-gpu`, sin dependencias entre ambos.
+
+## La referencia histórica (Fase 4, --esfera-cpu)
 
 Arrastrar con el botón izquierdo orbita; la rueda acerca y aleja; quieta 3 s, la cámara gira sola. El título dice los puntos, la GPU y los fps.
 
@@ -44,7 +62,8 @@ Los avisos de tipo GENERAL (del cargador de Vulkan y de capas que otros programa
 
 ## Tests
 
-- **`tests/app.rs`** lanza el ejecutable de verdad con `--prueba` y exige «120 fotogramas · 0 avisos de validación». Lo repite con el millón de puntos.
+- **`tests/app.rs`** lanza la ruta residente con un millón de puntos durante 120 fotogramas y dos cambios de tamaño; exige cero avisos y recursos de compute constantes. Conserva también la prueba de la esfera CPU.
+- **`tests/procedural.rs`** comprueba recuentos, índices y normales contra CPU, vacío, grupo parcial, capacidad y exceso; exige repetición bit a bit en la misma GPU y cambios visibles en las capturas. Prueba también 1024² puntos.
 - **`tests/visor.rs`** dibuja esferas de NUDO con los shaders de `hilo-spirv` en capturas fuera de pantalla y mira los píxeles. Comprueba tres cosas: arriba es arriba, se ven las caras de delante (y no las de dentro) y lo de delante tapa lo de atrás.
 
 ## La Fase 2: el primer kernel

@@ -9,6 +9,7 @@ use super::funciones::FnDispositivo;
 use super::imagen::Imagen;
 use super::malla_gpu::MallaGpu;
 use super::pipeline_grafico::PipelineGrafico;
+use super::residente::Residente;
 use super::tipos::{ACCESO_TRANSFER_WRITE, ASPECTO_COLOR, Disp, ETAPA_TRANSFER, USO_COLOR_ATTACHMENT};
 use super::tipos_calculo::{
     ACCESO_HOST_READ, ACCESO_TRANSFER_READ, BUFFER_TRANSFER_DST, BarreraMemoria, ETAPA_HOST, ST_MEMORY_BARRIER,
@@ -18,6 +19,7 @@ use super::tipos_grafico::{
     USO_PROFUNDIDAD, USO_TRANSFER_SRC,
 };
 use crate::eleccion::{MEMORIA_COHERENTE, MEMORIA_CON_CACHE, MEMORIA_VISIBLE};
+use crate::{ActividadProcedural, KernelsProcedurales, ParametrosProcedurales};
 
 /// SPIR-V de vértices y de fragmentos.
 pub(crate) type Sombreadores<'a> = (&'a [u32], &'a [u32]);
@@ -31,13 +33,14 @@ pub(crate) struct Visor {
     fragmentos: Vec<u32>,
     pipeline: Option<PipelineGrafico>,
     malla: Option<MallaGpu>,
+    procedural: Option<Residente>,
 }
 
 impl Visor {
     pub(crate) fn nuevo(ctx: &Contexto, (vertices, fragmentos): Sombreadores) -> Result<Self, String> {
         let fd = ctx.fd.ok_or("el contexto no tiene dispositivo")?;
         let (vertices, fragmentos) = (vertices.to_vec(), fragmentos.to_vec());
-        Ok(Self { fd, d: ctx.dispositivo, vertices, fragmentos, pipeline: None, malla: None })
+        Ok(Self { fd, d: ctx.dispositivo, vertices, fragmentos, pipeline: None, malla: None, procedural: None })
     }
 
     /// Otros shaders: el pipeline se rehará en el próximo dibujo.
@@ -69,9 +72,56 @@ impl Visor {
             self.pipeline = Some(PipelineGrafico::nuevo(ctx, &self.vertices, &self.fragmentos, formato)?);
         }
         Ok(match (&self.pipeline, &self.malla) {
-            (Some(pipeline), Some(malla)) => Some(Escena { pipeline, malla, constantes }),
+            (Some(pipeline), Some(malla)) => {
+                Some(Escena { pipeline, malla, constantes, indirecto: None, calculo: None })
+            }
             _ => None,
         })
+    }
+
+    pub(crate) fn preparar_procedural(
+        &mut self,
+        ctx: &Contexto,
+        capacidad: u32,
+        kernels: KernelsProcedurales,
+    ) -> Result<(), String> {
+        esperar(ctx)?;
+        self.procedural = Some(Residente::nuevo(ctx, capacidad, kernels, 2)?);
+        self.malla = None;
+        Ok(())
+    }
+
+    pub(crate) fn escena_procedural<'a>(
+        &'a mut self,
+        ctx: &Contexto,
+        formato: u32,
+        constantes: &'a [f32; 32],
+        cuadro: usize,
+        parametros: ParametrosProcedurales,
+    ) -> Result<Escena<'a>, String> {
+        // Valida antes de adquirir imagen o tocar sincronización de presentación.
+        parametros.palabras(2)?;
+        let _ = self.escena(ctx, formato, constantes)?;
+        let pipeline = self.pipeline.as_ref().ok_or("falta el pipeline gráfico")?;
+        let ranura =
+            self.procedural.as_ref().and_then(|p| p.ranuras.get(cuadro)).ok_or("falta la ranura procedural")?;
+        Ok(Escena {
+            pipeline,
+            malla: &ranura.malla,
+            constantes,
+            indirecto: Some(ranura.control.objeto),
+            calculo: Some((ranura, parametros)),
+        })
+    }
+
+    pub(crate) fn contar_paso(&mut self) {
+        if let Some(procedural) = &mut self.procedural {
+            procedural.contar_paso();
+        }
+    }
+
+    pub(crate) fn actividad(&self) -> ActividadProcedural {
+        self.procedural.as_ref().map_or(ActividadProcedural::default(), Residente::actividad)
     }
 }
 
@@ -104,6 +154,22 @@ pub(crate) fn capturar(
     }
     let pipeline = PipelineGrafico::nuevo(ctx, sombreadores.0, sombreadores.1, FORMATO_RGBA8)?;
     let malla = MallaGpu::nueva(ctx, vertices, indices)?;
+    capturar_buffers(ctx, &pipeline, &malla, None, (ancho, alto), limpiar, constantes)
+}
+
+/// Captura de buffers ya residentes, con dibujo directo o indirecto.
+pub(super) fn capturar_buffers(
+    ctx: &Contexto,
+    pipeline: &PipelineGrafico,
+    malla: &MallaGpu,
+    indirecto: Option<super::tipos::Objeto>,
+    (ancho, alto): (u32, u32),
+    limpiar: [f32; 4],
+    constantes: &[f32; 32],
+) -> Result<Vec<u8>, String> {
+    if ancho == 0 || alto == 0 || ancho > 4096 || alto > 4096 {
+        return Err("captura fuera de 1..=4096 por lado".to_owned());
+    }
     let color =
         Imagen::nueva(ctx, FORMATO_RGBA8, (ancho, alto), USO_COLOR_ATTACHMENT | USO_TRANSFER_SRC, ASPECTO_COLOR)?;
     let profundidad = Imagen::nueva(ctx, FORMATO_PROFUNDIDAD, (ancho, alto), USO_PROFUNDIDAD, ASPECTO_PROFUNDIDAD)?;
@@ -117,7 +183,7 @@ pub(crate) fn capturar(
         extension: (ancho, alto),
         despues: (LAYOUT_TRANSFER_SRC, ETAPA_TRANSFER, ACCESO_TRANSFER_READ),
     };
-    let escena = Escena { pipeline: &pipeline, malla: &malla, constantes };
+    let escena = Escena { pipeline, malla, constantes, indirecto, calculo: None };
     let copia = CopiaImagen {
         desplazamiento: 0,
         largo_fila: 0, // filas seguidas, sin relleno

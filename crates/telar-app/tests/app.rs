@@ -8,7 +8,10 @@ use std::process::Command;
 
 #[test]
 fn ventana_y_gpu_sin_avisos_de_validacion() {
-    let salida = Command::new(env!("CARGO_BIN_EXE_telar")).arg("--prueba").output().expect("no se pudo lanzar telar");
+    let salida = Command::new(env!("CARGO_BIN_EXE_telar"))
+        .args(["--prueba", "--puntos", "1000000"])
+        .output()
+        .expect("no se pudo lanzar telar");
     let texto = String::from_utf8_lossy(&salida.stdout);
     let errores = String::from_utf8_lossy(&salida.stderr);
     if errores.contains("vulkan-1.dll") {
@@ -19,6 +22,7 @@ fn ventana_y_gpu_sin_avisos_de_validacion() {
     assert!(texto.contains("120 fotogramas · 0 avisos de validación"), "salida inesperada:\n{texto}\n{errores}");
     // La inicial y una por cada cambio de tamaño.
     assert!(texto.contains("swapchain creada 3 veces"), "la swapchain no se rehízo:\n{texto}");
+    assert!(texto.contains("8 buffers · 6 pipelines · 2 grabaciones compute · 120 pasos · 1920 bytes parámetros · 0 bytes geometría subida · 0 bytes descargados"), "{texto}");
 }
 
 #[test]
@@ -44,7 +48,7 @@ fn el_primer_kernel_da_lo_mismo_en_la_gpu_que_en_la_cpu() {
 #[test]
 fn el_visor_con_un_millon_de_puntos_sin_avisos() {
     let salida = Command::new(env!("CARGO_BIN_EXE_telar"))
-        .args(["--prueba", "--puntos", "1000000"])
+        .args(["--prueba", "--esfera-cpu", "--puntos", "1000000"])
         .output()
         .expect("no se pudo lanzar telar");
     let texto = String::from_utf8_lossy(&salida.stdout);

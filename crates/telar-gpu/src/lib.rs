@@ -17,10 +17,14 @@
 pub mod eleccion;
 mod escena;
 mod ffi;
+mod procedural;
 
 use core::sync::atomic::Ordering;
 
 pub use escena::{Constantes, Sombreadores};
+pub use procedural::{
+    ActividadProcedural, DiagnosticoProcedural, KernelsProcedurales, ParametrosProcedurales, Procedural,
+};
 
 /// Bytes de [`Constantes`] en la GPU (8 `vec4`).
 pub const TAMANO_CONSTANTES: u32 = ffi::TAMANO_CONSTANTES;

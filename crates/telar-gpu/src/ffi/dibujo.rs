@@ -8,6 +8,7 @@ use core::ffi::c_void;
 use super::funciones::FnDispositivo;
 use super::malla_gpu::MallaGpu;
 use super::pipeline_grafico::{PipelineGrafico, TAMANO_CONSTANTES};
+use super::residente::Ranura;
 use super::tipos::{
     ASPECTO_COLOR, BarreraImagen, Comandos, Extension2D, FAMILIA_IGNORADA, LAYOUT_UNDEFINED, Objeto, Rango,
     ST_IMAGE_MEMORY_BARRIER,
@@ -18,6 +19,7 @@ use super::tipos_grafico::{
     ETAPA_SALIDA_COLOR, ETAPA_VERTICES, GUARDAR, INDICES_U32, InfoRenderizado, LAYOUT_COLOR, LAYOUT_PROFUNDIDAD,
     NO_GUARDAR, PUNTO_GRAFICOS, Rect2D, ST_RENDERING_ATTACHMENT_INFO, ST_RENDERING_INFO, Viewport,
 };
+use crate::ParametrosProcedurales;
 
 const NULO: *const c_void = core::ptr::null();
 
@@ -38,6 +40,8 @@ pub(crate) struct Escena<'a> {
     pub(crate) pipeline: &'a PipelineGrafico,
     pub(crate) malla: &'a MallaGpu,
     pub(crate) constantes: &'a [f32; 32],
+    pub(crate) indirecto: Option<Objeto>,
+    pub(crate) calculo: Option<(&'a Ranura, ParametrosProcedurales)>,
 }
 
 /// Graba en `cmd` el fotograma: limpia a `limpiar` (color ya en el espacio del
@@ -121,7 +125,11 @@ pub(crate) unsafe fn grabar(
             let desde = 0u64;
             (fg.usar_vertices)(cmd, 0, 1, &raw const e.malla.vertices.objeto, &raw const desde);
             (fg.usar_indices)(cmd, e.malla.indices.objeto, 0, INDICES_U32);
-            (fg.dibujar_indices)(cmd, e.malla.n_indices, 1, 0, 0, 0);
+            if let Some(argumentos) = e.indirecto {
+                (fg.dibujar_indirecto)(cmd, argumentos, 12, 1, 20);
+            } else {
+                (fg.dibujar_indices)(cmd, e.malla.n_indices, 1, 0, 0, 0);
+            }
         }
         (fg.terminar_renderizado)(cmd);
         (fd.barrera)(cmd, ETAPA_SALIDA_COLOR, etapa, 0, 0, NULO, 0, NULO, 1, &raw const despues);

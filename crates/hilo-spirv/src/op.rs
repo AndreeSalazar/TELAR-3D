@@ -58,6 +58,24 @@ pub const MEMBER_DECORATE: u16 = 72;
 pub const I_ADD: u16 = 128;
 /// `OpIMul`.
 pub const I_MUL: u16 = 132;
+/// `OpISub`.
+pub const I_SUB: u16 = 130;
+/// `OpUDiv`.
+pub const U_DIV: u16 = 134;
+/// `OpUMod`.
+pub const U_MOD: u16 = 137;
+/// `OpConvertUToF`.
+pub const U_A_F: u16 = 112;
+/// `OpConvertFToU`.
+pub const F_A_U: u16 = 109;
+/// `OpBitcast`.
+pub const BITCAST: u16 = 124;
+/// `OpSelect`.
+pub const SELECT: u16 = 169;
+/// `OpLogicalAnd`.
+pub const LOGICAL_AND: u16 = 167;
+/// `OpFDiv`.
+pub const F_DIV: u16 = 136;
 /// `OpULessThan`.
 pub const U_LESS_THAN: u16 = 176;
 /// `OpShiftRightLogical`.

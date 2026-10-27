@@ -6,6 +6,12 @@ Un sistema 3D procedural **propio**, basado en nodos, inspirado en lo que enseñ
 
 **La estrella del norte:** una **esfera de fuego ultrarrealista**, simulada y renderizada entera en la GPU. Esta vez no manda la CPU: **manda la GPU**.
 
+**Ya funciona la primera ruta procedural residente:** el visor predeterminado
+genera una rejilla, la deforma y calcula normales con kernels GPU; también lee
+en GPU los argumentos de despacho y dibujo. `cargo run -p telar-app --release`
+la muestra. La CPU envía parámetros, cámara y el lote; la geometría permanece
+en GPU. La esfera histórica se conserva con `--esfera-cpu`.
+
 | Pieza | Nombre | Qué es |
 |---|---|---|
 | El programa | **TELAR** | el telar procedural: no se modela a mano, se teje con reglas |
@@ -38,6 +44,7 @@ Un sistema 3D procedural **propio**, basado en nodos, inspirado en lo que enseñ
 | [docs/ESFERA-DE-FUEGO.md](docs/ESFERA-DE-FUEGO.md) | la simulación y el render de la esfera de fuego, paso a paso en la GPU |
 | [docs/GUARDIANES.md](docs/GUARDIANES.md) | las reglas y por qué existen |
 | [docs/PLAN.md](docs/PLAN.md) | las fases, cada una con su demo y su «hecho cuando» |
+| [docs/REVISION-GPU.md](docs/REVISION-GPU.md) | estado real del cocinado y próximo hito: generación, deformación y decisiones residentes en GPU |
 
 ## La máquina de referencia
 

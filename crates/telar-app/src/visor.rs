@@ -1,17 +1,15 @@
-//! El visor (Fase 4): una esfera de NUDO, rasterizada en la GPU, con cámara
-//! orbital. NUDO cocina la geometría, `nudo::Malla` la parte en triángulos,
-//! `hilo-spirv` escribe los shaders y `telar-gpu` los dibuja; la app solo une.
+//! El visor: una superficie generada y deformada en GPU, con cámara orbital.
+//! El modo --esfera-cpu conserva la referencia de la Fase 4.
 //!
 //! Arrastrar con el botón izquierdo orbita; la rueda acerca y aleja; quieta
 //! unos segundos, la cámara gira sola.
 
 use std::time::{Duration, Instant};
 
+use nudo::Camara;
 use nudo::mate::normalizar;
-use nudo::{Camara, Malla, Nodo};
 use telar_gpu::eleccion::hex;
-use telar_gpu::{Constantes, Gpu, Opciones, Sombreadores, Superficie};
-use telar_nodos::Esfera;
+use telar_gpu::{Constantes, Gpu, Opciones, ParametrosProcedurales, Superficie};
 use telar_ventana::{Boton, Config, Evento, Tecla, Ventana};
 
 /// El negro del cosmos, la brasa (lo que un día será fuego) y la luz ambiente.
@@ -32,12 +30,13 @@ const GIRO_SOLO: f32 = 12.0;
 
 /// Cómo se abre el visor.
 pub(crate) struct Modo {
+    pub(crate) procedural: bool,
     /// Ventana oculta, 120 fotogramas y dos cambios de tamaño.
     pub(crate) prueba: bool,
     pub(crate) validacion: bool,
     /// Se cierra sola pasado este tiempo.
     pub(crate) limite: Option<Duration>,
-    /// Cuántos puntos tiene la esfera (más o menos: filas × columnas).
+    /// Puntos aproximados de la superficie; la rejilla admite hasta 1024².
     pub(crate) puntos: u32,
 }
 
@@ -47,24 +46,8 @@ pub(crate) struct Resumen {
     pub(crate) segundos: f32,
 }
 
-/// Una esfera de NUDO de unos `puntos` puntos (el doble de columnas que filas,
-/// para que los cuadros salgan cuadrados), ya en triángulos.
-pub(crate) fn esfera(puntos: u32) -> Result<Malla, String> {
-    let filas = i32::try_from((puntos / 2).isqrt()).map_err(|_| "demasiados puntos")?.max(3);
-    let esfera = Esfera { filas, columnas: 2 * filas, ..Esfera::default() };
-    Ok(Malla::de(&esfera.cocinar(&[])?))
-}
-
 /// Abre la ventana y lleva el bucle del visor.
 pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
-    let antes = Instant::now();
-    let malla = esfera(modo.puntos)?;
-    println!(
-        "telar: esfera de {} puntos · {} triángulos · cocinada en {:.0} ms",
-        malla.vertices.len(),
-        malla.triangulos(),
-        antes.elapsed().as_secs_f64() * 1000.0
-    );
     let config = Config { titulo: "TELAR 3D".to_owned(), ancho: 1280, alto: 720, visible: !modo.prueba };
     let mut ventana = Ventana::nueva(&config)?;
     let m = ventana.manejadores();
@@ -76,11 +59,8 @@ pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
         gpu.dispositivo(),
         if gpu.validacion() { "activa" } else { "apagada" }
     );
-    let (vertices, fragmentos) = (hilo_spirv::visor::vertices(), hilo_spirv::visor::fragmentos());
-    gpu.preparar_visor(Sombreadores { vertices: &vertices, fragmentos: &fragmentos })?;
-    gpu.subir_malla(&malla.vertices, &malla.indices)?;
-    let titulo = format!("TELAR 3D · {} puntos · {}", malla.vertices.len(), gpu.dispositivo());
-    drop(malla); // ya está en la GPU
+    let (capacidad, puntos) = crate::escena::preparar(&mut gpu, modo)?;
+    let titulo = format!("TELAR 3D · {puntos} puntos · {}", gpu.dispositivo());
 
     let mut camara = Camara::default();
     let luz = normalizar([0.45, 0.8, 0.4]);
@@ -121,7 +101,17 @@ pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
         let aspecto = ancho.max(1) as f32 / alto.max(1) as f32;
         let constantes =
             Constantes { matriz: camara.matriz(aspecto), luz, color: hex(BRASA), cielo: hex(CIELO), suelo: hex(SUELO) };
-        if gpu.dibujar_escena(hex(FONDO), &constantes)? {
+        let dibujado = if modo.procedural {
+            // La prueba cambia el tamaño lógico dentro de capacidad sin volver a
+            // grabar compute. La GPU calcula los recuentos y todos los argumentos.
+            let lado = if modo.prueba && (40..80).contains(&cuadros) { capacidad / 2 } else { capacidad };
+            let parametros =
+                ParametrosProcedurales { lado, fase: inicio.elapsed().as_secs_f32() % 1000.0, amplitud: 0.35 };
+            gpu.dibujar_procedural(hex(FONDO), &constantes, parametros)?
+        } else {
+            gpu.dibujar_escena(hex(FONDO), &constantes)?
+        };
+        if dibujado {
             cuadros += 1;
             en_este_segundo += 1;
         } else {
@@ -144,6 +134,9 @@ pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
     let segundos = inicio.elapsed().as_secs_f32();
     let (_, (ancho, alto)) = gpu.imagenes();
     println!("telar: swapchain creada {} veces · tamaño final {ancho}×{alto}", gpu.swapchains_creadas());
+    if modo.procedural {
+        crate::escena::comprobar(&gpu, cuadros)?;
+    }
     // La GPU antes que la ventana: la superficie de Vulkan vive dentro de la ventana.
     drop(gpu);
     drop(ventana);

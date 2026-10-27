@@ -96,3 +96,20 @@ fn los_shaders_del_visor_pasan_spirv_val() {
         );
     }
 }
+
+#[test]
+fn los_tres_kernels_residentes_pasan_spirv_val() {
+    let validador = spirv_val().expect("esta prueba requiere spirv-val del SDK de Vulkan");
+    for (nombre, palabras) in [
+        ("preparar", hilo_spirv::rejilla::preparar()),
+        ("generar", hilo_spirv::rejilla::generar()),
+        ("deformar", hilo_spirv::rejilla::deformar()),
+    ] {
+        let bytes: Vec<u8> = palabras.iter().flat_map(|w| w.to_le_bytes()).collect();
+        let archivo = std::env::temp_dir().join(format!("telar-residente-{nombre}-{}.spv", std::process::id()));
+        std::fs::write(&archivo, bytes).unwrap();
+        let salida = Command::new(&validador).args(["--target-env", "vulkan1.3"]).arg(&archivo).output().unwrap();
+        let _ = std::fs::remove_file(&archivo);
+        assert!(salida.status.success(), "{nombre}: {}", String::from_utf8_lossy(&salida.stderr));
+    }
+}

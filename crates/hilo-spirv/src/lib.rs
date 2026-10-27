@@ -22,6 +22,7 @@ pub mod ejemplos;
 mod funcion;
 mod modulo;
 pub mod op;
+pub mod rejilla;
 pub mod visor;
 
 pub use funcion::Funcion;

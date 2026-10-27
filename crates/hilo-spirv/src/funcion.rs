@@ -72,6 +72,16 @@ impl Funcion<'_> {
         self.con_resultado(codigo, tipo, &[a.0, b.0])
     }
 
+    /// Conversión o reinterpretación de un valor (`OpConvertUToF`, `OpBitcast`…).
+    pub fn unaria(&mut self, codigo: u16, tipo: Id, valor: Id) -> Id {
+        self.con_resultado(codigo, tipo, &[valor.0])
+    }
+
+    /// Elige un valor sin bifurcar (`OpSelect`).
+    pub fn elegir(&mut self, tipo: Id, condicion: Id, si: Id, no: Id) -> Id {
+        self.con_resultado(op::SELECT, tipo, &[condicion.0, si.0, no.0])
+    }
+
     /// `OpSelectionMerge`: dónde se juntan las dos ramas del `if` que sigue.
     pub fn fusion(&mut self, fusion: Id) {
         instruccion(&mut self.cuerpo, op::SELECTION_MERGE, &[fusion.0, op::CONTROL_NINGUNO]);

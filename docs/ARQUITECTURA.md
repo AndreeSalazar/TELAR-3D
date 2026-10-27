@@ -1,5 +1,11 @@
 # Arquitectura: la GPU manda
 
+**Este documento describe la arquitectura objetivo.** La Fase 4.5 ya incorpora
+una ruta residente de rejilla con generación, deformación y dibujo indirecto,
+dos juegos de recursos y compute pregrabado. El grafo general de NUDO continúa
+en CPU como referencia; HILO y el solver de fuego siguen pendientes.
+Ver [REVISION-GPU.md](REVISION-GPU.md) para el diagnóstico histórico y el avance.
+
 ## La idea en una frase
 
 **Los datos nacen, viven y mueren en la GPU.** La CPU edita el grafo, lo compila y le pasa a la GPU unos pocos bytes de parámetros por fotograma. Todo lo demás (emitir, simular, decidir cuánto trabajo hay y renderizar) lo hace la GPU sin volver a preguntar.
@@ -46,12 +52,13 @@ En casi todos los motores la CPU es la jefa y la GPU obedece: la CPU decide, man
 
 1. El grafo vive en la CPU (en `nudo`), con marcas de **sucio**: cambiar un nodo ensucia solo lo que depende de él.
 2. Al cambiar la **topología** (añadir o quitar nodos o cables), `hilo` recompila y **fusiona**: los nodos seguidos que trabajan punto a punto se unen en un solo kernel, sin leer ni escribir la memoria entre medias.
-3. Al cambiar solo un **parámetro**, no se recompila: se escribe el buffer de parámetros.
-4. El resultado es un **plan**: una lista fija de despachos que `telar-gpu` graba una vez en un *command buffer* y reenvía cada fotograma.
+3. Al cambiar un **valor** dentro de la capacidad y los tipos del plan, no se recompila: se escribe el buffer de parámetros. Cambiar capacidad, tipos o estructura puede exigir nuevos recursos o un plan distinto.
+4. El resultado es un **plan**: pasadas, recursos y dependencias que `telar-gpu` graba para reutilizar el cálculo. Debe contemplar los buffers alternos y los fotogramas en vuelo. La presentación depende de la imagen adquirida y puede grabarse aparte.
 
 ## Cómo «piensa» la GPU
 
 - **Despacho indirecto** (`vkCmdDispatchIndirect`): un kernel cuenta, por ejemplo, cuántos ladrillos tienen fuego y escribe él mismo cuántos grupos lanzar en la pasada siguiente. La CPU no se entera ni necesita enterarse.
+- **Alcance:** el host sigue preparando y enviando el grafo de pasadas. El despacho indirecto cambia sus dimensiones desde un buffer; no permite a un shader lanzar cualquier pipeline. La autonomía se mide por decisiones y datos que permanecen en GPU.
 - **Colas de trabajo en la GPU:** los kernels añaden tareas con atómicos enteros (deterministas si se ordenan) y otra pasada las consume.
 - **Más adelante:** la generación de comandos en la GPU (`VK_EXT_device_generated_commands`), o Work Graphs en DX12. Se valorará si el driver de la RTX 3060 lo soporta.
 - **Sin lecturas de vuelta:** las estadísticas (fps, ladrillos activos) bajan en un anillo asíncrono, con varios fotogramas de retraso, sin frenar nunca a la GPU.
