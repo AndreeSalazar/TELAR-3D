@@ -29,7 +29,7 @@ buffers mediante `vkCmdDrawIndexedIndirect`.
 Cada fotograma escribe 16 bytes de parámetros de superficie; además se graban
 128 bytes de constantes de cámara e iluminación. Dos juegos residentes evitan
 sobrescribir los datos en vuelo. Al finalizar, informa de 8 buffers residentes,
-6 pipelines de compute, 2 grabaciones de compute, los pasos y transferencias.
+8 pipelines de compute, 2 grabaciones de compute, los pasos y transferencias.
 La prueba cambia las dimensiones dentro de capacidad sin crear recursos nuevos.
 
 La GPU también decide **omitir la generación** cuando las dimensiones no han
@@ -42,6 +42,13 @@ vacío o exceso de capacidad, con una referencia independiente.
 `src/escena.rs` prepara y comprueba la escena; `src/visor.rs` atiende la ventana
 y la cámara. Los kernels viven en `hilo-spirv`, y el ejecutor Vulkan en
 `telar-gpu`, sin dependencias entre ambos.
+
+El visor ahora prepara un `PlanProcedural` de cuatro operaciones: preparar,
+generar, deformar y relieve (escala de altura 1,3 con normales corregidas).
+El ejecutor admite de 2 a 32 etapas; sigue usando los cuatro buffers de esta
+demostración. `tests/plan_gpu.rs` compara planes de 2, 3, 4 y 5 etapas contra CPU,
+comprueba orden, vacío y caché, y valida límites y mensajes antes de crear GPU.
+Los tiempos diagnósticos incluyen un nombre por operación.
 
 ## La referencia histórica (Fase 4, --esfera-cpu)
 

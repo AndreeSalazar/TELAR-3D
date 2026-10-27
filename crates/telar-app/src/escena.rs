@@ -3,7 +3,7 @@
 use crate::visor::Modo;
 use nudo::{Malla, Nodo};
 use std::time::Instant;
-use telar_gpu::{Gpu, KernelsProcedurales, Sombreadores};
+use telar_gpu::{DominioProcedural, EtapaProcedural, Gpu, KernelsProcedurales, PlanProcedural, Sombreadores};
 use telar_nodos::Esfera;
 
 pub(crate) fn preparar(gpu: &mut Gpu, modo: &Modo) -> Result<(u32, usize), String> {
@@ -13,10 +13,11 @@ pub(crate) fn preparar(gpu: &mut Gpu, modo: &Modo) -> Result<(u32, usize), Strin
     let puntos = if modo.procedural {
         let (preparar, generar, deformar) =
             (hilo_spirv::rejilla::preparar(), hilo_spirv::rejilla::generar(), hilo_spirv::rejilla::deformar());
-        gpu.preparar_procedural(
-            capacidad,
-            KernelsProcedurales { preparar: &preparar, generar: &generar, deformar: &deformar },
-        )?;
+        let relieve = hilo_spirv::rejilla::escalar_altura(1.3)?;
+        let mut etapas =
+            KernelsProcedurales { preparar: &preparar, generar: &generar, deformar: &deformar }.etapas().to_vec();
+        etapas.push(EtapaProcedural { nombre: "relieve", codigo: &relieve, dominio: DominioProcedural::Puntos });
+        gpu.preparar_plan_procedural(capacidad, PlanProcedural::nuevo(&etapas)?)?;
         println!("telar: rejilla residente · capacidad {capacidad}×{capacidad} · generación y deformación GPU");
         (capacidad * capacidad) as usize
     } else {
@@ -50,7 +51,7 @@ pub(crate) fn comprobar(gpu: &Gpu, cuadros: u32) -> Result<(), String> {
     );
     println!("telar: {} mapeos persistentes de parámetros", actividad.mapeos);
     if actividad.buffers != 8
-        || actividad.pipelines != 6
+        || actividad.pipelines != 8
         || actividad.grabaciones != 2
         || actividad.mapeos != 2
         || actividad.pasos != u64::from(cuadros)

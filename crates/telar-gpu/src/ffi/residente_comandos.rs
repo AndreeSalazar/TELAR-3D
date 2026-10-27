@@ -1,4 +1,4 @@
-//! Lote de cálculo pregrabado: productor → indirecto → generación → deformación.
+//! Plan pregrabado: productor → generación indirecta → operaciones por punto.
 
 use super::{
     contexto::{Contexto, ok},
@@ -13,7 +13,7 @@ use super::{
 
 impl Ranura {
     pub(super) fn grabar(&self, ctx: &Contexto) -> Result<(), String> {
-        let recursos = &self.recursos[0];
+        let recursos = &self.etapas[0].recursos;
         let (fd, fc, cmd, nulo) = (recursos.fd, recursos.fd.calculo, self.comando, core::ptr::null());
         let inicio =
             InfoInicioComandos { s_type: ST_COMMAND_BUFFER_BEGIN_INFO, p_next: nulo, flags: 0, herencia: nulo };
@@ -49,15 +49,17 @@ impl Ranura {
             ACCESO_SHADER_READ | ACCESO_SHADER_WRITE,
         );
         let medir = ctx.bits_tiempo > 0;
-        // SAFETY: las cuatro consultas pertenecen a la ranura y su valla ya se
+        // SAFETY: las consultas pertenecen a la ranura y su valla ya se
         // completó antes de cada reenvío; los pipelines y conjuntos son persistentes.
         unsafe {
             if medir {
-                (fc.reiniciar_consultas)(cmd, recursos.consultas, 0, 4);
+                let consultas = u32::try_from(self.etapas.len() + 1).map_err(|_| "demasiadas consultas")?;
+                (fc.reiniciar_consultas)(cmd, recursos.consultas, 0, consultas);
                 (fc.marcar_tiempo)(cmd, ETAPA_TOP_OF_PIPE, recursos.consultas, 0);
             }
         }
-        for (indice, recurso) in self.recursos.iter().enumerate() {
+        for (indice, etapa) in self.etapas.iter().enumerate() {
+            let recurso = &etapa.recursos;
             // SAFETY: los conjuntos tienen los cuatro buffers vivos hasta que
             // termina la ranura; control contiene argumentos escritos por preparar.
             unsafe {
@@ -72,11 +74,9 @@ impl Ranura {
                     0,
                     nulo.cast(),
                 );
-                if indice == 0 {
-                    (fc.despachar)(cmd, 1, 1, 1);
-                } else {
-                    let desplazamiento = if indice == 1 { 48 } else { 0 };
-                    (fc.despachar_indirecto)(cmd, self.control.objeto, desplazamiento);
+                match etapa.dominio.argumento() {
+                    None => (fc.despachar)(cmd, 1, 1, 1),
+                    Some(desplazamiento) => (fc.despachar_indirecto)(cmd, self.control.objeto, desplazamiento),
                 }
                 if medir {
                     (fc.marcar_tiempo)(
@@ -87,7 +87,7 @@ impl Ranura {
                     );
                 }
             }
-            if indice < 2 {
+            if indice + 1 < self.etapas.len() {
                 barrera(
                     ETAPA_CALCULO,
                     ETAPA_CALCULO | ETAPA_INDIRECTO,
@@ -102,7 +102,7 @@ impl Ranura {
             ACCESO_SHADER_WRITE,
             ACCESO_LEER_ATRIBUTOS | ACCESO_LEER_INDICES | ACCESO_INDIRECTO | ACCESO_TRANSFER_READ,
         );
-        // SAFETY: las tres pasadas y sus barreras están completas.
+        // SAFETY: todas las pasadas del plan y sus barreras están completas.
         unsafe { ok((fd.terminar)(cmd), "cerrar el lote residente") }
     }
 }

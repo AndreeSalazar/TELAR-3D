@@ -81,7 +81,7 @@ El visor predeterminado muestra una rejilla cuyos vértices, normales, índices 
 argumentos nacen en GPU; cambiar parámetros no recocina geometría en CPU.
 
 **Verificado en la RTX 3060:** 120 pasos sin recrear recursos ni regrabar compute;
-8 buffers residentes, 6 pipelines de compute y 2 grabaciones para dos juegos en
+8 buffers residentes, 8 pipelines de compute y 2 grabaciones para dos juegos en
 vuelo; 16 bytes de parámetros de superficie por paso, cero geometría subida y
 cero descargas en vivo. Además, 128 bytes de constantes de cámara/iluminación
 en el dibujo. Tests pequeños contra CPU, repetición bit a bit en la misma GPU,
@@ -123,8 +123,10 @@ Léxico, sintaxis, tipos, IR en SSA, fusión de nodos y SPIR-V, más el **intér
 
 Orden de construcción para seguir ampliando el trabajo GPU:
 
-1. Generalizar las tres pasadas actuales a un plan de operaciones y recursos
-   residentes, con dependencias y decisiones de ejecución representadas explícitamente.
+1. **Implementado para el ABI de rejilla:** plan secuencial de 2..=32 etapas con
+   dominios, nombres, argumentos indirectos, barreras entre operaciones y tiempos
+   identificados. El visor usa preparar → generar → deformar → relieve. Pendiente:
+   recursos y grafos arbitrarios; el contrato actual conserva x/z para la caché.
 2. Introducir un IR tipado por punto (atributos, escalares y vectores) y compilar
    las primeras operaciones al backend SPIR-V; comparar contra su intérprete CPU.
 3. Añadir sintaxis HILO, parámetros y diagnósticos sobre ese mismo IR. La CPU

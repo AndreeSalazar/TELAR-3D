@@ -10,6 +10,9 @@ use crate::{
 };
 use alloc::vec::Vec;
 
+mod operaciones;
+pub use operaciones::escalar_altura;
+
 struct Entorno {
     modulo: Modulo,
     entero: Id,

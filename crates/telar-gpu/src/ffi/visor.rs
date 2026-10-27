@@ -19,7 +19,7 @@ use super::tipos_grafico::{
     USO_PROFUNDIDAD, USO_TRANSFER_SRC,
 };
 use crate::eleccion::{MEMORIA_COHERENTE, MEMORIA_CON_CACHE, MEMORIA_VISIBLE};
-use crate::{ActividadProcedural, KernelsProcedurales, ParametrosProcedurales};
+use crate::{ActividadProcedural, ParametrosProcedurales, PlanProcedural};
 
 /// SPIR-V de vértices y de fragmentos.
 pub(crate) type Sombreadores<'a> = (&'a [u32], &'a [u32]);
@@ -83,10 +83,10 @@ impl Visor {
         &mut self,
         ctx: &Contexto,
         capacidad: u32,
-        kernels: KernelsProcedurales,
+        plan: PlanProcedural,
     ) -> Result<(), String> {
         esperar(ctx)?;
-        self.procedural = Some(Residente::nuevo(ctx, capacidad, kernels, 2)?);
+        self.procedural = Some(Residente::nuevo(ctx, capacidad, plan, 2)?);
         self.malla = None;
         Ok(())
     }

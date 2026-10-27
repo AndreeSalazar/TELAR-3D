@@ -8,6 +8,10 @@ Ver [REVISION-GPU.md](REVISION-GPU.md) para el diagnóstico histórico y el avan
 
 La rejilla ya incluye caché de topología decidida por GPU y parámetros mapeados
 persistentemente. Cambiar fase o amplitud no obliga a regenerar sus índices.
+El ejecutor acepta planes de 2..=32 operaciones sobre el ABI actual: cada
+operación declara dominio y nombre; las dependencias siguen su orden y las
+barreras entre etapas. El visor incorpora una operación adicional de relieve.
+Los grafos con recursos arbitrarios y el compilador HILO siguen pendientes.
 
 ## La idea en una frase
 

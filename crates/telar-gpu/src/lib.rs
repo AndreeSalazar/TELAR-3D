@@ -17,11 +17,13 @@
 pub mod eleccion;
 mod escena;
 mod ffi;
+mod plan;
 mod procedural;
 
 use core::sync::atomic::Ordering;
 
 pub use escena::{Constantes, Sombreadores};
+pub use plan::{DominioProcedural, EtapaProcedural, PlanProcedural};
 pub use procedural::{
     ActividadProcedural, DiagnosticoProcedural, KernelsProcedurales, ParametrosProcedurales, Procedural,
 };

@@ -82,7 +82,7 @@ fn cadena_residente_correcta_reutilizable_y_visible() {
     assert_eq!(primera.indices, segunda.indices);
     let bits = |v: &Vec<[f32; 6]>| v.iter().map(|p| p.map(f32::to_bits)).collect::<Vec<_>>();
     assert_eq!(bits(&primera.vertices), bits(&segunda.vertices));
-    assert!(segunda.nanosegundos.is_some_and(|t| t.iter().all(|n| n.is_finite() && *n > 0.0)));
+    assert!(segunda.nanosegundos.as_ref().is_some_and(|t| t.iter().all(|n| n.is_finite() && *n > 0.0)));
     eprintln!("{} · ns preparar/generar/deformar {:?}", gpu.dispositivo(), segunda.nanosegundos);
 
     let grafico = [hilo_spirv::visor::vertices(), hilo_spirv::visor::fragmentos()];

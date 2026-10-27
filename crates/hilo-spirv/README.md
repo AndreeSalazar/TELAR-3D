@@ -35,6 +35,13 @@ contra el recuento activo. Cada hilo posee su vértice y, al generar, una celda 
 es la normalización de `(-2A cos(2x+fase) cos(2z), 1, 2A sin(2x+fase) sin(2z))`.
 Es diferenciación analítica de esa superficie, sin reducción ni atómicos.
 
+`rejilla::escalar_altura(k)` añade una operación componible que vive en
+`src/rejilla/operaciones.rs`: transforma `y` en `k*y` y la normal en
+`normalize(k*nx, ny, k*nz)`. Conserva x/z e índices; admite factores finitos
+entre -16 y 16, incluido cero. El factor forma parte del código compilado: cambiarlo
+requiere preparar otro plan; fase y amplitud siguen siendo parámetros en vivo.
+Las operaciones se encadenan mediante `PlanProcedural` en el backend Vulkan.
+
 ABI del conjunto 0, todos buffers de almacenamiento:
 
 | Enlace | Contenido |
@@ -53,7 +60,7 @@ cuando se genera; su desbordamiento a 32 bits es modular y no afecta la caché.
 
 El control se inicializa a cero una vez con `vkCmdFillBuffer` en el ejecutor.
 Las barreras entre kernels y antes del dibujo las graba el
-ejecutor Vulkan. Los tres programas pasan `spirv-val`; las pruebas de integración
+ejecutor Vulkan. Los cuatro programas pasan `spirv-val`; las pruebas de integración
 en `telar-app` comparan datos y píxeles. Esto aún no incorpora el lenguaje HILO.
 
 ## Los shaders del visor

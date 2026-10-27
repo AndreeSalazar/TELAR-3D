@@ -1,6 +1,6 @@
 //! Contrato público de ejecución residente, sin dependencia del compilador ni de NUDO.
 
-use crate::{Calculo, Constantes, Gpu, Sombreadores, ffi};
+use crate::{Calculo, Constantes, DominioProcedural, EtapaProcedural, Gpu, PlanProcedural, Sombreadores, ffi};
 
 /// Tres programas con el ABI documentado en hilo-spirv: productor, generador y deformador.
 #[derive(Clone, Copy)]
@@ -11,6 +11,18 @@ pub struct KernelsProcedurales<'a> {
     pub generar: &'a [u32],
     /// Lee y modifica los vértices residentes.
     pub deformar: &'a [u32],
+}
+
+impl<'a> KernelsProcedurales<'a> {
+    /// Traduce la demostración original de tres kernels al plan extensible.
+    #[must_use]
+    pub const fn etapas(self) -> [EtapaProcedural<'a>; 3] {
+        [
+            EtapaProcedural { nombre: "preparar", codigo: self.preparar, dominio: DominioProcedural::Preparar },
+            EtapaProcedural { nombre: "generar", codigo: self.generar, dominio: DominioProcedural::Generar },
+            EtapaProcedural { nombre: "deformar", codigo: self.deformar, dominio: DominioProcedural::Puntos },
+        ]
+    }
 }
 
 /// Parámetros pequeños; ningún vértice ni índice cruza desde el host.
@@ -48,7 +60,7 @@ pub struct ActividadProcedural {
     pub grabaciones: u64,
     /// Mapeos persistentes de parámetros, creados una vez por juego residente.
     pub mapeos: u64,
-    /// Lotes enviados que contienen las tres pasadas.
+    /// Lotes enviados que contienen el plan completo.
     pub pasos: u64,
     /// Bytes de parámetros escritos por el host.
     pub parametros: u64,
@@ -66,8 +78,10 @@ pub struct DiagnosticoProcedural {
     pub vertices: Vec<[f32; 6]>,
     /// Índices activos.
     pub indices: Vec<u32>,
-    /// Tiempos GPU de preparar, generar y deformar, en nanosegundos.
-    pub nanosegundos: Option<[f64; 3]>,
+    /// Nombres de las operaciones, en el mismo orden que sus tiempos.
+    pub etapas: Vec<String>,
+    /// Tiempos GPU por operación, en nanosegundos.
+    pub nanosegundos: Option<Vec<f64>>,
 }
 
 /// Ejecutor sin ventana; el préstamo mantiene vivo el dispositivo.
@@ -82,7 +96,16 @@ impl Calculo {
     /// # Errors
     /// Rechaza capacidades fuera de 2..=1024 o errores de Vulkan.
     pub fn procedural(&self, capacidad: u32, kernels: KernelsProcedurales) -> Result<Procedural<'_>, String> {
-        Ok(Procedural { interior: ffi::Residente::nuevo(&self.contexto, capacidad, kernels, 1)?, calculo: self })
+        let etapas = kernels.etapas();
+        self.procedural_con_plan(capacidad, PlanProcedural::nuevo(&etapas)?)
+    }
+
+    /// Prepara un plan de longitud variable; recursos y comandos quedan residentes.
+    ///
+    /// # Errors
+    /// Si la capacidad no vale, el dispositivo rechaza un shader o Vulkan falla.
+    pub fn procedural_con_plan(&self, capacidad: u32, plan: PlanProcedural) -> Result<Procedural<'_>, String> {
+        Ok(Procedural { interior: ffi::Residente::nuevo(&self.contexto, capacidad, plan, 1)?, calculo: self })
     }
 }
 
@@ -131,8 +154,17 @@ impl Gpu {
     /// # Errors
     /// Si falta el visor, la capacidad no vale o Vulkan falla.
     pub fn preparar_procedural(&mut self, capacidad: u32, kernels: KernelsProcedurales) -> Result<(), String> {
+        let etapas = kernels.etapas();
+        self.preparar_plan_procedural(capacidad, PlanProcedural::nuevo(&etapas)?)
+    }
+
+    /// Prepara un plan extensible para los dos fotogramas en vuelo.
+    ///
+    /// # Errors
+    /// Si falta el visor, la capacidad no vale o Vulkan falla.
+    pub fn preparar_plan_procedural(&mut self, capacidad: u32, plan: PlanProcedural) -> Result<(), String> {
         let visor = self.visor.as_mut().ok_or("primero hay que preparar el visor")?;
-        visor.preparar_procedural(&self.contexto, capacidad, kernels)
+        visor.preparar_procedural(&self.contexto, capacidad, plan)
     }
 
     /// Actualiza parámetros y envía compute pregrabado junto con el dibujo indirecto.

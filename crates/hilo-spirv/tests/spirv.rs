@@ -98,12 +98,13 @@ fn los_shaders_del_visor_pasan_spirv_val() {
 }
 
 #[test]
-fn los_tres_kernels_residentes_pasan_spirv_val() {
+fn los_kernels_residentes_pasan_spirv_val() {
     let validador = spirv_val().expect("esta prueba requiere spirv-val del SDK de Vulkan");
     for (nombre, palabras) in [
         ("preparar", hilo_spirv::rejilla::preparar()),
         ("generar", hilo_spirv::rejilla::generar()),
         ("deformar", hilo_spirv::rejilla::deformar()),
+        ("escalar_altura", hilo_spirv::rejilla::escalar_altura(-0.5).unwrap()),
     ] {
         let bytes: Vec<u8> = palabras.iter().flat_map(|w| w.to_le_bytes()).collect();
         let archivo = std::env::temp_dir().join(format!("telar-residente-{nombre}-{}.spv", std::process::id()));

@@ -103,24 +103,27 @@ impl Residente {
         let vertices = palabras[16..16 + puntos * 6].as_chunks::<6>().0.iter().map(|v| v.map(f32::from_bits)).collect();
         let desde = 16 + (nv / 4) as usize;
         let indices = palabras[desde..desde + indices].to_vec();
-        Ok(DiagnosticoProcedural { control, vertices, indices, nanosegundos: self.tiempos(ctx)? })
+        let etapas = ranura.etapas.iter().map(|etapa| etapa.nombre.clone()).collect();
+        Ok(DiagnosticoProcedural { control, vertices, indices, etapas, nanosegundos: self.tiempos(ctx)? })
     }
 
-    fn tiempos(&self, ctx: &Contexto) -> Result<Option<[f64; 3]>, String> {
+    fn tiempos(&self, ctx: &Contexto) -> Result<Option<Vec<f64>>, String> {
         if ctx.bits_tiempo == 0 {
             return Ok(None);
         }
-        let recurso = &self.ranuras[0].recursos[0];
-        let mut tics = [0u64; 4];
-        // SAFETY: paso esperó su valla; las cuatro consultas escritas caben en tics.
+        let ranura = &self.ranuras[0];
+        let recurso = &ranura.etapas[0].recursos;
+        let mut tics = vec![0u64; ranura.etapas.len() + 1];
+        let cantidad = u32::try_from(tics.len()).map_err(|_| "demasiadas consultas")?;
+        // SAFETY: paso esperó su valla; todas las consultas escritas caben en tics.
         unsafe {
             ok(
                 (recurso.fd.calculo.leer_consultas)(
                     ctx.dispositivo,
                     recurso.consultas,
                     0,
-                    4,
-                    32,
+                    cantidad,
+                    core::mem::size_of_val(tics.as_slice()),
                     tics.as_mut_ptr().cast(),
                     8,
                     RESULTADO_64,
@@ -128,6 +131,6 @@ impl Residente {
                 "leer tiempos residentes",
             )?;
         }
-        Ok(Some(core::array::from_fn(|i| nanosegundos(tics[i], tics[i + 1], ctx.bits_tiempo, ctx.periodo_ns))))
+        Ok(Some(tics.windows(2).map(|par| nanosegundos(par[0], par[1], ctx.bits_tiempo, ctx.periodo_ns)).collect()))
     }
 }

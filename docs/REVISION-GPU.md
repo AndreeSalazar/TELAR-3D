@@ -57,6 +57,9 @@ de Khronos, consultadas durante esta entrega.
 
 ## Lo que demostraba el código de b8f4109
 
+Las entregas anteriores conservan sus cifras históricas. El estado nuevo se
+describe en la sección de planes extensibles al final de este documento.
+
 | Pieza | Evidencia | Alcance real |
 |---|---|---|
 | Geometría | `telar-app/src/visor.rs`: `esfera.cocinar`, `Malla::de` y `subir_malla` | Se genera y triangula en CPU; después se dibuja en GPU. |
@@ -186,3 +189,27 @@ lenguaje completo.
 - [Khronos: vkCmdDrawIndexedIndirect](https://docs.vulkan.org/refpages/latest/refpages/source/vkCmdDrawIndexedIndirect.html).
 - [Khronos: ejemplos de sincronización](https://docs.vulkan.org/guide/latest/synchronization_examples.html),
   incluidas dependencias de compute a compute, dibujo indirecto y entrada de vértices.
+
+## Tercera entrega: planes extensibles
+
+El ejecutor ya no contiene un array fijo de tres kernels ni decide el argumento
+indirecto por la posición de la pasada. `PlanProcedural` valida entre 2 y 32 etapas,
+con nombre, SPIR-V y dominio explícito. Los dominios definen preparar, generar y
+operar sobre puntos; sus dependencias se graban en orden, con barreras entre
+etapas. Los pipelines y consultas se dimensionan al preparar el plan.
+
+El visor utiliza preparar → generar → deformar → relieve. La cuarta operación
+escala la altura 1,3 y corrige normales en GPU. Mantiene 8 buffers, 8 pipelines,
+2 grabaciones y 2 mapeos persistentes para dos juegos. Sigue enviando 16 bytes
+de parámetros de superficie, además de las constantes de cámara/iluminación.
+
+La API de tres kernels se conserva como adaptador al plan. El diagnóstico ahora
+devuelve vectores de nombres y tiempos por operación. Las pruebas cubren planes
+de 2, 3, 4 y 5 etapas, factores positivos, negativos y cero, alteraciones del
+orden, vacío y reutilización de la caché. Etiqueta **IGUAL** contra las referencias
+CPU con tolerancia 2·10⁻⁵; la comparación con Houdini sigue **ABIERTA**.
+
+Límites: secuencia ordenada y cuatro buffers del ABI de rejilla, no un grafo
+general de recursos. Las operaciones por punto conservan x/z. La validación de
+metadatos no demuestra el comportamiento del shader: los programas se validan
+con spirv-val y con pruebas Vulkan. El IR tipado de HILO es el siguiente paso.

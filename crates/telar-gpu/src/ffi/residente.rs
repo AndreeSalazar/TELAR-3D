@@ -11,11 +11,17 @@ use super::{
     tipos_grafico::{BUFFER_INDICES, BUFFER_VERTICES},
 };
 use crate::eleccion::{MEMORIA_COHERENTE, MEMORIA_GPU, MEMORIA_VISIBLE};
-use crate::{ActividadProcedural, KernelsProcedurales, ParametrosProcedurales};
+use crate::{ActividadProcedural, DominioProcedural, ParametrosProcedurales, PlanProcedural};
+
+pub(super) struct EtapaResidente {
+    pub(super) recursos: Recursos,
+    pub(super) nombre: String,
+    pub(super) dominio: DominioProcedural,
+}
 
 pub(crate) struct Ranura {
     // Antes de los buffers: Drop de Recursos espera a que acabe su uso en GPU.
-    pub(super) recursos: [Recursos; 3],
+    pub(super) etapas: Vec<EtapaResidente>,
     pub(crate) parametros: BufferMapeado,
     pub(crate) malla: MallaGpu,
     pub(crate) control: Buffer,
@@ -30,12 +36,7 @@ pub(crate) struct Residente {
 }
 
 impl Residente {
-    pub(crate) fn nuevo(
-        ctx: &Contexto,
-        capacidad: u32,
-        kernels: KernelsProcedurales,
-        cantidad: usize,
-    ) -> Result<Self, String> {
+    pub(crate) fn nuevo(ctx: &Contexto, capacidad: u32, plan: PlanProcedural, cantidad: usize) -> Result<Self, String> {
         if !(2..=1024).contains(&capacidad) {
             return Err("capacidad procedural fuera de 2..=1024 puntos por lado".to_owned());
         }
@@ -44,7 +45,7 @@ impl Residente {
         }
         let mut residente = Self { ranuras: Vec::new(), actividad: ActividadProcedural::default(), pendiente: false };
         for _ in 0..cantidad {
-            residente.ranuras.push(Ranura::nueva(ctx, capacidad, kernels, &mut residente.actividad)?);
+            residente.ranuras.push(Ranura::nueva(ctx, capacidad, plan, &mut residente.actividad)?);
         }
         Ok(residente)
     }
@@ -65,7 +66,7 @@ impl Residente {
         }
         let ranura = &self.ranuras[0];
         ranura.actualizar(parametros)?;
-        let recursos = &ranura.recursos[0];
+        let recursos = &ranura.etapas[0].recursos;
         let fd = recursos.fd;
         let nulo = core::ptr::null();
         let envio = InfoEnvio {
@@ -100,7 +101,7 @@ impl Ranura {
     fn nueva(
         ctx: &Contexto,
         capacidad: u32,
-        kernels: KernelsProcedurales,
+        plan: PlanProcedural,
         actividad: &mut ActividadProcedural,
     ) -> Result<Self, String> {
         let fd = ctx.fd.ok_or("falta el dispositivo")?;
@@ -131,16 +132,19 @@ impl Ranura {
                 (fd.calculo.llenar_buffer)(comando, control.objeto, 0, 64, 0);
             }
         })?;
-        let mut recursos = core::array::from_fn::<_, 3, _>(|_| Recursos::nuevo(&fd, ctx.dispositivo));
+        let mut etapas = Vec::with_capacity(plan.etapas().len());
         let buffers = [&parametros.buffer, &vertices, &indices, &control].map(|b| (b.objeto, b.tamano));
-        for (recurso, spirv) in recursos.iter_mut().zip([kernels.preparar, kernels.generar, kernels.deformar]) {
-            recurso.pipeline_enlaces(spirv, 4)?;
+        for etapa in plan.etapas() {
+            let mut recurso = Recursos::nuevo(&fd, ctx.dispositivo);
+            recurso.pipeline_enlaces(etapa.codigo, 4)?;
             actividad.pipelines += 1;
             recurso.descriptores_buffers(&buffers)?;
+            etapas.push(EtapaResidente { recursos: recurso, nombre: etapa.nombre.to_owned(), dominio: etapa.dominio });
         }
-        let comando = recursos[0].preparar_consultas(ctx, if ctx.bits_tiempo > 0 { 4 } else { 0 })?;
+        let consultas = u32::try_from(etapas.len() + 1).map_err(|_| "demasiadas consultas")?;
+        let comando = etapas[0].recursos.preparar_consultas(ctx, if ctx.bits_tiempo > 0 { consultas } else { 0 })?;
         let ranura = Self {
-            recursos,
+            etapas,
             parametros,
             malla: MallaGpu { vertices, indices, n_indices: 0 },
             control,

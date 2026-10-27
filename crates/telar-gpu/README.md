@@ -12,13 +12,27 @@ let calculo = Calculo::nuevo(&Opciones::default())?; // sin ventana: para calcul
 ## Cómo está hecho
 
 La ruta residente usa `preparar_procedural` y `dibujar_procedural` en la ventana,
-o `Calculo::procedural` para pruebas sin ventana. Recibe tres SPIR-V y conserva
-buffers, pipelines, conjuntos y comandos. Su ABI actual es el de la demostración
+o `Calculo::procedural` para pruebas sin ventana. La API de tres SPIR-V se traduce
+al mismo ejecutor de planes; conserva buffers, pipelines, conjuntos y comandos.
+Su ABI actual es el de la demostración
 de rejilla; todavía no es un ejecutor de grafos arbitrarios.
+
+`PlanProcedural` permite de 2 a 32 operaciones: preparar, generar y cero o más
+pasadas por punto. Cada `EtapaProcedural` declara nombre, código SPIR-V y dominio;
+el dominio especifica el argumento indirecto y el contrato de buffers. El orden
+expresa dependencias, con barreras conservadoras entre pasadas. Nombres, dominios
+y cabeceras se validan antes de crear recursos. Esto no demuestra seguridad del
+shader: deben respetarse sus accesos y verificarse el SPIR-V y su resultado.
+
+Usar `Gpu::preparar_plan_procedural` o `Calculo::procedural_con_plan` para planes
+nuevos. Cada operación tiene su nombre y tiempo GPU en `DiagnosticoProcedural`.
+No se recorre el plan desde CPU por fotograma. El visor predeterminado encadena
+preparar → generar → deformar → relieve, con 8 pipelines para dos juegos.
 
 | Módulo residente | Responsabilidad |
 |---|---|
 | `src/procedural.rs` | API segura, parámetros, actividad y diagnóstico |
+| `src/plan.rs` | contratos de dominio y validación pura del plan ordenado |
 | `src/ffi/residente.rs` | recursos persistentes y juegos por fotograma |
 | `src/ffi/residente_comandos.rs` | grabación única, barreras y despachos indirectos |
 | `src/ffi/residente_lectura.rs` | descargas, capturas y tiempos explícitos de diagnóstico |
