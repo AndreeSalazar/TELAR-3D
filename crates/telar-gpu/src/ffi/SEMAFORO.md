@@ -15,5 +15,5 @@ Clasificación de riesgo, no certificación absoluta ni medición de rendimiento
 
 Render de rejilla: fragmentos leen geometría/control del mismo juego residente.
 Barreras compute → fragmentos y fragmentos → compute protegen la reutilización.
-Control reserva 160 bytes por juego (32 adicionales); capturas de diagnóstico
+Control reserva 192 bytes por juego (64 adicionales); capturas de diagnóstico
 usan dos timestamps y descargan píxeles fuera del bucle vivo. Ver docs/RENDER-AREA.md.

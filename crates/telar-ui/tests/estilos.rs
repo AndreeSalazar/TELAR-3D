@@ -20,5 +20,5 @@ fn personalizacion_cambia_cajas_y_pixeles_y_un_error_conserva_el_tema() {
     let nodo = estudio.nodo(diseno, 0);
     assert!(estudio.pulsar(diseno, nodo.x + 10.0, nodo.y + 10.0));
     assert_eq!(estudio.seleccionado, 0);
-    assert_eq!(estudio.amplitud, 0.35);
+    assert_eq!(estudio.onda.amplitud, 0.35);
 }

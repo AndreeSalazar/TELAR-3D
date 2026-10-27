@@ -11,6 +11,7 @@ struct Emisor {
     vector: IdSpirv,
     booleano: IdSpirv,
     entradas: [IdSpirv; 4],
+    parametros: [IdSpirv; 4],
 }
 
 impl Programa {
@@ -25,6 +26,25 @@ impl Programa {
         let mut funcion = modulo.funcion(interfaz.void, interfaz.tipo_main);
         let (entrada, cuerpo, fin) = (funcion.etiqueta(), funcion.etiqueta(), funcion.etiqueta());
         funcion.bloque(entrada);
+        if let Some(maximo) = self
+            .operaciones
+            .iter()
+            .filter_map(|op| match op {
+                Operacion::Parametro(indice) => Some(*indice),
+                _ => None,
+            })
+            .max()
+        {
+            let largo = funcion.longitud(interfaz.entero, interfaz.buffers[0], 0);
+            let minimo = funcion.modulo().constante_u32(5 + maximo);
+            let cabe = funcion.binaria(op::U_LESS_THAN_EQUAL, interfaz.booleano, minimo, largo);
+            let (rechazo, continuar) = (funcion.etiqueta(), funcion.etiqueta());
+            funcion.fusion(continuar);
+            funcion.saltar_si(cabe, continuar, rechazo);
+            funcion.bloque(rechazo);
+            funcion.volver();
+            funcion.bloque(continuar);
+        }
         let direccion = funcion.acceso(interfaz.entrada, interfaz.global, &[cero]);
         let indice = funcion.cargar(interfaz.entero, direccion);
         let puntos = interfaz.leer(&mut funcion, 3, nueve);
@@ -40,11 +60,21 @@ impl Programa {
         let fase = funcion.unaria(op::BITCAST, interfaz.real, fase);
         let amplitud = interfaz.leer(&mut funcion, 0, dos);
         let amplitud = funcion.unaria(op::BITCAST, interfaz.real, amplitud);
+        let parametros = core::array::from_fn(|indice| {
+            if self.operaciones.iter().any(|op| matches!(op, Operacion::Parametro(i) if *i as usize == indice)) {
+                let indice = funcion.modulo().constante_u32(4 + u32::try_from(indice).unwrap_or(0));
+                let valor = interfaz.leer(&mut funcion, 0, indice);
+                funcion.unaria(op::BITCAST, interfaz.real, valor)
+            } else {
+                funcion.modulo().constante_f32(0.0)
+            }
+        });
         let emisor = Emisor {
             real: interfaz.real,
             vector: interfaz.vector,
             booleano: interfaz.booleano,
             entradas: [posicion, normal, fase, amplitud],
+            parametros,
         };
         let mut valores = Vec::with_capacity(self.operaciones.len());
         for (indice, operacion) in self.operaciones.iter().enumerate() {
@@ -105,6 +135,7 @@ impl Emisor {
             Operacion::Normal => self.entradas[1],
             Operacion::Fase => self.entradas[2],
             Operacion::Amplitud => self.entradas[3],
+            Operacion::Parametro(indice) => self.parametros[indice as usize],
             Operacion::Sumar(a, b) => funcion.binaria(op::F_ADD, tipo, valor(a), valor(b)),
             Operacion::Restar(a, b) => funcion.binaria(op::F_SUB, tipo, valor(a), valor(b)),
             Operacion::Multiplicar(a, b) => match (tipos[a.0], tipos[b.0]) {

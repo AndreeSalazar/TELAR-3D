@@ -79,7 +79,7 @@ de un trabajador externo que ignore las reglas del plan.
 
 El control conserva su prefijo de 32 palabras y mantiene los offsets anteriores:
 deformación en byte 0, dibujo en byte 12 y generación en byte 48.
-El backend ahora reserva 40 palabras; las ocho adicionales pertenecen a la caché
+El backend ahora reserva 48 palabras; las dieciséis adicionales pertenecen a la caché
 optativa de deformación. La cabecera v1 sigue declarando el mínimo de 32.
 Ver [la extensión y sus límites](RENDER-AREA.md).
 

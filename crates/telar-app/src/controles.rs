@@ -69,6 +69,7 @@ impl Controles {
                 self.sucio = true;
             }
             Evento::Tecla(Tecla::Otra(9)) if self.interfaz => {
+                self.estudio.soltar();
                 self.estudio.seleccionado = (self.estudio.seleccionado + 1) % 4;
                 self.sucio = true;
             }
@@ -78,7 +79,7 @@ impl Controles {
 
     pub(crate) fn avanzar(&mut self, dt: f32) {
         if !self.estudio.pausado {
-            self.fase = (self.fase + dt * self.estudio.velocidad) % 1000.0;
+            self.fase = (self.fase + dt * self.estudio.onda.velocidad) % 1000.0;
         }
         if !self.arrastrando && self.tocado.is_none_or(|t| t.elapsed() >= Duration::from_secs(3)) {
             self.camara.orbitar(12.0 * dt, 0.0);

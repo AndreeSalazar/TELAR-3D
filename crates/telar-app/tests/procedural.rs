@@ -69,7 +69,7 @@ fn cadena_residente_correcta_reutilizable_y_visible() {
     }
     let actividad = residente.actividad();
     assert_eq!((actividad.buffers, actividad.pipelines, actividad.grabaciones), (4, 3, 1));
-    assert_eq!((actividad.pasos, actividad.parametros, actividad.geometria_subida), (120, 1920, 0));
+    assert_eq!((actividad.pasos, actividad.parametros, actividad.geometria_subida), (120, 3840, 0));
     assert!(actividad.descargados > 0, "las lecturas de diagnóstico se contabilizan");
     let fijo = parametros(17, 0.25, 0.3);
     residente.paso(fijo).unwrap();

@@ -30,7 +30,7 @@ fn estudio_capturado_dibuja_paneles_y_reacciona_al_inspector() {
         cielo: [0.3; 4],
         suelo: [0.1; 4],
     };
-    residente.paso(ParametrosProcedurales { lado: 64, fase: 0.6, amplitud: estudio.amplitud }).unwrap();
+    residente.paso(ParametrosProcedurales { lado: 64, fase: 0.6, amplitud: estudio.onda.amplitud }).unwrap();
     let triangulos = estudio.dibujar_con_fuente(diseno, 4096, &fuente).unwrap();
     let captura = |vertices| CapaInterfaz {
         shaders: Sombreadores { vertices: &ui[0], fragmentos: &ui[1] },
@@ -47,7 +47,7 @@ fn estudio_capturado_dibuja_paneles_y_reacciona_al_inspector() {
     estudio.pulsar(diseno, control.x + 10.0, control.y + 12.0);
     estudio.mover(diseno, 5000.0);
     estudio.soltar();
-    residente.paso(ParametrosProcedurales { lado: 64, fase: 0.6, amplitud: estudio.amplitud }).unwrap();
+    residente.paso(ParametrosProcedurales { lado: 64, fase: 0.6, amplitud: estudio.onda.amplitud }).unwrap();
     let triangulos = estudio.dibujar_con_fuente(diseno, 4096, &fuente).unwrap();
     let segunda = residente.capturar_estudio(shaders, (1280, 720), fondo, &constantes, captura(&triangulos)).unwrap();
     let diferencias = (100..550)

@@ -85,3 +85,15 @@ fn relieve_coincide_con_la_normal_geometrica() {
     assert!((resultado.normal[0] + 1.2 / longitud).abs() < 0.000_001);
     assert!((resultado.normal[1] - 0.8 / longitud).abs() < 0.000_001);
 }
+
+#[test]
+fn parametros_propios_tienen_indices_tipados_y_valores_vivos() {
+    let entrada = Entrada { posicion: [1.0, 2.0, 3.0], normal: [0.0, 1.0, 0.0], fase: 0.0, amplitud: 0.0 };
+    for indice in 0..4 {
+        let p = programa(vec![Op::Parametro(indice), Op::Normal], 0, 1);
+        let valores = [0.5, 1.0, 2.0, 3.0];
+        assert_eq!(p.interpretar_con_parametros(entrada, valores).unwrap().posicion[1], valores[indice as usize]);
+        assert!(p.interpretar_con_parametros(entrada, [f32::NAN; 4]).is_err());
+    }
+    assert!(Programa::nuevo(vec![Op::Parametro(4), Op::Normal], Salida { altura: Id(0), normal: Id(1) }).is_err());
+}

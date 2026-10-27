@@ -142,8 +142,12 @@ GPU: emitir ─► advectar ─► fuerzas ─► presión ─► combustión �
 
 El visor ya usa luz de área y autosombra aproximada sobre las alturas finales de
 la rejilla residente. La variante optativa del coordinador omite toda la cadena
-de puntos si lado/fase/amplitud no cambian en un plan fijo. El backend reserva
-160 bytes de control: prefijo ABI v1 de 128 bytes más 32 de caché. La cabecera
+de puntos si lado/fase/amplitud y los escalares propios no cambian en un plan fijo. El backend reserva
+192 bytes de control: prefijo ABI v1 de 128 bytes más 64 de caché. La cabecera
 TLAR v1 conserva su mínimo de 32 palabras. Cada ranura tiene estado independiente.
 Contrato, mediciones y límites: [RENDER-AREA.md](RENDER-AREA.md).
 No equivale a invalidación de grafos generales ni a render progresivo todavía.
+
+El inspector ya conserva configuraciones propias y Relieve recibe un escalar
+vivo HILO, sin recompilar al editar. Parámetros: 32 B por paso. El prefijo de
+control sigue siendo ABI v1; extensión y pruebas en [NODOS-PARAMETROS.md](NODOS-PARAMETROS.md).

@@ -168,7 +168,7 @@ impl Presentacion {
         let (cmd, listo, nulo) = (self.comandos[f], sc.listos[i], core::ptr::null());
         let mut comandos = [cmd; 2];
         let n_comandos = if let Some((ranura, parametros)) = escena.and_then(|e| e.calculo) {
-            // La valla del juego f ya terminó; ahora se pueden actualizar sus 16 bytes.
+            // La valla del juego f ya terminó; ahora se pueden actualizar sus 32 bytes.
             ranura.actualizar(parametros)?;
             comandos = [ranura.comando, cmd];
             2

@@ -27,6 +27,7 @@ Límite actual: 256 instrucciones por programa.
 | Escalar, Vector | constantes finitas |
 | Posicion, Normal | entrada del punto actual al empezar la etapa |
 | Fase, Amplitud | parámetros leídos desde el buffer vivo |
+| Parametro(0..3) | escalares propios, palabras 4..7 del buffer vivo; longitud comprobada antes de leer |
 | Sumar, Restar | operandos del mismo tipo |
 | Multiplicar | escalar×escalar, vector×escalar en ambos órdenes, o componente a componente |
 | Extraer, Componer | componentes 0..=2 y composición de tres escalares |
@@ -82,3 +83,7 @@ El visor de un millón de puntos usa el relieve compilado desde HILO.
 Etiqueta: **IGUAL** en los casos verificados dentro de tolerancia en Ryzen 5
 5600X / RTX 3060 / Windows 11. Rendimiento comparativo y Houdini: **ABIERTO**.
 Las bases de SSA y las fuentes SPIR-V están en `docs/MATEMATICAS.md`, sección 12.
+
+`ejemplos::relieve_dinamico()` usa `Parametro(0)`. El intérprete admite los cuatro
+valores mediante `interpretar_con_parametros`; el método anterior usa los mismos
+valores de compatibilidad que el backend: [1,3; 0; 0; 0].

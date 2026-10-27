@@ -3,7 +3,7 @@ use crate::maquina::{Maquina, Memoria};
 use hilo_spirv::{Funcion, Id, op};
 
 /// Palabras necesarias para la extensión de caché; el prefijo ABI v1 conserva 32.
-pub const PALABRAS: usize = 40;
+pub const PALABRAS: usize = 48;
 /// Fase, amplitud y lado de la última deformación ejecutada.
 pub const CLAVE: u32 = 32;
 /// Una clave válida fue publicada en esta ranura.
@@ -18,8 +18,12 @@ pub(super) fn decidir(f: &mut Funcion, m: &MaquinaDatos, grupos: Id, permitido: 
     let cero = f.modulo().constante_u32(0);
     let uno = f.modulo().constante_u32(1);
     let largo = f.longitud(memoria.entero, memoria.control, 0);
-    let minimo = f.modulo().constante_u32(40);
-    let cabe = f.binaria(op::U_LESS_THAN_EQUAL, m.booleano, minimo, largo);
+    let minimo = f.modulo().constante_u32(48);
+    let cabe_control = f.binaria(op::U_LESS_THAN_EQUAL, m.booleano, minimo, largo);
+    let largo_parametros = f.longitud(memoria.entero, m.parametros, 0);
+    let ocho = f.modulo().constante_u32(8);
+    let cabe_parametros = f.binaria(op::U_LESS_THAN_EQUAL, m.booleano, ocho, largo_parametros);
+    let cabe = f.binaria(op::LOGICAL_AND, m.booleano, cabe_control, cabe_parametros);
     // No acceder a la extensión si un ejecutor antiguo solo reservó el prefijo.
     let (trabajo, fin) = (f.etiqueta(), f.etiqueta());
     f.fusion(fin);
@@ -27,8 +31,8 @@ pub(super) fn decidir(f: &mut Funcion, m: &MaquinaDatos, grupos: Id, permitido: 
     f.bloque(trabajo);
     let valido = memoria.leer(f, memoria.control, VALIDA);
     let mut cambio = f.binaria(op::I_EQUAL, m.booleano, valido, cero);
-    let clave = [1, 2, 0].map(|i| memoria.leer(f, m.parametros, i));
-    for (indice, nuevo) in (CLAVE..).zip(clave) {
+    let clave = [1, 2, 0, 4, 5, 6, 7].map(|i| memoria.leer(f, m.parametros, i));
+    for (indice, nuevo) in [CLAVE, CLAVE + 1, CLAVE + 2, 38, 39, 40, 41].into_iter().zip(clave) {
         let previo = memoria.leer(f, memoria.control, indice);
         let diferente = f.binaria(op::I_NOT_EQUAL, m.booleano, previo, nuevo);
         cambio = f.binaria(op::LOGICAL_OR, m.booleano, cambio, diferente);
@@ -39,7 +43,7 @@ pub(super) fn decidir(f: &mut Funcion, m: &MaquinaDatos, grupos: Id, permitido: 
     let ejecutar = f.binaria(op::LOGICAL_AND, m.booleano, permitido, cambio);
     let cantidad = f.elegir(memoria.entero, ejecutar, grupos, cero);
     memoria.guardar(f, 0, cantidad);
-    for (indice, nuevo) in (CLAVE..).zip(clave) {
+    for (indice, nuevo) in [CLAVE, CLAVE + 1, CLAVE + 2, 38, 39, 40, 41].into_iter().zip(clave) {
         let previo = memoria.leer(f, memoria.control, indice);
         let valor = f.elegir(memoria.entero, permitido, nuevo, previo);
         memoria.guardar(f, indice, valor);

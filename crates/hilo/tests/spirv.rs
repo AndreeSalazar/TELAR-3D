@@ -35,6 +35,9 @@ fn ir_compilado_pasa_el_validador_oficial() {
     )
     .unwrap();
     let mut programas = vec![compuesto];
+    programas.push(hilo::ejemplos::relieve_dinamico().unwrap());
+    programas
+        .push(Programa::nuevo(vec![Op::Parametro(3), Op::Normal], Salida { altura: Id(0), normal: Id(1) }).unwrap());
     for factor in [-2.0, 0.0, 1.3] {
         programas.push(hilo::ejemplos::relieve(factor).unwrap());
     }

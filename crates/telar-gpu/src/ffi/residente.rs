@@ -12,7 +12,7 @@ use super::{
 };
 use crate::eleccion::{MEMORIA_COHERENTE, MEMORIA_GPU, MEMORIA_VISIBLE};
 use crate::procedural::TAMANO_CONTROL;
-use crate::{ActividadProcedural, DominioProcedural, ParametrosProcedurales, PlanProcedural};
+use crate::{ActividadProcedural, DominioProcedural, ParametrosNodos, PlanProcedural};
 
 pub(super) struct EtapaResidente {
     pub(super) recursos: Recursos,
@@ -68,10 +68,10 @@ impl Residente {
 
     pub(crate) fn contar_paso(&mut self) {
         self.actividad.pasos += 1;
-        self.actividad.parametros += 16;
+        self.actividad.parametros += 32;
     }
 
-    pub(crate) fn paso(&mut self, ctx: &Contexto, parametros: ParametrosProcedurales) -> Result<(), String> {
+    pub(crate) fn paso(&mut self, ctx: &Contexto, parametros: ParametrosNodos) -> Result<(), String> {
         use super::tipos::{InfoEnvio, ST_SUBMIT_INFO};
         if self.pendiente {
             return Err("el paso anterior no confirmó su finalización".to_owned());
@@ -122,7 +122,7 @@ impl Ranura {
             actividad.buffers += 1;
             Ok::<_, String>(buffer)
         };
-        let parametros = crear(16, BUFFER_ALMACEN, (MEMORIA_VISIBLE | MEMORIA_COHERENTE, 0))?.mapear_persistente()?;
+        let parametros = crear(32, BUFFER_ALMACEN, (MEMORIA_VISIBLE | MEMORIA_COHERENTE, 0))?.mapear_persistente()?;
         let vertices = crear(
             u64::from(capacidad * capacidad) * 24,
             BUFFER_ALMACEN | BUFFER_VERTICES | BUFFER_TRANSFER_SRC,
@@ -196,7 +196,7 @@ impl Ranura {
     }
 
     /// Se llama después de esperar la valla del fotograma dueño de esta ranura.
-    pub(crate) fn actualizar(&self, parametros: ParametrosProcedurales) -> Result<(), String> {
+    pub(crate) fn actualizar(&self, parametros: ParametrosNodos) -> Result<(), String> {
         self.parametros.escribir(como_bytes(&parametros.palabras(self.capacidad)?))
     }
 }

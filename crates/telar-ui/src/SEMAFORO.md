@@ -12,3 +12,7 @@ Limites: No es CSS web completo; fuentes latinas, UI hasta 120000 vértices y at
 Evidencia: crates/telar-ui/tests, crates/telar-estilo/tests y docs/SEMAFOROS.md.
 
 Clasificación de riesgo, no certificación absoluta ni medición de rendimiento.
+
+Cada nodo conserva sus parámetros y el inspector expone solo los controles propios.
+No calcula geometría 3D; envía valores a la app. Evidencia: tests/parametros.rs
+y docs/NODOS-PARAMETROS.md.

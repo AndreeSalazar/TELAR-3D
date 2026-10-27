@@ -128,15 +128,16 @@ impl Distribucion {
         }
     }
 
-    /// Zona del deslizador de amplitud (0) o velocidad (1).
+    /// Zona del deslizador del nodo seleccionado, separada de los botones inferiores.
     #[must_use]
     #[allow(clippy::cast_precision_loss, reason = "índice limitado a dos controles")]
     pub fn control(self, indice: usize) -> Rectangulo {
+        let y = self.ajustes.y + 104.0 + self.control[1] + indice.min(1) as f32 * (self.control[0] + self.control[2]);
         Rectangulo {
             x: self.ajustes.x + self.relleno,
-            y: self.ajustes.y + 104.0 + self.control[1] + indice.min(1) as f32 * (self.control[0] + self.control[2]),
+            y,
             ancho: self.ajustes.ancho - self.relleno * 2.0,
-            alto: self.control[0],
+            alto: self.control[0].min((self.pausa().y - y - 2.0).max(1.0)),
         }
     }
 

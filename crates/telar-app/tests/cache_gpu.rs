@@ -51,7 +51,7 @@ fn el_productor_reutiliza_topologia_y_se_recupera_de_vacio_y_exceso() {
     let actividad = residente.actividad();
     assert_eq!((actividad.buffers, actividad.pipelines, actividad.grabaciones), (4, 3, 1));
     assert_eq!(actividad.mapeos, 1, "120 pasos reutilizan el único mapeo de parámetros");
-    assert_eq!((actividad.pasos, actividad.parametros, actividad.geometria_subida), (120, 1920, 0));
+    assert_eq!((actividad.pasos, actividad.parametros, actividad.geometria_subida), (120, 3840, 0));
     drop(residente);
     drop(gpu);
     assert_eq!(avisos_de_validacion(), 0);

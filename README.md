@@ -28,8 +28,7 @@ memoria local anunciada de la GPU. Un guardián GPU comprueba contrato y regione
 antes de habilitar geometría y servicios. El bloque es independiente de Windows;
 la aplicación mantiene su backend Win32/Vulkan. [Formato y pruebas](docs/ARRANQUE-GPU.md).
 
-**Primer estudio visual:** visor amplio y grafo con nodos seleccionables y arrastrables, inspector con amplitud y
-velocidad, pausa y tres colores de vista previa. La interfaz se dibuja en Vulkan
+**Primer estudio visual:** visor amplio y grafo con nodos seleccionables y arrastrables, inspector propio por nodo: resolución, onda, relieve y salida, con pausa y materiales. La interfaz se dibuja en Vulkan
 y deja el cálculo procedural en GPU. Todavía no es un editor de grafos libre.
 
 Tipografía proporcional con antialias, realce de controles al pasar el cursor y
@@ -50,12 +49,15 @@ de la rejilla; el kernel omite deformación cuando sus parámetros no cambian.
 [Contrato y mediciones GPU](docs/RENDER-AREA.md). Transporte de luz progresivo y
 volúmenes siguen pendientes.
 
+Los ajustes de cada etapa ya modifican cálculo o sombreado.
+[Configuración de los nodos](docs/NODOS-PARAMETROS.md).
+
 **Semáforos obligatorios:** cada carpeta fuente/configuración/documentación declara
 ROJO crítico, AMARILLO probable o VERDE seguro en su contexto y explica su consumo.
 El guardián bloquea carpetas sin informe. [Política](docs/SEMAFOROS.md),
 [mapa](docs/MAPA-SEMAFOROS.md).
 
-![Estudio nativo de TELAR](docs/capturas/estudio-area.png)
+![Estudio nativo de TELAR](docs/capturas/nodos-salida.png)
 
 | Pieza | Nombre | Qué es |
 |---|---|---|

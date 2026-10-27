@@ -135,7 +135,7 @@ fn gpu_solicita_rehacer_suspender_reanudar_y_rechaza_servicios_invalidos() {
     }
     let actividad = residente.actividad();
     assert_eq!((actividad.buffers, actividad.grabaciones, actividad.mapeos), (4, 1, 1));
-    assert_eq!(actividad.parametros, 12 * 16);
+    assert_eq!(actividad.parametros, 12 * 32);
     assert_eq!(actividad.geometria_subida, 0);
     drop(residente);
     drop(gpu);

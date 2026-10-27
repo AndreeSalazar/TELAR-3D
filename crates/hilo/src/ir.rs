@@ -31,6 +31,8 @@ pub enum Operacion {
     Fase,
     /// Amplitud del buffer de parámetros, sin recompilar.
     Amplitud,
+    /// Escalar propio de nodo, índice 0..3 de la extensión de parámetros.
+    Parametro(u32),
     /// Suma de dos valores del mismo tipo.
     Sumar(Id, Id),
     /// Resta de dos valores del mismo tipo.
@@ -149,6 +151,12 @@ fn tipo_operacion(indice: usize, operacion: Operacion, tipos: &[Tipo]) -> Result
         }
         Operacion::Posicion | Operacion::Normal => Ok(Tipo::Vector),
         Operacion::Fase | Operacion::Amplitud => Ok(Tipo::Escalar),
+        Operacion::Parametro(indice_parametro) => {
+            if indice_parametro > 3 {
+                return Err(Error::nuevo(indice, "parámetro fuera de 0..=3"));
+            }
+            Ok(Tipo::Escalar)
+        }
         Operacion::Sumar(a, b) | Operacion::Restar(a, b) => {
             let (a, b) = (tipo(a)?, tipo(b)?);
             exigir(indice, b, a)?;

@@ -76,13 +76,13 @@ barrera transfer → compute antes de leerlo. La inicialización está fuera del
 bucle y del contador de grabaciones de compute reutilizables.
 
 Las primeras 16 palabras conservan la geometría; las siguientes 16 quedan para
-servicios residentes. `DiagnosticoProcedural::control` devuelve ahora 32 u32;
+servicios residentes. `DiagnosticoProcedural::control` devuelve ahora 48 u32 (prefijo ABI v1 de 32 más extensión);
 `PALABRAS_CONTROL_PROCEDURAL` publica esa dimensión sin depender del compilador.
 La prueba de integración comprueba que coincide con el ABI del kernel aislado.
 
 Los parámetros quedan mapeados durante toda la vida del ejecutor: `BufferMapeado`
 se desmapea al destruirse, después de completar las vallas y antes de liberar
-la memoria. Cada paso escribe sus 16 bytes sin llamar a mapear ni desmapear.
+la memoria. Cada paso escribe sus 32 bytes sin llamar a mapear ni desmapear.
 `ActividadProcedural::mapeos` cuenta uno por juego residente.
 Al exceder capacidad, el productor emite trabajo cero y marca error; evita
 producir geometría truncada. El modo vivo no descarga ese estado: la notificación
@@ -163,3 +163,7 @@ let pixeles = calculo.capturar(sombreadores, &vertices, &indices, (64, 64), fond
 - La malla vive en **memoria de la GPU**: se sube con un buffer intermedio y una copia, con su barrera.
 - La profundidad la comparten los dos fotogramas en vuelo: una barrera hace que cada uno espere a que el anterior termine de escribirla.
 - El pipeline se rehace si cambia el formato de la ventana. El visor espera a la GPU antes de soltar nada.
+
+`ParametrosNodos` mantiene el prefijo de superficie y añade cuatro escalares
+vivos. Los métodos anteriores adaptan el paquete al mismo buffer de 32 bytes.
+Control reserva 192 bytes; no conoce las operaciones HILO ni los controles UI.

@@ -6,7 +6,9 @@ extern crate alloc;
 mod dibujo;
 mod fuente;
 mod lienzo;
+mod parametros;
 pub use fuente::Fuente;
+pub use parametros::{Control, Onda, Rejilla, Relieve, Salida};
 
 pub use telar_estilo::Caja as Rectangulo;
 mod distribucion;
@@ -16,14 +18,16 @@ pub use distribucion::Distribucion;
 pub struct Estudio {
     /// Etapa seleccionada: rejilla, onda, relieve o salida.
     pub seleccionado: usize,
-    /// Altura de la onda, entre 0 y 0,8.
-    pub amplitud: f32,
-    /// Velocidad de fase, entre 0 y 2.
-    pub velocidad: f32,
+    /// Configuración del generador de geometría.
+    pub rejilla: Rejilla,
+    /// Configuración de la onda.
+    pub onda: Onda,
+    /// Configuración del relieve.
+    pub relieve: Relieve,
+    /// Configuración del render.
+    pub salida: Salida,
     /// Pausa la fase; la cámara continúa siendo interactiva.
     pub pausado: bool,
-    /// Perfil de vista previa: cobre, porcelana o esmalte azul.
-    pub material: usize,
     arrastre: Option<Arrastre>,
     nodos: [[f32; 2]; 4],
     encima: Option<Objetivo>,
@@ -40,7 +44,7 @@ enum Objetivo {
 
 #[derive(Clone, Copy)]
 enum Arrastre {
-    Control(usize),
+    Control { nodo: usize, indice: usize },
     Nodo { indice: usize, desplazamiento: [f32; 2] },
 }
 
@@ -48,10 +52,11 @@ impl Default for Estudio {
     fn default() -> Self {
         Self {
             seleccionado: 1,
-            amplitud: 0.35,
-            velocidad: 1.0,
+            rejilla: Rejilla { lado: 256, capacidad: 256 },
+            onda: Onda { amplitud: 0.35, velocidad: 1.0 },
+            relieve: Relieve { factor: 1.3 },
+            salida: Salida { exposicion: 1.4, rugosidad: 0.3, material: 0 },
             pausado: false,
-            material: 0,
             arrastre: None,
             nodos: [[0.03, 0.02], [0.97, 0.31], [0.03, 0.62], [0.97, 0.99]],
             encima: None,
@@ -94,9 +99,15 @@ impl Estudio {
                 .chain((0..4).rev().filter(|i| *i != preferido))
                 .find(|i| self.nodo(diseno, *i).contiene(x, y))
                 .map(Objetivo::Nodo)
-                .or_else(|| (0..2).find(|i| diseno.control(*i).contiene(x, y)).map(Objetivo::Control))
+                .or_else(|| {
+                    (0..2)
+                        .find(|i| self.control(*i).is_some() && diseno.control(*i).contiene(x, y))
+                        .map(Objetivo::Control)
+                })
                 .or_else(|| diseno.pausa().contiene(x, y).then_some(Objetivo::Pausa))
-                .or_else(|| (0..3).find(|i| diseno.muestra(*i).contiene(x, y)).map(Objetivo::Material));
+                .or_else(|| {
+                    (0..3).find(|i| self.seleccionado == 3 && diseno.muestra(*i).contiene(x, y)).map(Objetivo::Material)
+                });
         }
         anterior != self.encima
     }
@@ -116,7 +127,7 @@ impl Estudio {
     /// Color base sRGB; la app añade rugosidad y metalicidad del perfil de render.
     #[must_use]
     pub fn color(&self) -> [f32; 4] {
-        color_material(self.material)
+        color_material(self.salida.material)
     }
 
     /// Procesa una pulsación. Devuelve true si el panel consume la interacción.
@@ -134,8 +145,8 @@ impl Estudio {
             }
         }
         for indice in 0..2 {
-            if diseno.control(indice).contiene(x, y) {
-                self.arrastre = Some(Arrastre::Control(indice));
+            if self.control(indice).is_some() && diseno.control(indice).contiene(x, y) {
+                self.arrastre = Some(Arrastre::Control { nodo: self.seleccionado, indice });
                 self.mover(diseno, x);
                 return true;
             }
@@ -146,8 +157,9 @@ impl Estudio {
         }
         for material in 0..3 {
             let rect = diseno.muestra(material);
-            if rect.contiene(x, y) {
-                self.material = material;
+            if self.seleccionado == 3 && rect.contiene(x, y) {
+                self.salida.material = material;
+                self.salida.rugosidad = [0.3, 0.42, 0.15][material];
                 return true;
             }
         }
@@ -156,17 +168,16 @@ impl Estudio {
 
     /// Actualiza un deslizador activo y devuelve si cambió un parámetro.
     pub fn mover(&mut self, diseno: Distribucion, x: f32) -> bool {
-        let Some(Arrastre::Control(indice)) = self.arrastre else {
+        let Some(Arrastre::Control { nodo, indice }) = self.arrastre else {
             return false;
         };
+        if nodo != self.seleccionado {
+            self.soltar();
+            return false;
+        }
         let control = diseno.control(indice);
         let valor = ((x - control.x) / control.ancho).clamp(0.0, 1.0);
-        if indice == 0 {
-            self.amplitud = valor * 0.8;
-        } else {
-            self.velocidad = valor * 2.0;
-        }
-        true
+        self.ajustar(indice, valor)
     }
 
     /// Mueve un nodo dentro del grafo o actualiza el deslizador activo.

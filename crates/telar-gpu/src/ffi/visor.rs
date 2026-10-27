@@ -19,7 +19,7 @@ use super::tipos_grafico::{
     USO_PROFUNDIDAD, USO_TRANSFER_SRC,
 };
 use crate::eleccion::{MEMORIA_COHERENTE, MEMORIA_CON_CACHE, MEMORIA_VISIBLE};
-use crate::{ActividadProcedural, ParametrosProcedurales, PlanProcedural};
+use crate::{ActividadProcedural, ParametrosNodos, PlanProcedural};
 
 /// SPIR-V de vértices y de fragmentos.
 pub(crate) type Sombreadores<'a> = (&'a [u32], &'a [u32]);
@@ -103,7 +103,7 @@ impl Visor {
         formato: u32,
         constantes: &'a [f32; 32],
         cuadro: usize,
-        parametros: ParametrosProcedurales,
+        parametros: ParametrosNodos,
     ) -> Result<Escena<'a>, String> {
         // Valida antes de adquirir imagen o tocar sincronización de presentación.
         parametros.palabras(2)?;

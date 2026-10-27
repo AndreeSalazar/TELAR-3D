@@ -2,8 +2,8 @@
 
 use crate::{Calculo, Constantes, DominioProcedural, EtapaProcedural, Gpu, PlanProcedural, Sombreadores, ffi};
 
-/// Prefijo de 32 palabras de geometría/servicios más ocho de caché optativa.
-pub const PALABRAS_CONTROL_PROCEDURAL: usize = 40;
+/// Prefijo de 32 palabras de geometría/servicios más dieciséis de caché optativa.
+pub const PALABRAS_CONTROL_PROCEDURAL: usize = 48;
 pub(crate) const TAMANO_CONTROL: u64 = (PALABRAS_CONTROL_PROCEDURAL * 4) as u64;
 
 /// Tres programas con el ABI documentado en hilo-spirv: productor, generador y deformador.
@@ -50,6 +50,33 @@ impl ParametrosProcedurales {
             return Err("fase o amplitud fuera del intervalo finito admitido".to_owned());
         }
         Ok([self.lado, self.fase.to_bits(), self.amplitud.to_bits(), capacidad])
+    }
+}
+
+/// Parámetros independientes de operaciones por punto, junto al prefijo de rejilla.
+#[derive(Clone, Copy)]
+pub struct ParametrosNodos {
+    /// Tamaño, fase y amplitud del prefijo compatible.
+    pub superficie: ParametrosProcedurales,
+    /// Cuatro escalares finitos en [-16,16], usados por HILO como Parametro(0..3).
+    pub valores: [f32; 4],
+}
+
+impl From<ParametrosProcedurales> for ParametrosNodos {
+    fn from(superficie: ParametrosProcedurales) -> Self {
+        Self { superficie, valores: [1.3, 0.0, 0.0, 0.0] }
+    }
+}
+
+impl ParametrosNodos {
+    pub(crate) fn palabras(self, capacidad: u32) -> Result<[u32; 8], String> {
+        if !self.valores.iter().all(|v| v.is_finite() && v.abs() <= 16.0) {
+            return Err("parámetros de nodos fuera de [-16,16] finito".to_owned());
+        }
+        let mut palabras = [0; 8];
+        palabras[..4].copy_from_slice(&self.superficie.palabras(capacidad)?);
+        palabras[4..].copy_from_slice(&self.valores.map(f32::to_bits));
+        Ok(palabras)
     }
 }
 
@@ -120,6 +147,14 @@ impl Procedural<'_> {
     /// # Errors
     /// Si los parámetros no son finitos o Vulkan falla.
     pub fn paso(&mut self, parametros: ParametrosProcedurales) -> Result<(), String> {
+        self.paso_nodos(parametros.into())
+    }
+
+    /// Ejecuta el plan con cuatro valores propios de las operaciones HILO.
+    ///
+    /// # Errors
+    /// Rechaza valores no finitos/fuera de rango o fallos de Vulkan.
+    pub fn paso_nodos(&mut self, parametros: ParametrosNodos) -> Result<(), String> {
         self.interior.paso(&self.calculo.contexto, parametros)
     }
 
@@ -195,6 +230,19 @@ impl Gpu {
         fondo: [f32; 4],
         bloque: &[f32; 32],
         parametros: ParametrosProcedurales,
+    ) -> Result<bool, String> {
+        self.dibujar_nodos(fondo, bloque, parametros.into())
+    }
+
+    /// Dibuja la superficie con parámetros HILO independientes, sin recompilar el plan.
+    ///
+    /// # Errors
+    /// Si las constantes/parámetros son inválidos, faltan recursos o Vulkan falla.
+    pub fn dibujar_nodos(
+        &mut self,
+        fondo: [f32; 4],
+        bloque: &[f32; 32],
+        parametros: ParametrosNodos,
     ) -> Result<bool, String> {
         if !bloque.iter().all(|v| v.is_finite()) {
             return Err("constantes de render no finitas".to_owned());

@@ -18,7 +18,7 @@ fn inspector_camara_y_pausa_tienen_eventos_separados() {
     control.evento(Evento::Raton { x, y }, diseno);
     control.evento(Evento::Boton { boton: Boton::Izquierdo, pulsado: true }, diseno);
     control.evento(Evento::Raton { x: 1300, y }, diseno);
-    assert_eq!(control.estudio.amplitud, 0.8);
+    assert_eq!(control.estudio.onda.amplitud, 0.8);
     assert_eq!(control.camara, inicial);
     control.evento(Evento::Boton { boton: Boton::Izquierdo, pulsado: false }, diseno);
     control.evento(Evento::Rueda(1.0), diseno);

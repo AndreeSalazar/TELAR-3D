@@ -20,7 +20,7 @@ use super::tipos_grafico::{
     ETAPA_SALIDA_COLOR, ETAPA_VERTICES, GUARDAR, INDICES_U32, InfoRenderizado, LAYOUT_COLOR, LAYOUT_PROFUNDIDAD,
     NO_GUARDAR, PUNTO_GRAFICOS, Rect2D, ST_RENDERING_ATTACHMENT_INFO, ST_RENDERING_INFO, Viewport,
 };
-use crate::ParametrosProcedurales;
+use crate::ParametrosNodos;
 
 const NULO: *const c_void = core::ptr::null();
 
@@ -43,7 +43,7 @@ pub(crate) struct Escena<'a> {
     pub(crate) constantes: &'a [f32; 32],
     pub(crate) indirecto: Option<Objeto>,
     pub(crate) conjunto: Option<Objeto>,
-    pub(crate) calculo: Option<(&'a Ranura, ParametrosProcedurales)>,
+    pub(crate) calculo: Option<(&'a Ranura, ParametrosNodos)>,
 }
 
 /// Graba en `cmd` el fotograma: limpia a `limpiar` (color ya en el espacio del

@@ -56,18 +56,27 @@ impl Programa {
     /// Rechaza entradas no finitas o el primer resultado numérico no finito.
     /// El backend GPU no incluye todavía estos diagnósticos numéricos en vivo.
     pub fn interpretar(&self, entrada: Entrada) -> Result<Resultado, Error> {
+        self.interpretar_con_parametros(entrada, [1.3, 0.0, 0.0, 0.0])
+    }
+
+    /// Evalúa con los mismos cuatro escalares propios enviados a GPU.
+    ///
+    /// # Errors
+    /// Si una entrada o un resultado no es finito.
+    pub fn interpretar_con_parametros(&self, entrada: Entrada, parametros: [f32; 4]) -> Result<Resultado, Error> {
         if !entrada
             .posicion
             .iter()
             .chain(&entrada.normal)
             .chain([&entrada.fase, &entrada.amplitud])
+            .chain(&parametros)
             .all(|v| v.is_finite())
         {
             return Err(Error::nuevo(0, "entrada no finita"));
         }
         let mut valores = Vec::with_capacity(self.operaciones.len());
         for (indice, operacion) in self.operaciones.iter().enumerate() {
-            let valor = evaluar(*operacion, entrada, &valores);
+            let valor = evaluar(*operacion, entrada, parametros, &valores);
             if !valor.finito() {
                 return Err(Error::nuevo(indice, "resultado numérico no finito"));
             }
@@ -82,7 +91,7 @@ impl Programa {
     }
 }
 
-fn evaluar(operacion: Operacion, entrada: Entrada, valores: &[Valor]) -> Valor {
+fn evaluar(operacion: Operacion, entrada: Entrada, parametros: [f32; 4], valores: &[Valor]) -> Valor {
     let valor = |id: crate::Id| valores[id.0];
     match operacion {
         Operacion::Escalar(v) => Valor::Escalar(v),
@@ -91,6 +100,7 @@ fn evaluar(operacion: Operacion, entrada: Entrada, valores: &[Valor]) -> Valor {
         Operacion::Normal => Valor::Vector(entrada.normal),
         Operacion::Fase => Valor::Escalar(entrada.fase),
         Operacion::Amplitud => Valor::Escalar(entrada.amplitud),
+        Operacion::Parametro(indice) => Valor::Escalar(parametros[indice as usize]),
         Operacion::Sumar(a, b) => binaria(valor(a), valor(b), |a, b| a + b),
         Operacion::Restar(a, b) => binaria(valor(a), valor(b), |a, b| a - b),
         Operacion::Multiplicar(a, b) => binaria(valor(a), valor(b), |a, b| a * b),

@@ -22,7 +22,8 @@ pub fn compilar_con_arranque() -> Vec<u32> {
 }
 
 /// Variante para un plan inmutable cuyas operaciones por punto dependen solo de
-/// lado, fase y amplitud. Requiere 40 palabras de control; con 32 no usa caché.
+/// lado, fase, amplitud y cuatro escalares vivos. Requiere control de 48 palabras
+/// y parámetros de ocho; sin esas extensiones no usa caché.
 /// No usar con simulaciones ni operaciones que acumulen sobre el resultado anterior.
 #[must_use]
 pub fn compilar_con_cache() -> Vec<u32> {

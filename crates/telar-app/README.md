@@ -47,7 +47,7 @@ vértices. La GPU prepara los argumentos, genera la rejilla y deforma la altura
 `A sin(2x + fase) cos(2z)` con su normal analítica. Dibuja desde los mismos
 buffers mediante `vkCmdDrawIndexedIndirect`.
 
-Cada fotograma escribe 16 bytes de parámetros de superficie; además se graban
+Cada fotograma escribe 32 bytes de parámetros de superficie; además se graban
 128 bytes de constantes de cámara e iluminación. Dos juegos residentes evitan
 sobrescribir los datos en vuelo. Al finalizar, informa de 8 buffers residentes,
 8 pipelines de compute, 2 grabaciones de compute, los pasos y transferencias.
@@ -55,7 +55,7 @@ La prueba cambia las dimensiones dentro de capacidad sin crear recursos nuevos.
 
 La GPU también decide **omitir la generación** cuando las dimensiones no han
 cambiado. Cada juego conserva su rejilla e índices y sigue deformándolos; los
-16 bytes de parámetros se actualizan en un mapeo persistente, sin mapear ni
+32 bytes de parámetros se actualizan en un mapeo persistente, sin mapear ni
 desmapear por fotograma. El estado de caché y su contador de generaciones se
 mantienen en GPU. `tests/cache_gpu.rs` comprueba decisiones y recuperación tras
 vacío o exceso de capacidad, con una referencia independiente.
@@ -120,3 +120,6 @@ GPU y CPU iguales bit a bit (16777216 de 16777216) · 0 avisos de validación
 ```
 
 El test `el_primer_kernel_da_lo_mismo_en_la_gpu_que_en_la_cpu` lo exige con 1 048 576 números.
+
+El inspector ya expone ajustes propios por nodo; Relieve usa HILO dinámico sin
+recompilar al editar. Ver [contrato y pruebas](../../docs/NODOS-PARAMETROS.md).

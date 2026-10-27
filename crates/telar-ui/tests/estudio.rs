@@ -13,15 +13,17 @@ fn paneles_consumen_eventos_y_los_deslizadores_limitan_sus_valores() {
     let control = diseno.control(0);
     assert!(estudio.pulsar(diseno, control.x + 10.0, control.y + 12.0));
     assert!(estudio.mover(diseno, 5000.0));
-    assert_eq!(estudio.amplitud, 0.8);
+    assert_eq!(estudio.relieve.factor, 3.0);
+    assert_eq!(estudio.onda.amplitud, 0.35);
     estudio.mover(diseno, -100.0);
-    assert_eq!(estudio.amplitud, 0.0);
+    assert_eq!(estudio.relieve.factor, 0.0);
     estudio.soltar();
     assert!(!estudio.mover(diseno, 1200.0));
+    estudio.seleccionado = 1;
     let control = diseno.control(1);
     assert!(estudio.pulsar(diseno, control.x + 10.0, control.y + 12.0));
     estudio.mover(diseno, 5000.0);
-    assert_eq!(estudio.velocidad, 2.0);
+    assert_eq!(estudio.onda.velocidad, 2.0);
     estudio.soltar();
     let pausa = diseno.pausa();
     estudio.pulsar(diseno, pausa.x + 10.0, pausa.y + 10.0);
@@ -29,9 +31,10 @@ fn paneles_consumen_eventos_y_los_deslizadores_limitan_sus_valores() {
     estudio.pulsar(diseno, pausa.x + 10.0, pausa.y + 10.0);
     assert!(!estudio.pausado);
     let cobre = estudio.color();
+    estudio.seleccionado = 3;
     let muestra = diseno.muestra(2);
     estudio.pulsar(diseno, muestra.x + 10.0, muestra.y + 10.0);
-    assert_eq!(estudio.material, 2);
+    assert_eq!(estudio.salida.material, 2);
     assert_ne!(cobre, estudio.color());
 }
 
@@ -68,7 +71,7 @@ fn mover_nudos_conserva_parametros_y_limita_el_lienzo() {
     let movido = estudio.nodo(diseno, 1);
     assert_ne!(movido.x, inicial.x);
     assert_ne!(antes, estudio.dibujar(diseno, 4096), "nodo y cables se recomponen");
-    assert_eq!((estudio.amplitud, estudio.velocidad), (0.35, 1.0));
+    assert_eq!((estudio.onda.amplitud, estudio.onda.velocidad), (0.35, 1.0));
     estudio.mover_en(diseno, -5000.0, 5000.0);
     let limitado = estudio.nodo(diseno, 1);
     assert!(limitado.x >= diseno.grafo.x && limitado.y + limitado.alto <= diseno.grafo.y + diseno.grafo.alto + 0.001);
@@ -88,7 +91,7 @@ fn realce_solo_recompone_al_cambiar_objetivo_y_no_modifica_parametros() {
     assert!(!estudio.apuntar(diseno, nodo.x + 10.0, nodo.y + 10.0));
     assert_ne!(antes, estudio.dibujar(diseno, 4096));
     assert_eq!(estudio.seleccionado, 1);
-    assert_eq!(estudio.amplitud, 0.35);
+    assert_eq!(estudio.onda.amplitud, 0.35);
     assert!(estudio.apuntar(diseno, 0.0, 0.0));
     assert_eq!(antes, estudio.dibujar(diseno, 4096));
 }

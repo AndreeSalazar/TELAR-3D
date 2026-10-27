@@ -146,12 +146,14 @@ fn inspector(estudio: &Estudio, lienzo: &mut Lienzo, diseno: Distribucion) {
     texto(
         lienzo,
         [contenido.x, diseno.ajustes.y + 74.0, contenido.ancho, 18.0],
-        "Parámetros globales de superficie",
+        ["Generador · GPU residente", "Deformación · animación", "Altura y normales · HILO", "Material · render GPU"]
+            [estudio.seleccionado.min(3)],
         &etiqueta,
     );
-    for (indice, (nombre, valor, maximo)) in
-        [("Amplitud", estudio.amplitud, 0.8), ("Velocidad", estudio.velocidad, 2.0)].into_iter().enumerate()
-    {
+    for indice in 0..2 {
+        let Some(parametro) = estudio.control(indice) else { continue };
+        let (nombre, valor) = (parametro.nombre, parametro.valor);
+        let fraccion = ((valor - parametro.minimo) / (parametro.maximo - parametro.minimo).max(1.0e-6)).clamp(0.0, 1.0);
         let rect = diseno.control(indice);
         let control = estudio.estilo("control", estudio.encima == Some(Objetivo::Control(indice)), false);
         let campo = estudio.estilo("valor", false, false);
@@ -161,13 +163,14 @@ fn inspector(estudio: &Estudio, lienzo: &mut Lienzo, diseno: Distribucion) {
             Rectangulo { x: rect.x + rect.ancho - ancho_valor, y: rect.y - 28.0, ancho: ancho_valor, alto: alto_valor };
         texto(lienzo, [rect.x, rect.y - 26.0, rect.ancho - ancho_valor - 8.0, 22.0], nombre, &etiqueta);
         lienzo.caja(valor_rect, &campo);
-        lienzo.etiqueta(valor_rect.interior(8.0), &format!("{valor:.2}"), &campo);
+        let valor_texto = if estudio.seleccionado == 0 { format!("{valor:.0}") } else { format!("{valor:.2}") };
+        lienzo.etiqueta(valor_rect.interior(8.0), &valor_texto, &campo);
         let y = rect.y + rect.alto * 0.5;
         let barra = Rectangulo { x: rect.x, y, ancho: rect.ancho, alto: 3.0 };
         lienzo.redondo(barra, control.radio, control.fondo);
-        lienzo.redondo(Rectangulo { ancho: rect.ancho * valor / maximo, ..barra }, control.radio, control.color);
+        lienzo.redondo(Rectangulo { ancho: rect.ancho * fraccion, ..barra }, control.radio, control.color);
         lienzo.redondo(
-            Rectangulo { x: rect.x + rect.ancho * valor / maximo - 4.0, y: y - 3.0, ancho: 9.0, alto: 9.0 },
+            Rectangulo { x: rect.x + rect.ancho * fraccion - 4.0, y: y - 3.0, ancho: 9.0, alto: 9.0 },
             4.5,
             control.color,
         );
@@ -176,22 +179,31 @@ fn inspector(estudio: &Estudio, lienzo: &mut Lienzo, diseno: Distribucion) {
     let estilo = estudio.estilo("boton", estudio.encima == Some(Objetivo::Pausa), estudio.pausado);
     lienzo.caja(boton, &estilo);
     lienzo.etiqueta(boton.contenido(&estilo), if estudio.pausado { "Continuar" } else { "Pausar" }, &estilo);
-    let primera = diseno.muestra(0);
-    texto(
-        lienzo,
-        [primera.x, primera.y - 23.0, diseno.ajustes.x + diseno.ajustes.ancho - primera.x - panel.relleno, 20.0],
-        "Material de vista previa",
-        &etiqueta,
-    );
-    for material in 0..3 {
-        let mut estilo = estudio.estilo(
-            "muestra",
-            estudio.encima == Some(Objetivo::Material(material)),
-            estudio.material == material,
-        );
-        let color = crate::color_material(material);
-        estilo.fondo = [color[0], color[1], color[2]];
-        lienzo.caja(diseno.muestra(material), &estilo);
+    if estudio.seleccionado == 3 {
+        let primera = diseno.muestra(0);
+        if diseno.ajustes.alto >= 270.0 {
+            texto(
+                lienzo,
+                [
+                    primera.x,
+                    primera.y - 23.0,
+                    diseno.ajustes.x + diseno.ajustes.ancho - primera.x - panel.relleno,
+                    20.0,
+                ],
+                "Material de vista previa",
+                &etiqueta,
+            );
+        }
+        for material in 0..3 {
+            let mut estilo = estudio.estilo(
+                "muestra",
+                estudio.encima == Some(Objetivo::Material(material)),
+                estudio.salida.material == material,
+            );
+            let color = crate::color_material(material);
+            estilo.fondo = [color[0], color[1], color[2]];
+            lienzo.caja(diseno.muestra(material), &estilo);
+        }
     }
 }
 

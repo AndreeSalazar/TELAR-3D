@@ -29,7 +29,7 @@ pub use interfaz::{AtlasInterfaz, CapaInterfaz, CapturaEstudio};
 pub use perfil::PerfilGpu;
 pub use plan::{DominioProcedural, EtapaProcedural, PlanProcedural};
 pub use procedural::{
-    ActividadProcedural, DiagnosticoProcedural, KernelsProcedurales, PALABRAS_CONTROL_PROCEDURAL,
+    ActividadProcedural, DiagnosticoProcedural, KernelsProcedurales, PALABRAS_CONTROL_PROCEDURAL, ParametrosNodos,
     ParametrosProcedurales, Procedural,
 };
 

@@ -7,11 +7,23 @@ use alloc::vec;
 /// # Errors
 /// Rechaza factores no finitos, como cualquier constante del IR.
 pub fn relieve(factor: f32) -> Result<Programa, Error> {
+    relieve_con(Op::Escalar(factor))
+}
+
+/// Relieve cuyo factor procede del primer escalar vivo del nodo, sin recompilar.
+///
+/// # Errors
+/// Si la construcción del programa deja de cumplir el contrato del IR.
+pub fn relieve_dinamico() -> Result<Programa, Error> {
+    relieve_con(Op::Parametro(0))
+}
+
+fn relieve_con(factor: Op) -> Result<Programa, Error> {
     Programa::nuevo(
         vec![
             Op::Posicion,
             Op::Normal,
-            Op::Escalar(factor),
+            factor,
             Op::Extraer(Id(0), 1),
             Op::Multiplicar(Id(3), Id(2)),
             Op::Extraer(Id(1), 0),

@@ -8,7 +8,7 @@ VRAM: Indirecta mediante telar-gpu: destinos, malla, atlas y buffers; no se atri
 RAM: Estado UI, palabras SPIR-V y staging/lecturas de pruebas. .tlar tiene límite de archivo.
 E/S: Ventana, entrada y presentación; E/S .tlar y capturas solo en sus comandos.
 Frecuencia: Arranque/fotograma; exportación, inspección y diagnóstico fuera del bucle vivo.
-Limites: 16 B de parámetros procedurales por paso y 128 B de constantes de dibujo; pico de proceso no medido.
+Limites: 32 B de parámetros procedurales por paso y 128 B de constantes de dibujo; pico de proceso no medido.
 Evidencia: tests/app.rs, archivo_tlar.rs, render_gpu.rs y docs/ARRANQUE-GPU.md.
 
 Clasificación de riesgo, no certificación absoluta ni medición de rendimiento.

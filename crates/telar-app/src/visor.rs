@@ -59,6 +59,7 @@ pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
     let fuente = if modo.procedural { Some(crate::tipografia::crear()?) } else { None };
     preparar_interfaz(&mut gpu, fuente.as_ref())?;
     let mut controles = Controles::nuevo(modo.procedural);
+    controles.estudio.configurar_capacidad(capacidad);
     let fondo = cargar_estilos(modo, &mut controles)?;
     let mut tamano_ui = (0, 0);
     let luz = normalizar([0.45, 0.8, 0.4]);
@@ -85,7 +86,8 @@ pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
         };
         if modo.procedural && (controles.sucio || tamano_ui != (ancho, alto)) {
             let fuente = fuente.as_ref().ok_or("falta la fuente de interfaz")?;
-            let triangulos = controles.estudio.dibujar_con_fuente(diseno, capacidad * capacidad, fuente)?;
+            let triangulos =
+                controles.estudio.dibujar_con_fuente(diseno, controles.estudio.rejilla.lado.pow(2), fuente)?;
             gpu.actualizar_interfaz(&triangulos, diseno.area())?;
             controles.sucio = false;
             tamano_ui = (ancho, alto);
@@ -93,17 +95,12 @@ pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
         let dibujado = if modo.procedural {
             // La prueba cambia el tamaño lógico dentro de capacidad sin volver a
             // grabar compute. La GPU calcula los recuentos y todos los argumentos.
-            let lado = if modo.prueba && (40..80).contains(&cuadros) { capacidad / 2 } else { capacidad };
-            let parametros =
-                ParametrosProcedurales { lado, fase: controles.fase, amplitud: controles.estudio.amplitud };
-            let bloque = crate::render::bloque(
-                &controles.camara,
-                aspecto,
-                controles.estudio.color(),
-                controles.estudio.material,
-                gpu.imagenes().0 != telar_gpu::eleccion::FORMATO_SRGB,
-            )?;
-            gpu.dibujar_procedural_bloque(fondo, &bloque, parametros)?
+            let lado = if modo.prueba && (40..80).contains(&cuadros) {
+                capacidad / 2
+            } else {
+                controles.estudio.rejilla.lado.min(capacidad)
+            };
+            dibujar_superficie(&mut gpu, &controles, aspecto, lado, fondo)?
         } else {
             let constantes = Constantes {
                 matriz: controles.camara.matriz(aspecto),
@@ -165,4 +162,26 @@ fn preparar_interfaz(gpu: &mut Gpu, fuente: Option<&telar_ui::Fuente>) -> Result
         })?;
     }
     Ok(())
+}
+
+fn dibujar_superficie(
+    gpu: &mut Gpu,
+    controles: &Controles,
+    aspecto: f32,
+    lado: u32,
+    fondo: [f32; 4],
+) -> Result<bool, String> {
+    let estudio = &controles.estudio;
+    let parametros = telar_gpu::ParametrosNodos {
+        superficie: ParametrosProcedurales { lado, fase: controles.fase, amplitud: estudio.onda.amplitud },
+        valores: [estudio.relieve.factor, 0.0, 0.0, 0.0],
+    };
+    let bloque = crate::render::bloque(
+        &controles.camara,
+        aspecto,
+        estudio.color(),
+        &estudio.salida,
+        gpu.imagenes().0 != telar_gpu::eleccion::FORMATO_SRGB,
+    )?;
+    gpu.dibujar_nodos(fondo, &bloque, parametros)
 }

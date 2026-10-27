@@ -59,7 +59,7 @@ syscalls de Windows/Linux. No acceden a archivos, red ni recursos externos.
 
 Enlace 0: cuatro u32 de parámetros (lado, fase, amplitud, capacidad). Enlaces 1/2:
 geometría, usada por los trabajadores. Enlace 3: prefijo de control de **32 u32 / 128 bytes**,
-más ocho palabras de caché optativa. El backend reserva e inicializa 160 bytes una vez.
+más dieciséis palabras de caché optativa. El backend reserva e inicializa 192 bytes una vez.
 
 - `[0..16)`: ABI de geometría anterior, compatible con sus trabajadores.
 - `[16..25)`: solicitud, suspensión, resultado, atendidas, versión, último código,
@@ -99,9 +99,9 @@ explícito; ninguna lectura decide el siguiente paso. El visor vivo no descarga.
 
 ## Caché opcional del plan de deformación
 
-`compilar_con_cache()` añade clave exacta lado/fase/amplitud y omite el despacho
-por puntos en planes fijos y puros. La extensión usa control[32..40]; el prefijo
-ABI v1 permanece intacto. Con un buffer antiguo de 32 palabras ejecuta sin caché.
+`compilar_con_cache()` añade clave exacta lado/fase/amplitud y cuatro escalares vivos y omite el despacho
+por puntos en planes fijos y puros. La extensión usa control[32..48]; el prefijo
+ABI v1 permanece intacto. Sin 48 palabras de control y ocho de parámetros ejecuta sin caché.
 No aplicarla a simulaciones acumulativas o dependencias no declaradas en esa clave.
-El visor la usa para Onda y el relieve fijo; no almacena píxeles ni iluminación.
+El visor la usa para Onda y el relieve dinámico; no almacena píxeles ni iluminación.
 Ver [contrato y evidencia](../../docs/RENDER-AREA.md).

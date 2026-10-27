@@ -34,17 +34,18 @@ La cuadratura y la marcha sobre la rejilla son nuestra implementación de vista 
 ## Estático y dinámico sin lecturas al host
 
 `telar_kernel::compilar_con_cache` es una variante **optativa para planes inmutables**
-cuyas operaciones por punto sean funciones de lado, fase y amplitud. La GPU compara
-sus bits y publica despacho cero para toda la cadena de puntos si nada cambió.
+cuyas operaciones por punto sean funciones de lado, fase, amplitud y los cuatro escalares. La GPU compara
+sus bits y publica despacho cero para toda la cadena de puntos si nada cambió. Ver
+[NODOS-PARAMETROS.md](NODOS-PARAMETROS.md).
 La cámara y el material pueden cambiar sin deformar otra vez; el dibujo sí se repite.
 No hay caché de píxeles ni de iluminación todavía.
 
-La extensión ocupa control[32..40], 32 bytes adicionales por ranura. Conserva el
+La extensión ocupa control[32..48], 64 bytes adicionales por ranura. Conserva el
 prefijo ABI v1 de 32 palabras y la cabecera TLAR v1: esa cabecera declara el mínimo,
-no la longitud total reservada. El backend ahora reserva 160 bytes por control.
-Si un ejecutor solo ofrece 32 palabras, esta variante ejecuta sin caché y no lee
-la extensión. Fase, amplitud y lado están en [32..35], válida en 35, recalculadas
-en 36 y omitidas en 37; 38 y 39 quedan reservadas. Los contadores son modulares u32.
+no la longitud total reservada. El backend ahora reserva 192 bytes por control.
+Si un ejecutor no ofrece 48 palabras de control y ocho de parámetros, esta variante
+ejecuta sin caché y no lee la extensión. Fase, amplitud y lado están en [32..35], válida en 35, recalculadas
+en 36 y omitidas en 37; 38..42 guarda los escalares propios y 42..48 queda reservado. Los contadores son modulares u32.
 
 Regenerar topología invalida también deformación. Suspensión, vacío, exceso y
 rechazo de arranque no publican una nueva clave. Cada juego en vuelo posee su
@@ -54,6 +55,9 @@ externas: deben invalidarse explícitamente o usar el coordinador sin caché.
 Cambiar el plan reconstruye sus recursos y por tanto reinicia su estado.
 
 ## Medición reproducible
+
+Medición conservada del commit `a1c02e3`, anterior a la extensión de parámetros
+propios. No mide el coordinador ampliado ni el relieve dinámico de esta entrega.
 
 ```
 cargo run -p telar-app --release --example medir_render
@@ -88,7 +92,7 @@ pruebas de cambios, repeticiones, vacío y recuperación. No se sube geometría 
 
 La marcha de cuatro muestras × 32 pasos × cuatro alturas hace hasta 512 cargas f32
 por fragmento: 2048 bytes lógicos, no tráfico físico medido gracias a las cachés.
-No reserva otro mapa de sombras. Control añade 32 bytes por juego (64 en el visor).
+No reserva otro mapa de sombras. Control añade 64 bytes por juego sobre el prefijo (128 en el visor).
 Los buffers de geometría, índices, destinos y profundidad siguen en el backend.
 Pico total de VRAM y coste en otras escenas/dispositivos: **ABIERTO**.
 

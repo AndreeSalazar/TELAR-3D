@@ -17,7 +17,7 @@ pub(crate) fn preparar(gpu: &mut Gpu, modo: &Modo) -> Result<(u32, usize), Strin
     let puntos = if modo.procedural {
         let (preparar, generar, deformar) =
             (telar_kernel::compilar_con_cache(), hilo_spirv::rejilla::generar(), hilo_spirv::rejilla::deformar());
-        let relieve = hilo::ejemplos::relieve(1.3).map_err(|error| error.to_string())?.compilar();
+        let relieve = hilo::ejemplos::relieve_dinamico().map_err(|error| error.to_string())?.compilar();
         let mut etapas =
             KernelsProcedurales { preparar: &preparar, generar: &generar, deformar: &deformar }.etapas().to_vec();
         etapas.push(EtapaProcedural { nombre: "relieve", codigo: &relieve, dominio: DominioProcedural::Puntos });
@@ -68,7 +68,7 @@ pub(crate) fn comprobar(gpu: &Gpu, cuadros: u32) -> Result<(), String> {
         || actividad.grabaciones != 2
         || actividad.mapeos != 2
         || actividad.pasos != u64::from(cuadros)
-        || actividad.parametros != u64::from(cuadros) * 16
+        || actividad.parametros != u64::from(cuadros) * 32
         || actividad.geometria_subida != 0
         || actividad.descargados != 0
     {
