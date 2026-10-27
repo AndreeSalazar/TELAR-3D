@@ -3,7 +3,8 @@
 **Este documento describe la arquitectura objetivo.** La Fase 4.5 ya incorpora
 una ruta residente de rejilla con generación, deformación y dibujo indirecto,
 dos juegos de recursos y compute pregrabado. El grafo general de NUDO continúa
-en CPU como referencia; HILO y el solver de fuego siguen pendientes.
+en CPU como referencia; ya existe el primer IR tipado de HILO con intérprete CPU
+y backend SPIR-V. La sintaxis textual y el solver de fuego siguen pendientes.
 Ver [REVISION-GPU.md](REVISION-GPU.md) para el diagnóstico histórico y el avance.
 
 La rejilla ya incluye caché de topología decidida por GPU y parámetros mapeados
@@ -11,7 +12,9 @@ persistentemente. Cambiar fase o amplitud no obliga a regenerar sus índices.
 El ejecutor acepta planes de 2..=32 operaciones sobre el ABI actual: cada
 operación declara dominio y nombre; las dependencias siguen su orden y las
 barreras entre etapas. El visor incorpora una operación adicional de relieve.
-Los grafos con recursos arbitrarios y el compilador HILO siguen pendientes.
+Los grafos con recursos arbitrarios siguen pendientes. El relieve del visor se
+compila desde el IR HILO al preparar la escena. `hilo` usa `hilo-spirv` y la
+matemática pura de `nudo`; `telar-app` pasa los bytes al backend GPU aislado.
 
 ## La idea en una frase
 

@@ -45,10 +45,14 @@ y la cámara. Los kernels viven en `hilo-spirv`, y el ejecutor Vulkan en
 
 El visor ahora prepara un `PlanProcedural` de cuatro operaciones: preparar,
 generar, deformar y relieve (escala de altura 1,3 con normales corregidas).
+El relieve se construye con `hilo::ejemplos::relieve` y se compila desde su IR
+tipado al preparar la escena. No se interpreta geometría en CPU en el bucle.
 El ejecutor admite de 2 a 32 etapas; sigue usando los cuatro buffers de esta
 demostración. `tests/plan_gpu.rs` compara planes de 2, 3, 4 y 5 etapas contra CPU,
 comprueba orden, vacío y caché, y valida límites y mensajes antes de crear GPU.
 Los tiempos diagnósticos incluyen un nombre por operación.
+`tests/hilo_gpu.rs` compara el mismo IR interpretado en CPU y compilado para GPU,
+con seis programas y parámetros cambiantes, sin modificar la caché ni los índices.
 
 ## La referencia histórica (Fase 4, --esfera-cpu)
 

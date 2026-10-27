@@ -78,6 +78,8 @@ pub const I_NOT_EQUAL: u16 = 171;
 pub const LOGICAL_AND: u16 = 167;
 /// `OpFDiv`.
 pub const F_DIV: u16 = 136;
+/// `OpFOrdGreaterThan`.
+pub const F_ORD_GREATER_THAN: u16 = 186;
 /// `OpULessThan`.
 pub const U_LESS_THAN: u16 = 176;
 /// `OpShiftRightLogical`.
@@ -162,6 +164,8 @@ pub const DECORACION_UBICACION: u32 = 30;
 pub const INTEGRADA_POSICION: u32 = 0;
 /// `GLSLstd450Normalize` (de `GLSL.std.450.h`).
 pub const GLSL_NORMALIZAR: u32 = 69;
+/// `GLSLstd450FAbs`.
+pub const GLSL_ABSOLUTO: u32 = 4;
 /// `GLSLstd450FMax`.
 pub const GLSL_MAXIMO: u32 = 40;
 /// `GLSLstd450FMix`.

@@ -213,3 +213,25 @@ Límites: secuencia ordenada y cuatro buffers del ABI de rejilla, no un grafo
 general de recursos. Las operaciones por punto conservan x/z. La validación de
 metadatos no demuestra el comportamiento del shader: los programas se validan
 con spirv-val y con pruebas Vulkan. El IR tipado de HILO es el siguiente paso.
+
+## Cuarta entrega: IR tipado de HILO
+
+Existe el crate `hilo`, `no_std + alloc`, sin dependencias externas ni FFI.
+Valida SSA lineal (referencias anteriores), escalares y vectores, componentes,
+constantes finitas y salidas altura/normal. Incluye aritmética, composición,
+producto escalar y normalización con escala previa y dirección definida para cero.
+
+El mismo IR alimenta el intérprete CPU y el backend SPIR-V. El visor compila su
+relieve desde el IR al preparar la escena. Los parámetros vivos se leen desde
+GPU y se conservan x/z, índices y control, sin descargas en el bucle.
+
+Las pruebas cubren errores de tipos/referencias, semántica independiente CPU,
+spirv-val y seis programas en Vulkan, parámetros cambiantes, vacío, grupos
+parciales, caché y repetición. Etiqueta **IGUAL** dentro de 2·10⁻⁵ en la RTX 3060;
+comparación con Houdini y rendimiento publicado siguen **ABIERTOS**.
+
+No hay todavía sintaxis textual, atributos arbitrarios, accesos a vecinos,
+bucles, atómicos ni fusión. La validación de tipos no prueba ausencia de
+desbordamientos f32. El intérprete informa de resultados no finitos; la GPU
+todavía no emite ese diagnóstico en vivo. Ver `crates/hilo/README.md` para el
+contrato numérico y el alcance preciso de esta primera entrega.

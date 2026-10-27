@@ -11,6 +11,8 @@ genera una rejilla, la deforma y calcula normales con kernels GPU; también lee
 en GPU los argumentos de despacho y dibujo. `cargo run -p telar-app --release`
 la muestra. La CPU envía parámetros, cámara y el lote; la geometría permanece
 en GPU. La esfera histórica se conserva con `--esfera-cpu`.
+El relieve del visor ya se compila desde el IR tipado de **HILO**, con intérprete
+CPU para verificar los resultados. La sintaxis textual del lenguaje sigue pendiente.
 
 | Pieza | Nombre | Qué es |
 |---|---|---|

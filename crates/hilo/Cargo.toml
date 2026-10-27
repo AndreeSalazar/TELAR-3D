@@ -1,0 +1,18 @@
+[package]
+name = "hilo"
+description = "IR tipado por punto, referencia CPU y compilación SPIR-V en no_std"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[package.metadata.telar]
+puede-usar = ["hilo-spirv", "nudo"]
+
+[dependencies]
+hilo-spirv = { path = "../hilo-spirv" }
+nudo = { path = "../nudo" }
+
+[lints]
+workspace = true

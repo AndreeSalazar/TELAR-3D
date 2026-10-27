@@ -11,7 +11,7 @@ crates/
   telar-gpu/     ✅ Vulkan a mano (unsafe SOLO en src/ffi/)      std · aislada: no usa nada nuestro
   telar-app/     ✅ `telar`: une ventana, GPU, shaders y geometría (el visor; en la Fase 8, la interfaz de nodos)
   nudo/          ✅ geometría, atributos y grafo que cocina      no_std + alloc
-  hilo/          lenguaje HILO: léxico, sintaxis, tipos, IR     no_std + alloc
+  hilo/          ✅ IR tipado, intérprete CPU y compilación SPIR-V; texto pendiente   no_std + alloc
   hilo-spirv/    ✅ SPIR-V emitido a mano (el primer kernel y los shaders del visor)  no_std + alloc
   telar-nodos/   ✅ un nodo por carpeta (código, libreto, tests)  no_std + alloc · referencias/ con su etiqueta
 ```

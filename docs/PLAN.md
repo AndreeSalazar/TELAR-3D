@@ -127,8 +127,12 @@ Orden de construcción para seguir ampliando el trabajo GPU:
    dominios, nombres, argumentos indirectos, barreras entre operaciones y tiempos
    identificados. El visor usa preparar → generar → deformar → relieve. Pendiente:
    recursos y grafos arbitrarios; el contrato actual conserva x/z para la caché.
-2. Introducir un IR tipado por punto (atributos, escalares y vectores) y compilar
-   las primeras operaciones al backend SPIR-V; comparar contra su intérprete CPU.
+2. **Primera entrega implementada:** crate `hilo` en `no_std`, IR SSA lineal de
+   escalares/vectores, posición/normal, fase/amplitud, validación de referencias
+   y tipos, intérprete CPU y backend SPIR-V. El relieve del visor nace de ese IR.
+   Comparación CPU/GPU dentro de 2·10⁻⁵, validación SPIR-V y repetición bit a bit
+   en la misma GPU. Salidas limitadas a altura/normal para conservar la caché;
+   atributos arbitrarios y análisis numérico general continúan pendientes.
 3. Añadir sintaxis HILO, parámetros y diagnósticos sobre ese mismo IR. La CPU
    compila al editar el programa; la ejecución por elemento pertenece a GPU.
 4. Fusionar operaciones compatibles después de probar sus dependencias y medir

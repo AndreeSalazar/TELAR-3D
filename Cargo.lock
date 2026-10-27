@@ -3,6 +3,14 @@
 version = 4
 
 [[package]]
+name = "hilo"
+version = "0.1.0"
+dependencies = [
+ "hilo-spirv",
+ "nudo",
+]
+
+[[package]]
 name = "hilo-spirv"
 version = "0.1.0"
 
@@ -14,6 +22,7 @@ version = "0.1.0"
 name = "telar-app"
 version = "0.1.0"
 dependencies = [
+ "hilo",
  "hilo-spirv",
  "nudo",
  "telar-gpu",

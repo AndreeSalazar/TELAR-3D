@@ -13,7 +13,7 @@ pub(crate) fn preparar(gpu: &mut Gpu, modo: &Modo) -> Result<(u32, usize), Strin
     let puntos = if modo.procedural {
         let (preparar, generar, deformar) =
             (hilo_spirv::rejilla::preparar(), hilo_spirv::rejilla::generar(), hilo_spirv::rejilla::deformar());
-        let relieve = hilo_spirv::rejilla::escalar_altura(1.3)?;
+        let relieve = hilo::ejemplos::relieve(1.3).map_err(|error| error.to_string())?.compilar();
         let mut etapas =
             KernelsProcedurales { preparar: &preparar, generar: &generar, deformar: &deformar }.etapas().to_vec();
         etapas.push(EtapaProcedural { nombre: "relieve", codigo: &relieve, dominio: DominioProcedural::Puntos });

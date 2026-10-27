@@ -11,7 +11,7 @@ publish.workspace = true
 # el compilador de kernels (hilo-spirv) y la geometría (nudo, telar-nodos): los une
 # sin que se conozcan entre ellos.
 [package.metadata.telar]
-puede-usar = ["telar-ventana", "telar-gpu", "hilo-spirv", "nudo", "telar-nodos"]
+puede-usar = ["telar-ventana", "telar-gpu", "hilo-spirv", "hilo", "nudo", "telar-nodos"]
 
 [[bin]]
 name = "telar"
@@ -21,6 +21,7 @@ path = "src/main.rs"
 telar-ventana = { path = "../telar-ventana" }
 telar-gpu = { path = "../telar-gpu" }
 hilo-spirv = { path = "../hilo-spirv" }
+hilo = { path = "../hilo" }
 nudo = { path = "../nudo" }
 telar-nodos = { path = "../telar-nodos" }
 
