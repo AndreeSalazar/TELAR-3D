@@ -161,7 +161,8 @@ impl Presentacion {
         let destino = Destino {
             imagen: sc.imagenes[i],
             vista: sc.vistas[i],
-            profundidad: (sc.profundidad.objeto, sc.profundidad.vista),
+            profundidad: (sc.adjuntos.profundidad.objeto, sc.adjuntos.profundidad.vista),
+            multimuestreo: sc.adjuntos.color(),
             extension: sc.extension,
             despues: (LAYOUT_PRESENT_SRC, ETAPA_BOTTOM_OF_PIPE, 0),
         };

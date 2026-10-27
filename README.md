@@ -52,12 +52,16 @@ volúmenes siguen pendientes.
 Los ajustes de cada etapa ya modifican cálculo o sombreado.
 [Configuración de los nodos](docs/NODOS-PARAMETROS.md).
 
+**Ruta de producción:** [estado, motivos y próximos hitos](docs/RUTA-PRODUCCION.md).
+El visor ya suaviza los contornos con MSAA hasta 4x según soporte real;
+[diagnóstico, comparación y coste](docs/ANTIALIAS.md).
+
 **Semáforos obligatorios:** cada carpeta fuente/configuración/documentación declara
 ROJO crítico, AMARILLO probable o VERDE seguro en su contexto y explica su consumo.
 El guardián bloquea carpetas sin informe. [Política](docs/SEMAFOROS.md),
 [mapa](docs/MAPA-SEMAFOROS.md).
 
-![Estudio nativo de TELAR](docs/capturas/nodos-salida.png)
+![Estudio nativo de TELAR](docs/capturas/estudio-msaa.png)
 
 | Pieza | Nombre | Qué es |
 |---|---|---|

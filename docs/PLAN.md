@@ -1,5 +1,11 @@
 # El plan, por fases
 
+**Estado y prioridades actuales:** [RUTA-PRODUCCION.md](RUTA-PRODUCCION.md).
+Ya funcionan parámetros propios por nodo, HILO con escalares vivos, caché de
+deformación y luz de área con autosombras aproximadas. Esta entrega añade MSAA
+para los bordes del visor. Las mediciones de las fases inferiores son históricas:
+el visor actual usa diez buffers residentes y 32 B de parámetros por paso.
+
 **Prioridad actual del kernel (27 de octubre de 2026):** el coordinador y el
 buzón residentes ya existen. El contrato de arranque y su guardián GPU ya están
 implementados en [ARRANQUE-GPU.md](ARRANQUE-GPU.md). El siguiente hito es la cola
@@ -187,7 +193,10 @@ con símbolo de tejido, puertos y cables curvos que siguen la disposición.
 Se conservan posiciones relativas al redimensionar. Mover nodos no cambia
 todavía el orden ni las conexiones de la ejecución GPU.
 
-**Pendiente:** edición real de nodos/cables, parámetros propios de cada nodo,
+**Parámetros propios implementados:** Rejilla, Onda, Relieve y Salida ya tienen
+controles funcionales y conservan sus valores. Ver [NODOS-PARAMETROS.md](NODOS-PARAMETROS.md).
+
+**Pendiente:** edición real de nodos/cables,
 inspector de atributos y resultados intermedios, guardar/abrir escenas,
 tipografía final, accesibilidad/DPI y materiales/iluminación de producción.
 La red actual no equivale al editor procedural completo.

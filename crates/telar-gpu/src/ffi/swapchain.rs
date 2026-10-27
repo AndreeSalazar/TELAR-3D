@@ -4,13 +4,13 @@
 
 use super::contexto::{Contexto, ok};
 use super::funciones::{FnDispositivo, FnSwapchain};
-use super::imagen::{Imagen, crear_vista, destruir_vista};
+use super::imagen::{crear_vista, destruir_vista};
+use super::multimuestreo::Adjuntos;
 use super::tipos::{
     ALFA_OPACO, ASPECTO_COLOR, COMPARTIR_EXCLUSIVO, Capacidades, Disp, Extension2D, FormatoSuperficie, InfoSimple,
     InfoSwapchain, Objeto, PRESENT_MODE_FIFO, ST_SEMAPHORE_CREATE_INFO, ST_SWAPCHAIN_CREATE_INFO_KHR,
     USO_COLOR_ATTACHMENT,
 };
-use super::tipos_grafico::{ASPECTO_PROFUNDIDAD, FORMATO_PROFUNDIDAD, USO_PROFUNDIDAD};
 use crate::eleccion::{elegir_extension, elegir_formato, elegir_imagenes};
 
 pub(crate) struct Swapchain {
@@ -24,7 +24,7 @@ pub(crate) struct Swapchain {
     pub(crate) vistas: Vec<Objeto>,
     /// Uno por imagen: la presentación lo usa hasta que esa imagen vuelve a adquirirse.
     pub(crate) listos: Vec<Objeto>,
-    pub(crate) profundidad: Imagen,
+    pub(crate) adjuntos: Adjuntos,
 }
 
 impl Swapchain {
@@ -55,7 +55,7 @@ impl Swapchain {
         if cap.usos & USO_COLOR_ATTACHMENT == 0 {
             return Err("la swapchain no admite dibujar en sus imágenes (COLOR_ATTACHMENT)".to_owned());
         }
-        let profundidad = Imagen::nueva(ctx, FORMATO_PROFUNDIDAD, (ancho, alto), USO_PROFUNDIDAD, ASPECTO_PROFUNDIDAD)?;
+        let adjuntos = Adjuntos::nuevos(ctx, formato, (ancho, alto))?;
         let info = InfoSwapchain {
             s_type: ST_SWAPCHAIN_CREATE_INFO_KHR,
             p_next: core::ptr::null(),
@@ -94,7 +94,7 @@ impl Swapchain {
             imagenes: Vec::new(),
             vistas: Vec::new(),
             listos: Vec::new(),
-            profundidad,
+            adjuntos,
         };
         // SAFETY: la swapchain es nueva; las imágenes se piden en dos pasos.
         unsafe {

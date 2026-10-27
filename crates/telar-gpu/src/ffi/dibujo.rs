@@ -30,6 +30,8 @@ pub(crate) struct Destino {
     pub(crate) vista: Objeto,
     /// `(imagen, vista)` de la profundidad, del mismo tamaño.
     pub(crate) profundidad: (Objeto, Objeto),
+    /// Color multimuestreado opcional; se resuelve a imagen/vista antes de presentar.
+    pub(crate) multimuestreo: Option<(Objeto, Objeto)>,
     pub(crate) extension: (u32, u32),
     /// Cómo queda la imagen de color al acabar: `(layout, etapa, acceso)` de lo
     /// que la use después.
@@ -69,6 +71,7 @@ pub(crate) unsafe fn grabar(
     let leer_escribir = ACCESO_LEER_PROFUNDIDAD | ACCESO_ESCRIBIR_PROFUNDIDAD;
     // El contenido de antes no importa (se limpia), pero la profundidad la comparten
     // los fotogramas en vuelo: el de ahora espera a que el anterior acabe de escribirla.
+    let imagen_msaa = destino.multimuestreo.map_or(destino.imagen, |(imagen, _)| imagen);
     let antes = [
         barrera(destino.imagen, color, (0, ACCESO_ESCRIBIR_COLOR), (LAYOUT_UNDEFINED, LAYOUT_COLOR)),
         barrera(
@@ -77,22 +80,19 @@ pub(crate) unsafe fn grabar(
             (ACCESO_ESCRIBIR_PROFUNDIDAD, leer_escribir),
             (LAYOUT_UNDEFINED, LAYOUT_PROFUNDIDAD),
         ),
+        // GPU: el adjunto compartido espera las escrituras de color anteriores.
+        barrera(imagen_msaa, color, (ACCESO_ESCRIBIR_COLOR, ACCESO_ESCRIBIR_COLOR), (LAYOUT_UNDEFINED, LAYOUT_COLOR)),
     ];
     let (layout, etapa, acceso) = destino.despues;
     let despues = barrera(destino.imagen, color, (ACCESO_ESCRIBIR_COLOR, acceso), (LAYOUT_COLOR, layout));
-    let adjunto = |vista, layout, guardar, limpiar| AdjuntoRenderizado {
-        s_type: ST_RENDERING_ATTACHMENT_INFO,
-        p_next: NULO,
-        vista,
-        layout,
-        modo_resolver: 0,
-        vista_resolver: 0,
-        layout_resolver: 0,
-        cargar: CARGAR_LIMPIAR,
-        guardar,
-        limpiar,
-    };
-    let adjunto_color = adjunto(destino.vista, LAYOUT_COLOR, GUARDAR, limpiar);
+    let mut adjunto_color = adjunto(destino.vista, LAYOUT_COLOR, GUARDAR, limpiar);
+    if let Some((_, vista)) = destino.multimuestreo {
+        adjunto_color.vista = vista;
+        adjunto_color.guardar = NO_GUARDAR;
+        adjunto_color.modo_resolver = 2; // VK_RESOLVE_MODE_AVERAGE_BIT.
+        adjunto_color.vista_resolver = destino.vista;
+        adjunto_color.layout_resolver = LAYOUT_COLOR;
+    }
     // Profundidad invertida: 0 es el infinito. No se guarda: solo vale durante el fotograma.
     let adjunto_prof = adjunto(vista_prof, LAYOUT_PROFUNDIDAD, NO_GUARDAR, [0.0; 4]);
     let (ancho, alto) = destino.extension;
@@ -116,7 +116,18 @@ pub(crate) unsafe fn grabar(
     // SAFETY: lo garantiza quien llama (ver arriba); todo lo que se pasa por
     // puntero vive hasta el final de la función.
     unsafe {
-        (fd.barrera)(cmd, etapas_antes, etapas_antes, 0, 0, NULO, 0, NULO, 2, antes.as_ptr());
+        (fd.barrera)(
+            cmd,
+            etapas_antes,
+            etapas_antes,
+            0,
+            0,
+            NULO,
+            0,
+            NULO,
+            if destino.multimuestreo.is_some() { 3 } else { 2 },
+            antes.as_ptr(),
+        );
         (fg.empezar_renderizado)(cmd, &raw const info);
         if let Some(e) = escena {
             let (viewport_escena, tijera_escena) =
@@ -219,5 +230,20 @@ unsafe fn dibujar_escena(
         } else {
             (fg.dibujar_indices)(cmd, e.malla.n_indices, 1, 0, 0, 0);
         }
+    }
+}
+
+fn adjunto(vista: Objeto, layout: u32, guardar: u32, limpiar: [f32; 4]) -> AdjuntoRenderizado {
+    AdjuntoRenderizado {
+        s_type: ST_RENDERING_ATTACHMENT_INFO,
+        p_next: NULO,
+        vista,
+        layout,
+        modo_resolver: 0,
+        vista_resolver: 0,
+        layout_resolver: 0,
+        cargar: CARGAR_LIMPIAR,
+        guardar,
+        limpiar,
     }
 }

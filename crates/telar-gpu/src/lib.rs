@@ -45,11 +45,13 @@ pub struct Opciones {
     pub nombre: String,
     /// Activar las capas de validación si están instaladas (vienen con el SDK).
     pub validacion: bool,
+    /// MSAA hasta 4x según soporte real de color/profundidad; false conserva 1x.
+    pub antialias: bool,
 }
 
 impl Default for Opciones {
     fn default() -> Self {
-        Self { nombre: "TELAR 3D".to_owned(), validacion: true }
+        Self { nombre: "TELAR 3D".to_owned(), validacion: true, antialias: true }
     }
 }
 
@@ -81,11 +83,12 @@ impl Gpu {
     ///
     /// Si no hay Vulkan, ninguna GPU puede presentar en la ventana o Vulkan falla.
     pub fn nueva(opciones: &Opciones, superficie: Superficie, tamano: (u32, u32)) -> Result<Self, String> {
-        let contexto = ffi::Contexto::nuevo(
+        let mut contexto = ffi::Contexto::nuevo(
             &opciones.nombre,
             opciones.validacion,
             Some((superficie.instancia, superficie.ventana)),
         )?;
+        contexto.antialias = opciones.antialias;
         let presentacion = ffi::Presentacion::nueva(&contexto, tamano)?;
         Ok(Self { interfaz: None, visor: None, presentacion, contexto })
     }
@@ -106,6 +109,13 @@ impl Gpu {
     #[must_use]
     pub fn imagenes(&self) -> (u32, (u32, u32)) {
         (self.presentacion.formato, self.presentacion.extension)
+    }
+
+    /// Muestras compatibles de color/profundidad para el formato actual.
+    /// # Errors
+    /// Si falla la consulta de capacidades del dispositivo.
+    pub fn muestras(&self) -> Result<u32, String> {
+        self.contexto.muestras(self.presentacion.formato)
     }
 
     /// Cuántas veces se ha creado la swapchain: 1 al empezar, y una más cada vez
@@ -188,7 +198,9 @@ impl Calculo {
     ///
     /// Si no hay Vulkan o ninguna GPU tiene una cola de gráficos.
     pub fn nuevo(opciones: &Opciones) -> Result<Self, String> {
-        Ok(Self { contexto: ffi::Contexto::nuevo(&opciones.nombre, opciones.validacion, None)? })
+        let mut contexto = ffi::Contexto::nuevo(&opciones.nombre, opciones.validacion, None)?;
+        contexto.antialias = opciones.antialias;
+        Ok(Self { contexto })
     }
 
     /// El nombre de la GPU elegida.

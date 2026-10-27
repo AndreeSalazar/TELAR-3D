@@ -62,6 +62,17 @@ impl Imagen {
         uso: u32,
         aspecto: u32,
     ) -> Result<Self, String> {
+        Self::con_muestras(ctx, formato, (ancho, alto), uso, aspecto, MUESTRAS_1)
+    }
+
+    pub(crate) fn con_muestras(
+        ctx: &Contexto,
+        formato: u32,
+        (ancho, alto): (u32, u32),
+        uso: u32,
+        aspecto: u32,
+        muestras: u32,
+    ) -> Result<Self, String> {
         let fd = ctx.fd.ok_or("el contexto no tiene dispositivo")?;
         let mut i = Self { fd, d: ctx.dispositivo, objeto: 0, memoria: 0, vista: 0 };
         let info = InfoImagen {
@@ -73,7 +84,7 @@ impl Imagen {
             extension: Extension3D { ancho, alto, fondo: 1 },
             mips: 1,
             capas: 1,
-            muestras: MUESTRAS_1,
+            muestras,
             teselado: TESELADO_OPTIMO,
             uso,
             compartir: COMPARTIR_EXCLUSIVO,

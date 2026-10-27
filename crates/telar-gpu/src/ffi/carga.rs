@@ -37,6 +37,8 @@ type SoportaPresentar = unsafe extern "system" fn(Fisico, u32, Objeto, *mut u32)
 type LeerCapacidades = unsafe extern "system" fn(Fisico, Objeto, *mut Capacidades) -> i32;
 type ListarFormatos = unsafe extern "system" fn(Fisico, Objeto, *mut u32, *mut FormatoSuperficie) -> i32;
 type LeerMemoria = unsafe extern "system" fn(Fisico, *mut PropiedadesMemoria);
+type PropiedadesImagen =
+    unsafe extern "system" fn(Fisico, u32, u32, u32, u32, u32, *mut super::multimuestreo::PropiedadesImagen) -> i32;
 type CrearMensajero = unsafe extern "system" fn(Instancia, *const InfoMensajero, Asig, *mut Objeto) -> i32;
 
 /// Las funciones globales (antes de tener instancia).
@@ -80,6 +82,7 @@ impl Global {
 /// (vale por instancia): así se puede soltar aunque falle la carga del resto.
 #[derive(Clone, Copy)]
 pub(crate) struct FnInstancia {
+    pub(crate) propiedades_imagen: PropiedadesImagen,
     pub(crate) destruir: DestruirInstancia,
     pub(crate) fisicos: ListarFisicos,
     pub(crate) propiedades: LeerPropiedades,
@@ -113,6 +116,7 @@ impl FnInstancia {
         };
         Ok(Self {
             destruir: cargar!(buscar, "vkDestroyInstance", DestruirInstancia),
+            propiedades_imagen: cargar!(buscar, "vkGetPhysicalDeviceImageFormatProperties", PropiedadesImagen),
             fisicos: cargar!(buscar, "vkEnumeratePhysicalDevices", ListarFisicos),
             propiedades: cargar!(buscar, "vkGetPhysicalDeviceProperties", LeerPropiedades),
             familias: cargar!(buscar, "vkGetPhysicalDeviceQueueFamilyProperties", LeerFamilias),

@@ -17,3 +17,9 @@ Render de rejilla: fragmentos leen geometría/control del mismo juego residente.
 Barreras compute → fragmentos y fragmentos → compute protegen la reutilización.
 Control reserva 192 bytes por juego (64 adicionales); capturas de diagnóstico
 usan dos timestamps y descargan píxeles fuera del bucle vivo. Ver docs/RENDER-AREA.md.
+
+MSAA: consulta soporte por formato y conserva color/profundidad multimuestreados.
+Coste lógico adicional 4x: 28 B/píxel (24,61 MiB a 1280x720 para RGBA8/D32),
+sin contar alineación ni pico físico. Dibujo y resolución ocurren en GPU; la escena
+medida pasa de 0,8330 a 1,4495 ms. DISTINTO, mayor coste por contorno más suave.
+El host prepara y envía; no filtra píxeles en CPU durante el visor vivo. Ver docs/ANTIALIAS.md.

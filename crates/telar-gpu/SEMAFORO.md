@@ -12,3 +12,9 @@ Limites: Capacidad hasta 1024 por lado; control/cabecera 128 B cada uno. Pico to
 Evidencia: docs/ARRANQUE-GPU.md; crates/telar-app/tests/arranque_gpu.rs y render_gpu.rs.
 
 Clasificación de riesgo, no certificación absoluta ni medición de rendimiento.
+
+MSAA: consulta soporte por formato y conserva color/profundidad multimuestreados.
+Coste lógico adicional 4x: 28 B/píxel (24,61 MiB a 1280x720 para RGBA8/D32),
+sin contar alineación ni pico físico. Dibujo y resolución ocurren en GPU; la escena
+medida pasa de 0,8330 a 1,4495 ms. DISTINTO, mayor coste por contorno más suave.
+El host prepara y envía; no filtra píxeles en CPU durante el visor vivo. Ver docs/ANTIALIAS.md.

@@ -14,10 +14,7 @@ use super::tipos::{ACCESO_TRANSFER_WRITE, ASPECTO_COLOR, Disp, ETAPA_TRANSFER, U
 use super::tipos_calculo::{
     ACCESO_HOST_READ, ACCESO_TRANSFER_READ, BUFFER_TRANSFER_DST, BarreraMemoria, ETAPA_HOST, ST_MEMORY_BARRIER,
 };
-use super::tipos_grafico::{
-    ASPECTO_PROFUNDIDAD, CopiaImagen, Extension3D, FORMATO_PROFUNDIDAD, FORMATO_RGBA8, LAYOUT_TRANSFER_SRC,
-    USO_PROFUNDIDAD, USO_TRANSFER_SRC,
-};
+use super::tipos_grafico::{CopiaImagen, Extension3D, FORMATO_RGBA8, LAYOUT_TRANSFER_SRC, USO_TRANSFER_SRC};
 use crate::eleccion::{MEMORIA_COHERENTE, MEMORIA_CON_CACHE, MEMORIA_VISIBLE};
 use crate::{ActividadProcedural, ParametrosNodos, PlanProcedural};
 
@@ -179,14 +176,15 @@ pub(super) fn capturar_buffers(
     }
     let color =
         Imagen::nueva(ctx, FORMATO_RGBA8, (ancho, alto), USO_COLOR_ATTACHMENT | USO_TRANSFER_SRC, ASPECTO_COLOR)?;
-    let profundidad = Imagen::nueva(ctx, FORMATO_PROFUNDIDAD, (ancho, alto), USO_PROFUNDIDAD, ASPECTO_PROFUNDIDAD)?;
+    let adjuntos = super::multimuestreo::Adjuntos::nuevos(ctx, FORMATO_RGBA8, (ancho, alto))?;
     let bytes = ancho as usize * alto as usize * 4;
     let memoria = (MEMORIA_VISIBLE | MEMORIA_COHERENTE, MEMORIA_CON_CACHE);
     let lectura = Buffer::nuevo(ctx, bytes as u64, BUFFER_TRANSFER_DST, memoria)?;
     let destino = Destino {
         imagen: color.objeto,
         vista: color.vista,
-        profundidad: (profundidad.objeto, profundidad.vista),
+        profundidad: (adjuntos.profundidad.objeto, adjuntos.profundidad.vista),
+        multimuestreo: adjuntos.color(),
         extension: (ancho, alto),
         despues: (LAYOUT_TRANSFER_SRC, ETAPA_TRANSFER, ACCESO_TRANSFER_READ),
     };

@@ -17,7 +17,7 @@ use super::tipos_grafico::{
     AtributoVertice, COMPARAR_MAYOR, DESCARTAR_TRASERAS, DINAMICO_TIJERA, DINAMICO_VIEWPORT, ESCRIBIR_RGBA,
     ETAPA_FRAGMENTOS, ETAPA_VERTICES, EnlaceVertices, EstadoDinamico, EstadoEnsamblado, EstadoMezcla, EstadoMuestreo,
     EstadoProfundidad, EstadoRasterizado, EstadoVertices, EstadoViewport, FORMATO_PROFUNDIDAD, FORMATO_RGB32F,
-    FRENTE_ANTIHORARIO, InfoPipelineGrafico, InfoRenderizadoPipeline, MUESTRAS_1, MezclaAdjunto, POR_VERTICE, RELLENAR,
+    FRENTE_ANTIHORARIO, InfoPipelineGrafico, InfoRenderizadoPipeline, MezclaAdjunto, POR_VERTICE, RELLENAR,
     RangoConstantes, ST_COLOR_BLEND, ST_DEPTH_STENCIL, ST_DYNAMIC_STATE, ST_GRAPHICS_PIPELINE, ST_INPUT_ASSEMBLY,
     ST_MULTISAMPLE, ST_PIPELINE_RENDERING, ST_RASTERIZATION, ST_VERTEX_INPUT, ST_VIEWPORT_STATE, TRIANGULOS,
 };
@@ -37,6 +37,7 @@ pub(crate) struct PipelineGrafico {
     /// El formato de color para el que se creó.
     pub(crate) formato: u32,
     interfaz: bool,
+    muestras: u32,
 }
 
 impl PipelineGrafico {
@@ -75,7 +76,15 @@ impl PipelineGrafico {
         conjunto: Objeto,
     ) -> Result<Self, String> {
         let fd = ctx.fd.ok_or("el contexto no tiene dispositivo")?;
-        let mut p = Self { fd, d: ctx.dispositivo, disposicion: 0, pipeline: 0, formato, interfaz };
+        let mut p = Self {
+            fd,
+            d: ctx.dispositivo,
+            disposicion: 0,
+            pipeline: 0,
+            formato,
+            interfaz,
+            muestras: ctx.muestras(formato)?,
+        };
         let rango =
             RangoConstantes { etapas: ETAPA_VERTICES | ETAPA_FRAGMENTOS, desplazamiento: 0, tamano: TAMANO_CONSTANTES };
         let info = InfoDisposicionPipeline {
@@ -155,7 +164,7 @@ impl PipelineGrafico {
             atributos: atributos.as_ptr(),
         };
         let (ensamblado, viewport) = (ensamblado(), viewport());
-        let (mut rasterizado, muestreo, mut profundidad) = (rasterizado(), muestreo(), profundidad());
+        let (mut rasterizado, muestreo, mut profundidad) = (rasterizado(), muestreo(self.muestras), profundidad());
         if self.interfaz {
             rasterizado.descartar_caras = 0;
             profundidad.prueba = 0;
@@ -276,12 +285,12 @@ fn rasterizado() -> EstadoRasterizado {
     }
 }
 
-fn muestreo() -> EstadoMuestreo {
+fn muestreo(muestras: u32) -> EstadoMuestreo {
     EstadoMuestreo {
         s_type: ST_MULTISAMPLE,
         p_next: NULO,
         flags: 0,
-        muestras: MUESTRAS_1,
+        muestras,
         sombreado_por_muestra: 0,
         minimo: 0.0,
         mascara: core::ptr::null(),

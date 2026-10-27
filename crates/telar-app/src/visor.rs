@@ -54,6 +54,7 @@ pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
         if gpu.validacion() { "activa" } else { "apagada" }
     );
     let (capacidad, puntos) = crate::escena::preparar(&mut gpu, modo)?;
+    println!("telar: antialias MSAA {}x · resolución nativa", gpu.muestras()?);
     let titulo = format!("TELAR 3D · {puntos} puntos · {}", gpu.dispositivo());
 
     let fuente = if modo.procedural { Some(crate::tipografia::crear()?) } else { None };

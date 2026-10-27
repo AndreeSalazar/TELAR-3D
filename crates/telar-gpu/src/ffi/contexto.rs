@@ -54,6 +54,7 @@ pub(crate) fn ok(resultado: i32, que: &str) -> Result<(), String> {
 
 /// Instancia, dispositivo y cola. Se destruye en orden inverso (Drop).
 pub(crate) struct Contexto {
+    pub(crate) antialias: bool,
     pub(crate) fi: FnInstancia,
     pub(crate) fd: Option<FnDispositivo>,
     pub(crate) instancia: Instancia,
@@ -98,6 +99,7 @@ impl Contexto {
         let fi = FnInstancia::cargar(&global, instancia, validacion)?;
         // A partir de aquí, cualquier error suelta lo creado en Drop.
         let mut ctx = Self {
+            antialias: true,
             fi,
             fd: None,
             instancia,

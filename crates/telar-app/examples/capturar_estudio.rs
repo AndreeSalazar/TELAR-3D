@@ -17,8 +17,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ancho = argumentos.next().map(|v| v.parse::<u32>()).transpose()?.unwrap_or(1280);
     let alto = argumentos.next().map(|v| v.parse::<u32>()).transpose()?.unwrap_or(720);
     let seleccionado = argumentos.next().map(|v| v.parse::<usize>()).transpose()?.unwrap_or(1).min(3);
+    let antialias = argumentos.next().as_deref() != Some("sin-msaa");
     let tamano = (ancho, alto);
-    let gpu = Calculo::nuevo(&Opciones::default())?;
+    let gpu = Calculo::nuevo(&Opciones { antialias, ..Opciones::default() })?;
     let codigo = [telar_kernel::compilar_con_cache(), hilo_spirv::rejilla::generar(), hilo_spirv::rejilla::deformar()];
     let relieve = hilo::ejemplos::relieve_dinamico()?.compilar();
     let mut etapas =
@@ -37,7 +38,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let camara = nudo::Camara { distancia: 7.0, ..nudo::Camara::default() };
     let constantes =
         render::bloque(&camara, diseno.visor.ancho / diseno.visor.alto, estudio.color(), &estudio.salida, true)?;
-    let pixeles = residente.capturar_estudio_bloque(
+    let captura = residente.medir_estudio(
         Sombreadores { vertices: &escena[0], fragmentos: &escena[1] },
         tamano,
         estudio.fondo_visor(),
@@ -53,7 +54,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }),
         },
     )?;
-    std::fs::write(&ruta, pixeles)?;
-    println!("captura RGBA8 {ancho}x{alto}: {ruta}");
+    std::fs::write(&ruta, captura.pixeles)?;
+    println!("captura RGBA8 {ancho}x{alto} · MSAA {}x: {ruta}", captura.muestras);
     Ok(())
 }

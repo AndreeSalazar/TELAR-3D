@@ -6,7 +6,8 @@ use telar_gpu::{
 mod arranque;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let gpu = Calculo::nuevo(&Opciones::default())?;
+    let antialias = !std::env::args().any(|arg| arg == "--sin-msaa");
+    let gpu = Calculo::nuevo(&Opciones { antialias, ..Opciones::default() })?;
     let codigo = [telar_kernel::compilar_con_cache(), hilo_spirv::rejilla::generar(), hilo_spirv::rejilla::deformar()];
     let etapas = KernelsProcedurales { preparar: &codigo[0], generar: &codigo[1], deformar: &codigo[2] }.etapas();
     let cabecera = arranque::crear(gpu.perfil(), 256, etapas.len())?;
@@ -35,6 +36,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     .bloque()?;
     println!("GPU {} · Vulkan validación {} · 1280x720 · 256x256 puntos", gpu.dispositivo(), gpu.validacion());
+    println!("MSAA solicitado: {antialias} (capacidad real devuelta por las capturas)");
     println!(
         "Timestamps de dibujo+limpieza+barreras, sin overlay visible; excluye creación, compute y descarga. 2 calentamientos y 9 muestras intercaladas."
     );
@@ -54,6 +56,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 },
             )?;
             if vuelta >= 2 {
+                if vuelta == 2 && i == 0 {
+                    println!("MSAA real {}x", captura.muestras);
+                }
                 tiempos[i].push(captura.nanosegundos.ok_or("la cola no admite timestamps")? / 1_000_000.0);
             }
         }

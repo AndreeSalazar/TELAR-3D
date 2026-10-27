@@ -109,3 +109,7 @@ Una generación de escena/cámara/material/luz invalidará esa acumulación desd
 Después: rebotes acotados, muestreo de luz/BRDF y pruebas contra integrales conocidas.
 La imagen de vista previa puede seguir interactiva mientras ese modo converge.
 Todavía **no están implementados** el trazado de caminos, acumulación, GI ni denoiser.
+
+El visor incorpora ahora MSAA para contornos; medición actual con/sin MSAA y
+su consumo adicional en [ANTIALIAS.md](ANTIALIAS.md). Los pasos hacia producción
+están centralizados en [RUTA-PRODUCCION.md](RUTA-PRODUCCION.md).

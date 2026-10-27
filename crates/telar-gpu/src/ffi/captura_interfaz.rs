@@ -8,10 +8,7 @@ use super::{
     recursos::Recursos,
     tipos::{ASPECTO_COLOR, ETAPA_TRANSFER, USO_COLOR_ATTACHMENT},
     tipos_calculo::{ACCESO_HOST_READ, BUFFER_TRANSFER_DST, BarreraMemoria, ETAPA_HOST, ST_MEMORY_BARRIER},
-    tipos_grafico::{
-        ASPECTO_PROFUNDIDAD, CopiaImagen, Extension3D, FORMATO_PROFUNDIDAD, FORMATO_RGBA8, LAYOUT_TRANSFER_SRC,
-        USO_PROFUNDIDAD, USO_TRANSFER_SRC,
-    },
+    tipos_grafico::{CopiaImagen, Extension3D, FORMATO_RGBA8, LAYOUT_TRANSFER_SRC, USO_TRANSFER_SRC},
 };
 use crate::eleccion::{MEMORIA_COHERENTE, MEMORIA_VISIBLE};
 
@@ -27,7 +24,7 @@ pub(super) fn capturar(
         return Err("captura de estudio fuera de 1..=4096 por lado".to_owned());
     }
     let color = Imagen::nueva(ctx, FORMATO_RGBA8, tamano, USO_COLOR_ATTACHMENT | USO_TRANSFER_SRC, ASPECTO_COLOR)?;
-    let profundidad = Imagen::nueva(ctx, FORMATO_PROFUNDIDAD, tamano, USO_PROFUNDIDAD, ASPECTO_PROFUNDIDAD)?;
+    let adjuntos = super::multimuestreo::Adjuntos::nuevos(ctx, FORMATO_RGBA8, tamano)?;
     let bytes = u64::from(ancho) * u64::from(alto) * 4;
     let lectura = Buffer::nuevo(ctx, bytes, BUFFER_TRANSFER_DST, (MEMORIA_VISIBLE | MEMORIA_COHERENTE, 0))?;
     let fd = ctx.fd.ok_or("falta el dispositivo")?;
@@ -37,7 +34,8 @@ pub(super) fn capturar(
     let destino = Destino {
         imagen: color.objeto,
         vista: color.vista,
-        profundidad: (profundidad.objeto, profundidad.vista),
+        profundidad: (adjuntos.profundidad.objeto, adjuntos.profundidad.vista),
+        multimuestreo: adjuntos.color(),
         extension: tamano,
         despues: (LAYOUT_TRANSFER_SRC, ETAPA_TRANSFER, super::tipos_calculo::ACCESO_TRANSFER_READ),
     };
@@ -99,5 +97,5 @@ pub(super) fn capturar(
         None
     };
     let pixeles = lectura.leer(usize::try_from(bytes).map_err(|_| "captura demasiado grande")?)?;
-    Ok(crate::CapturaEstudio { pixeles, nanosegundos })
+    Ok(crate::CapturaEstudio { pixeles, nanosegundos, muestras: adjuntos.muestras })
 }

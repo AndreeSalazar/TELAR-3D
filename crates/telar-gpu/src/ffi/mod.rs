@@ -44,6 +44,7 @@ mod funciones_grafico;
 mod imagen;
 mod interfaz;
 mod malla_gpu;
+mod multimuestreo;
 mod pipeline_grafico;
 mod presentacion;
 mod recursos;

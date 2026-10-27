@@ -167,3 +167,11 @@ let pixeles = calculo.capturar(sombreadores, &vertices, &indices, (64, 64), fond
 `ParametrosNodos` mantiene el prefijo de superficie y añade cuatro escalares
 vivos. Los métodos anteriores adaptan el paquete al mismo buffer de 32 bytes.
 Control reserva 192 bytes; no conoce las operaciones HILO ni los controles UI.
+
+## Antialiasing de contornos
+
+`Opciones::antialias` solicita MSAA hasta 4x por defecto, con capacidades reales
+consultadas por formato y fallback a 2x/1x. Los adjuntos y pipelines coinciden en
+muestras; la resolución de color ocurre en el pase dinámico. La swapchain sigue
+siendo de una muestra. Las capturas exponen `CapturaEstudio::muestras`.
+Coste y comparación: [ANTIALIAS.md](../../docs/ANTIALIAS.md).
