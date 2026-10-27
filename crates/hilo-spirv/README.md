@@ -42,10 +42,17 @@ ABI del conjunto 0, todos buffers de almacenamiento:
 | 0 | cuatro u32: lado pedido, bits f32 de fase y amplitud, capacidad validada por el ejecutor |
 | 1 | f32[], posición xyz y normal xyz por vértice |
 | 2 | u32[], seis índices por celda, caras hacia +Y |
-| 3 | u32[12]: dispatch [0..3), draw [3..8), lado seguro [8], puntos [9], error [10], reservado [11] |
+| 3 | u32[16]: dispatch de deformación [0..3), draw [3..8), lado seguro [8], puntos [9], error [10], último lado generado [11], dispatch de generación [12..15), contador de generaciones [15] |
 
 Un lado menor que 2 da salida vacía. Un lado mayor que capacidad da salida
-vacía y error 1. Las barreras entre kernels y antes del dibujo las graba el
+vacía y error 1. El último lado válido permanece en GPU: si se pide otra vez,
+el productor escribe cero grupos de generación y reutiliza posiciones x/z e
+índices. Fase y amplitud siguen cambiando la deformación. Vacío y error no
+invalidan la geometría guardada. El contador entero de generaciones avanza solo
+cuando se genera; su desbordamiento a 32 bits es modular y no afecta la caché.
+
+El control se inicializa a cero una vez con `vkCmdFillBuffer` en el ejecutor.
+Las barreras entre kernels y antes del dibujo las graba el
 ejecutor Vulkan. Los tres programas pasan `spirv-val`; las pruebas de integración
 en `telar-app` comparan datos y píxeles. Esto aún no incorpora el lenguaje HILO.
 

@@ -21,8 +21,8 @@ Cada crate declara a quién puede usar en su `Cargo.toml` (`[package.metadata.te
 ```bash
 cargo guard check     # el guardián
 cargo verify          # guardián + rustfmt + clippy pedantic + tests: antes de dar algo por terminado
- cargo run -p telar-app --release         # rejilla residente: generación, deformación y dibujo GPU
- cargo run -p telar-app --release -- --esfera-cpu # referencia histórica de la Fase 4
+cargo run -p telar-app --release         # rejilla residente: generación, deformación y dibujo GPU
+cargo run -p telar-app --release -- --esfera-cpu # referencia histórica de la Fase 4
 cargo run -p telar-app -- --prueba        # 120 fotogramas oculta: 0 avisos de validación o falla
 cargo run -p telar-app --release -- --calculo   # el primer kernel: GPU contra CPU, bit a bit
 ```

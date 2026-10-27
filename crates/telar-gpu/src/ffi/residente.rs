@@ -2,12 +2,12 @@
 //! Los kernels llegan como bytes; este módulo no conoce NUDO ni el compilador.
 
 use super::{
-    buffer::{Buffer, como_bytes},
+    buffer::{Buffer, BufferMapeado, como_bytes, una_vez},
     contexto::{Contexto, ok},
     malla_gpu::MallaGpu,
     recursos::Recursos,
     tipos::Comandos,
-    tipos_calculo::{BUFFER_ALMACEN, BUFFER_INDIRECTO, BUFFER_TRANSFER_SRC},
+    tipos_calculo::{BUFFER_ALMACEN, BUFFER_INDIRECTO, BUFFER_TRANSFER_DST, BUFFER_TRANSFER_SRC},
     tipos_grafico::{BUFFER_INDICES, BUFFER_VERTICES},
 };
 use crate::eleccion::{MEMORIA_COHERENTE, MEMORIA_GPU, MEMORIA_VISIBLE};
@@ -16,7 +16,7 @@ use crate::{ActividadProcedural, KernelsProcedurales, ParametrosProcedurales};
 pub(crate) struct Ranura {
     // Antes de los buffers: Drop de Recursos espera a que acabe su uso en GPU.
     pub(super) recursos: [Recursos; 3],
-    pub(crate) parametros: Buffer,
+    pub(crate) parametros: BufferMapeado,
     pub(crate) malla: MallaGpu,
     pub(crate) control: Buffer,
     pub(crate) comando: Comandos,
@@ -109,7 +109,7 @@ impl Ranura {
             actividad.buffers += 1;
             Ok::<_, String>(buffer)
         };
-        let parametros = crear(16, BUFFER_ALMACEN, (MEMORIA_VISIBLE | MEMORIA_COHERENTE, 0))?;
+        let parametros = crear(16, BUFFER_ALMACEN, (MEMORIA_VISIBLE | MEMORIA_COHERENTE, 0))?.mapear_persistente()?;
         let vertices = crear(
             u64::from(capacidad * capacidad) * 24,
             BUFFER_ALMACEN | BUFFER_VERTICES | BUFFER_TRANSFER_SRC,
@@ -120,9 +120,19 @@ impl Ranura {
             BUFFER_ALMACEN | BUFFER_INDICES | BUFFER_TRANSFER_SRC,
             (MEMORIA_GPU, 0),
         )?;
-        let control = crear(48, BUFFER_ALMACEN | BUFFER_INDIRECTO | BUFFER_TRANSFER_SRC, (MEMORIA_GPU, 0))?;
+        let control =
+            crear(64, BUFFER_ALMACEN | BUFFER_INDIRECTO | BUFFER_TRANSFER_SRC | BUFFER_TRANSFER_DST, (MEMORIA_GPU, 0))?;
+        actividad.mapeos += 1;
+        // GPU: inicializa la caché una sola vez; el lote publica transfer → compute.
+        una_vez(ctx, |fd, comando| {
+            // SAFETY: buffer de 64 bytes, uso TRANSFER_DST; vive hasta completar
+            // la valla de inicialización y durante todas las ejecuciones siguientes.
+            unsafe {
+                (fd.calculo.llenar_buffer)(comando, control.objeto, 0, 64, 0);
+            }
+        })?;
         let mut recursos = core::array::from_fn::<_, 3, _>(|_| Recursos::nuevo(&fd, ctx.dispositivo));
-        let buffers = [&parametros, &vertices, &indices, &control].map(|b| (b.objeto, b.tamano));
+        let buffers = [&parametros.buffer, &vertices, &indices, &control].map(|b| (b.objeto, b.tamano));
         for (recurso, spirv) in recursos.iter_mut().zip([kernels.preparar, kernels.generar, kernels.deformar]) {
             recurso.pipeline_enlaces(spirv, 4)?;
             actividad.pipelines += 1;
@@ -144,6 +154,6 @@ impl Ranura {
 
     /// Se llama después de esperar la valla del fotograma dueño de esta ranura.
     pub(crate) fn actualizar(&self, parametros: ParametrosProcedurales) -> Result<(), String> {
-        self.parametros.escribir(0, como_bytes(&parametros.palabras(self.capacidad)?))
+        self.parametros.escribir(como_bytes(&parametros.palabras(self.capacidad)?))
     }
 }

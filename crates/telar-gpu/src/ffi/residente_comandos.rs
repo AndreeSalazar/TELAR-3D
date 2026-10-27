@@ -3,7 +3,7 @@
 use super::{
     contexto::{Contexto, ok},
     residente::Ranura,
-    tipos::{ETAPA_TRANSFER, InfoInicioComandos, ST_COMMAND_BUFFER_BEGIN_INFO},
+    tipos::{ACCESO_TRANSFER_WRITE, ETAPA_TRANSFER, InfoInicioComandos, ST_COMMAND_BUFFER_BEGIN_INFO},
     tipos_calculo::{
         ACCESO_INDIRECTO, ACCESO_SHADER_READ, ACCESO_SHADER_WRITE, ACCESO_TRANSFER_READ, BarreraMemoria, ETAPA_CALCULO,
         ETAPA_INDIRECTO, ETAPA_TOP_OF_PIPE, PUNTO_CALCULO, ST_MEMORY_BARRIER,
@@ -44,7 +44,8 @@ impl Ranura {
                 | ACCESO_INDIRECTO
                 | ACCESO_LEER_ATRIBUTOS
                 | ACCESO_LEER_INDICES
-                | ACCESO_TRANSFER_READ,
+                | ACCESO_TRANSFER_READ
+                | ACCESO_TRANSFER_WRITE,
             ACCESO_SHADER_READ | ACCESO_SHADER_WRITE,
         );
         let medir = ctx.bits_tiempo > 0;
@@ -74,7 +75,8 @@ impl Ranura {
                 if indice == 0 {
                     (fc.despachar)(cmd, 1, 1, 1);
                 } else {
-                    (fc.despachar_indirecto)(cmd, self.control.objeto, 0);
+                    let desplazamiento = if indice == 1 { 48 } else { 0 };
+                    (fc.despachar_indirecto)(cmd, self.control.objeto, desplazamiento);
                 }
                 if medir {
                     (fc.marcar_tiempo)(

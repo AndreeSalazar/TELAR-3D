@@ -6,6 +6,9 @@ dos juegos de recursos y compute pregrabado. El grafo general de NUDO continúa
 en CPU como referencia; HILO y el solver de fuego siguen pendientes.
 Ver [REVISION-GPU.md](REVISION-GPU.md) para el diagnóstico histórico y el avance.
 
+La rejilla ya incluye caché de topología decidida por GPU y parámetros mapeados
+persistentemente. Cambiar fase o amplitud no obliga a regenerar sus índices.
+
 ## La idea en una frase
 
 **Los datos nacen, viven y mueren en la GPU.** La CPU edita el grafo, lo compila y le pasa a la GPU unos pocos bytes de parámetros por fotograma. Todo lo demás (emitir, simular, decidir cuánto trabajo hay y renderizar) lo hace la GPU sin volver a preguntar.

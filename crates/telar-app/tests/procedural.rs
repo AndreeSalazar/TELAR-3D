@@ -76,7 +76,9 @@ fn cadena_residente_correcta_reutilizable_y_visible() {
     let primera = residente.inspeccionar().unwrap();
     residente.paso(fijo).unwrap();
     let segunda = residente.inspeccionar().unwrap();
-    assert_eq!(primera.control, segunda.control);
+    assert_eq!(&primera.control[..12], &segunda.control[..12]);
+    assert_eq!(primera.control[15], segunda.control[15], "repetir parámetros conserva la generación");
+    assert_eq!(segunda.control[12], 0, "la GPU omite generar cuando puede reutilizar");
     assert_eq!(primera.indices, segunda.indices);
     let bits = |v: &Vec<[f32; 6]>| v.iter().map(|p| p.map(f32::to_bits)).collect::<Vec<_>>();
     assert_eq!(bits(&primera.vertices), bits(&segunda.vertices));
@@ -120,11 +122,20 @@ fn capacidad_maxima_residente_en_gpu() {
     assert_eq!(estado.indices.len(), 6_279_174);
     assert!(estado.indices.iter().all(|i| *i < 1_048_576));
     assert!(estado.vertices.iter().flatten().all(|v| v.is_finite()));
+    assert_eq!(estado.control[15], 1);
     eprintln!(
         "{} · 1024² puntos · 2093058 triángulos · ns preparar/generar/deformar {:?}",
         gpu.dispositivo(),
         estado.nanosegundos
     );
+    drop(estado);
+    residente.paso(parametros(1024, 1.1, 0.35)).unwrap();
+    let reutilizado = residente.inspeccionar().unwrap();
+    assert_eq!(reutilizado.control[12], 0, "no genera otra vez el millón de puntos");
+    assert_eq!(reutilizado.control[15], 1);
+    assert_eq!(reutilizado.vertices.len(), 1_048_576);
+    assert_eq!(reutilizado.indices.len(), 6_279_174);
+    eprintln!("misma topología reutilizada · ns preparar/generar omitido/deformar {:?}", reutilizado.nanosegundos);
     drop(residente);
     drop(gpu);
     assert_eq!(avisos_de_validacion(), 0);

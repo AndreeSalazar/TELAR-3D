@@ -28,6 +28,33 @@ todavía no informa ese estado asíncronamente. No hay compactación en esta dem
 el orden de los índices se obtiene directamente de las coordenadas de cada celda.
 La siguiente ampliación es generalizar el ejecutor para los nodos y HILO.
 
+## Segunda entrega: la GPU decide reutilizar
+
+El productor ya conserva la última topología válida. Cuando el lado no cambia,
+escribe cero grupos en el argumento de generación; el despacho de deformación
+sigue independiente. Vacío o exceso no destruyen la caché. Un contador entero
+GPU permite verificar que no se volvió a generar. El control creció a 64 bytes
+y se inicializa a cero con una operación GPU al crear cada juego.
+
+Los parámetros están mapeados de forma persistente. La ruta viva mantiene
+2 mapeos en total, en vez de mapear y desmapear en cada actualización. Conserva
+8 buffers residentes, 6 pipelines, 2 grabaciones reutilizables y 16 bytes de
+parámetros de superficie por paso. La cámara/iluminación sigue separada.
+
+`tests/cache_gpu.rs` comprueba 120 pasos con cambios y reutilización frente a un
+estado esperado CPU; la prueba máxima comprueba que el segundo paso conserva
+1 generación para 1 048 576 puntos. Etiqueta: **IGUAL** para la geometría con la
+misma entrada; **ABIERTO** para comparaciones de rendimiento publicables y Houdini.
+
+En una ejecución diagnóstica en la RTX 3060, el intervalo GPU de generación fue
+161 792 ns al generar y 2 272 ns al omitirla; el segundo intervalo contiene el
+coste de comandos y temporización, no generación de vértices. Son muestras
+aisladas, no un benchmark ni una medida del tiempo completo de fotograma.
+
+Fuentes: [despacho indirecto](https://docs.vulkan.org/refpages/latest/refpages/source/vkCmdDispatchIndirect.html)
+y [relleno de buffers](https://docs.vulkan.org/refpages/latest/refpages/source/vkCmdFillBuffer.html)
+de Khronos, consultadas durante esta entrega.
+
 ## Lo que demostraba el código de b8f4109
 
 | Pieza | Evidencia | Alcance real |

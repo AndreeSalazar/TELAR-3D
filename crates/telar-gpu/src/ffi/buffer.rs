@@ -29,7 +29,53 @@ pub(crate) struct Buffer {
     pub(crate) tamano: u64,
 }
 
+/// Buffer visible que conserva el mapeo hasta su destrucción. El propietario
+/// espera la valla antes de escribir, igual que al reutilizar sus comandos.
+pub(crate) struct BufferMapeado {
+    pub(crate) buffer: Buffer,
+    puntero: *mut u8,
+}
+
+impl BufferMapeado {
+    /// Escribe bytes sin llamadas Vulkan; el buffer es coherente para el host.
+    pub(crate) fn escribir(&self, datos: &[u8]) -> Result<(), String> {
+        if datos.len() as u64 > self.buffer.tamano {
+            return Err("los parámetros exceden el mapeo persistente".to_owned());
+        }
+        // SAFETY: mapear_persistente creó este puntero para toda la memoria;
+        // datos cabe en ella y la ranura espera su valla antes de sobrescribir.
+        unsafe {
+            core::ptr::copy_nonoverlapping(datos.as_ptr(), self.puntero, datos.len());
+        }
+        Ok(())
+    }
+}
+
+impl Drop for BufferMapeado {
+    fn drop(&mut self) {
+        // SAFETY: el mapeo se creó una vez y sigue vigente. El propietario
+        // completa el trabajo GPU antes del Drop; buffer se libera después.
+        unsafe {
+            (self.buffer.fd.calculo.desmapear)(self.buffer.d, self.buffer.memoria);
+        }
+    }
+}
+
 impl Buffer {
+    /// Consume un buffer de memoria visible y coherente, conservando su mapeo.
+    pub(crate) fn mapear_persistente(self) -> Result<BufferMapeado, String> {
+        let mut puntero: *mut c_void = core::ptr::null_mut();
+        // SAFETY: el llamador interno acaba de crear memoria HOST_VISIBLE y
+        // HOST_COHERENT, sin mapeos ni usos anteriores; se mapea toda la reserva.
+        unsafe {
+            ok(
+                (self.fd.calculo.mapear)(self.d, self.memoria, 0, self.tamano, 0, &raw mut puntero),
+                "mapear parámetros persistentes",
+            )?;
+        }
+        Ok(BufferMapeado { buffer: self, puntero: puntero.cast() })
+    }
+
     /// `memoria`: `(necesarias, preferidas)`, las propiedades del tipo de memoria.
     pub(crate) fn nuevo(ctx: &Contexto, tamano: u64, uso: u32, memoria: (u32, u32)) -> Result<Self, String> {
         let fd = ctx.fd.ok_or("el contexto no tiene dispositivo")?;

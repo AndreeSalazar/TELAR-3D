@@ -72,6 +72,8 @@ pub const F_A_U: u16 = 109;
 pub const BITCAST: u16 = 124;
 /// `OpSelect`.
 pub const SELECT: u16 = 169;
+/// `OpINotEqual`.
+pub const I_NOT_EQUAL: u16 = 171;
 /// `OpLogicalAnd`.
 pub const LOGICAL_AND: u16 = 167;
 /// `OpFDiv`.

@@ -26,6 +26,17 @@ de rejilla; todavía no es un ejecutor de grafos arbitrarios.
 La presentación espera su valla antes de escribir parámetros y envía el lote
 de compute pregrabado seguido del dibujo. El dibujo usa argumentos GPU desde
 el byte 12 del buffer de control. No se consulta un contador desde CPU.
+El buffer de control tiene 64 bytes: el despacho de generación empieza en el
+byte 48 y el de deformación en el byte 0. El productor mantiene la caché de
+dimensiones y escribe cero grupos de generación cuando la geometría sigue
+vigente. Se inicializa el control una sola vez con `vkCmdFillBuffer`, con una
+barrera transfer → compute antes de leerlo. La inicialización está fuera del
+bucle y del contador de grabaciones de compute reutilizables.
+
+Los parámetros quedan mapeados durante toda la vida del ejecutor: `BufferMapeado`
+se desmapea al destruirse, después de completar las vallas y antes de liberar
+la memoria. Cada paso escribe sus 16 bytes sin llamar a mapear ni desmapear.
+`ActividadProcedural::mapeos` cuenta uno por juego residente.
 Al exceder capacidad, el productor emite trabajo cero y marca error; evita
 producir geometría truncada. El modo vivo no descarga ese estado: la notificación
 asíncrona a la interfaz queda pendiente.

@@ -1,6 +1,7 @@
 //! Tres kernels residentes: preparar argumentos, generar la rejilla y deformarla.
 //! ABI: enlaces 0 parámetros u32[4], 1 vértices f32[], 2 índices u32[], 3 control
-//! u32[12]. Control: dispatch[0..3], draw[3..8], lado[8], puntos[9], error[10].
+//! u32[16]. Control: deformación[0..3], draw[3..8], lado[8], puntos[9], error[10],
+//! último lado generado[11], generación[12..15], generaciones acumuladas[15].
 //! Los lados superiores a la capacidad producen trabajo cero y error 1.
 
 use crate::{
@@ -88,13 +89,23 @@ pub fn preparar() -> Vec<u32> {
     let indices = funcion.binaria(op::I_MUL, entorno.entero, celdas, seis);
     let redondeo = funcion.binaria(op::I_ADD, entorno.entero, puntos, sesenta_y_tres);
     let grupos = funcion.binaria(op::U_DIV, entorno.entero, redondeo, sesenta_y_cuatro);
+    cache_gpu(
+        &mut funcion,
+        entorno.entero,
+        entorno.booleano,
+        entorno.puntero[3],
+        entorno.buffers[3],
+        lado,
+        permitido,
+        grupos,
+    );
     let error = funcion.elegir(entorno.entero, excede, uno, cero);
     let valores =
         [(cero, grupos), (uno, uno), (dos, uno), (tres, indices), (ocho, lado_seguro), (nueve, puntos), (diez, error)];
     for (indice, valor) in valores {
         escribir(&mut funcion, entorno.puntero[3], entorno.buffers[3], indice, valor);
     }
-    for (indice, valor) in [(4, uno), (5, cero), (6, cero), (7, cero), (11, cero)] {
+    for (indice, valor) in [(4, uno), (5, cero), (6, cero), (7, cero)] {
         let indice = funcion.modulo().constante_u32(indice);
         escribir(&mut funcion, entorno.puntero[3], entorno.buffers[3], indice, valor);
     }
@@ -102,6 +113,36 @@ pub fn preparar() -> Vec<u32> {
     let main = funcion.terminar();
     entorno.modulo.entrada_calculo(main, "main", &[], [1, 1, 1]);
     entorno.modulo.ensamblar()
+}
+
+/// El único hilo productor conserva la geometría hasta cambiar de dimensiones.
+#[allow(clippy::too_many_arguments, reason = "ids SPIR-V del entorno compartido por el productor")]
+fn cache_gpu(
+    funcion: &mut Funcion,
+    entero: Id,
+    booleano: Id,
+    puntero: Id,
+    control: Id,
+    lado: Id,
+    permitido: Id,
+    grupos: Id,
+) {
+    let [cero, uno, anterior, despacho, contador] = [0, 1, 11, 12, 15].map(|n| funcion.modulo().constante_u32(n));
+    let previo = leer(funcion, puntero, control, entero, anterior);
+    let total = leer(funcion, puntero, control, entero, contador);
+    let cambio = funcion.binaria(op::I_NOT_EQUAL, booleano, lado, previo);
+    let generar = funcion.binaria(op::LOGICAL_AND, booleano, permitido, cambio);
+    let cantidad = funcion.elegir(entero, generar, grupos, cero);
+    let incremento = funcion.elegir(entero, generar, uno, cero);
+    let total = funcion.binaria(op::I_ADD, entero, total, incremento);
+    let ultimo = funcion.elegir(entero, permitido, lado, previo);
+    for (indice, valor) in [(anterior, ultimo), (despacho, cantidad), (contador, total)] {
+        escribir(funcion, puntero, control, indice, valor);
+    }
+    for indice in [13, 14] {
+        let indice = funcion.modulo().constante_u32(indice);
+        escribir(funcion, puntero, control, indice, uno);
+    }
 }
 
 /// Genera puntos, normales planas e índices con una escritura exclusiva por hilo.

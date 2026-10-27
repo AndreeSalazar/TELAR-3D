@@ -31,6 +31,7 @@ type UsarConjuntos = unsafe extern "system" fn(Comandos, u32, Objeto, u32, u32, 
 type Despachar = unsafe extern "system" fn(Comandos, u32, u32, u32);
 type DespacharIndirecto = unsafe extern "system" fn(Comandos, Objeto, u64);
 type CopiarBuffer = unsafe extern "system" fn(Comandos, Objeto, Objeto, u32, *const Copia);
+type LlenarBuffer = unsafe extern "system" fn(Comandos, Objeto, u64, u64, u32);
 type CrearConsultas = unsafe extern "system" fn(Disp, *const InfoConsultas, Asig, *mut Objeto) -> i32;
 type ReiniciarConsultas = unsafe extern "system" fn(Comandos, Objeto, u32, u32);
 type MarcarTiempo = unsafe extern "system" fn(Comandos, u32, Objeto, u32);
@@ -64,6 +65,7 @@ pub(crate) struct FnCalculo {
     pub(crate) despachar: Despachar,
     pub(crate) despachar_indirecto: DespacharIndirecto,
     pub(crate) copiar_buffer: CopiarBuffer,
+    pub(crate) llenar_buffer: LlenarBuffer,
     pub(crate) crear_consultas: CrearConsultas,
     pub(crate) destruir_consultas: Destruir,
     pub(crate) reiniciar_consultas: ReiniciarConsultas,
@@ -100,6 +102,7 @@ impl FnCalculo {
             despachar: cargar!(buscar, "vkCmdDispatch", Despachar),
             despachar_indirecto: cargar!(buscar, "vkCmdDispatchIndirect", DespacharIndirecto),
             copiar_buffer: cargar!(buscar, "vkCmdCopyBuffer", CopiarBuffer),
+            llenar_buffer: cargar!(buscar, "vkCmdFillBuffer", LlenarBuffer),
             crear_consultas: cargar!(buscar, "vkCreateQueryPool", CrearConsultas),
             destruir_consultas: cargar!(buscar, "vkDestroyQueryPool", Destruir),
             reiniciar_consultas: cargar!(buscar, "vkCmdResetQueryPool", ReiniciarConsultas),

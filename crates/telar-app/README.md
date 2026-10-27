@@ -32,6 +32,13 @@ sobrescribir los datos en vuelo. Al finalizar, informa de 8 buffers residentes,
 6 pipelines de compute, 2 grabaciones de compute, los pasos y transferencias.
 La prueba cambia las dimensiones dentro de capacidad sin crear recursos nuevos.
 
+La GPU también decide **omitir la generación** cuando las dimensiones no han
+cambiado. Cada juego conserva su rejilla e índices y sigue deformándolos; los
+16 bytes de parámetros se actualizan en un mapeo persistente, sin mapear ni
+desmapear por fotograma. El estado de caché y su contador de generaciones se
+mantienen en GPU. `tests/cache_gpu.rs` comprueba decisiones y recuperación tras
+vacío o exceso de capacidad, con una referencia independiente.
+
 `src/escena.rs` prepara y comprueba la escena; `src/visor.rs` atiende la ventana
 y la cámara. Los kernels viven en `hilo-spirv`, y el ejecutor Vulkan en
 `telar-gpu`, sin dependencias entre ambos.

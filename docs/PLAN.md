@@ -93,6 +93,14 @@ capacidad asíncronamente, medir rasterización GPU por separado y publicar medi
 repetidas. Los tiempos GPU disponibles separan preparar, generar y deformar;
 todavía no representan el coste total de dibujar un fotograma.
 
+**Caché de topología implementada:** el productor GPU guarda el último lado
+válido por juego y omite la generación mediante cero grupos indirectos mientras
+puede reutilizar posiciones x/z e índices. Deformación conserva su propio
+despacho. La CPU no compara dimensiones ni descarga contadores para decidir.
+Los parámetros usan dos mapeos persistentes; ya no se mapean/desmapean por
+fotograma. Pruebas de 120 pasos cubren cambios, repetición, vacío y exceso;
+la prueba de 1024² puntos verifica la reutilización sin nueva generación.
+
 **Hecho cuando:** 120 pasos sin recrear recursos ni regrabar compute en estado
 estable, argumentos indirectos escritos por GPU, cero descargas intermedias,
 límites y desbordamiento comprobados, referencia CPU en tests pequeños y cero
@@ -112,6 +120,22 @@ El lenguaje, por punto como un *wrangle*:
 ```
 
 Léxico, sintaxis, tipos, IR en SSA, fusión de nodos y SPIR-V, más el **intérprete en la CPU** como referencia. El código generado usa el ejecutor residente de la Fase 4.5. Las reglas `memoria-gpu`, `barreras`, `limites` y `determinismo` viven en su comprobador de tipos.
+
+Orden de construcción para seguir ampliando el trabajo GPU:
+
+1. Generalizar las tres pasadas actuales a un plan de operaciones y recursos
+   residentes, con dependencias y decisiones de ejecución representadas explícitamente.
+2. Introducir un IR tipado por punto (atributos, escalares y vectores) y compilar
+   las primeras operaciones al backend SPIR-V; comparar contra su intérprete CPU.
+3. Añadir sintaxis HILO, parámetros y diagnósticos sobre ese mismo IR. La CPU
+   compila al editar el programa; la ejecución por elemento pertenece a GPU.
+4. Fusionar operaciones compatibles después de probar sus dependencias y medir
+   costes. Mantener transferencias y recreaciones fuera del recorrido estable.
+
+El objetivo de reducir la CPU al mínimo se comprueba con tiempos CPU y GPU,
+transferencias y contadores. «90 % GPU / 10 % CPU» expresa la intención, pero
+no es un porcentaje demostrado: ocupación, tiempo y cantidad de operaciones
+son medidas diferentes. Todavía no se ha medido un reparto de este tipo.
 
 **Hecho cuando:** el mismo programa da el mismo resultado en la GPU y en el intérprete, y un kernel con una carrera o con una suma atómica de `float` no compila, con un mensaje que dice por qué.
 

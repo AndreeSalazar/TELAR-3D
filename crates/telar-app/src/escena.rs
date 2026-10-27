@@ -48,9 +48,11 @@ pub(crate) fn comprobar(gpu: &Gpu, cuadros: u32) -> Result<(), String> {
         actividad.geometria_subida,
         actividad.descargados
     );
+    println!("telar: {} mapeos persistentes de parámetros", actividad.mapeos);
     if actividad.buffers != 8
         || actividad.pipelines != 6
         || actividad.grabaciones != 2
+        || actividad.mapeos != 2
         || actividad.pasos != u64::from(cuadros)
         || actividad.parametros != u64::from(cuadros) * 16
         || actividad.geometria_subida != 0

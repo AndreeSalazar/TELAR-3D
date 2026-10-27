@@ -46,6 +46,8 @@ pub struct ActividadProcedural {
     pub pipelines: u64,
     /// Grabaciones de compute, reutilizadas posteriormente.
     pub grabaciones: u64,
+    /// Mapeos persistentes de parámetros, creados una vez por juego residente.
+    pub mapeos: u64,
     /// Lotes enviados que contienen las tres pasadas.
     pub pasos: u64,
     /// Bytes de parámetros escritos por el host.
@@ -59,7 +61,7 @@ pub struct ActividadProcedural {
 /// Copia diagnóstica del estado GPU; nunca interviene en las decisiones del paso.
 pub struct DiagnosticoProcedural {
     /// Dispatch, draw y estado, según el ABI del buffer de control.
-    pub control: [u32; 12],
+    pub control: [u32; 16],
     /// Vértices activos, posición y normal.
     pub vertices: Vec<[f32; 6]>,
     /// Índices activos.

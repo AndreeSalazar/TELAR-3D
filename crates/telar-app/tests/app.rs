@@ -22,6 +22,7 @@ fn ventana_y_gpu_sin_avisos_de_validacion() {
     assert!(texto.contains("120 fotogramas · 0 avisos de validación"), "salida inesperada:\n{texto}\n{errores}");
     // La inicial y una por cada cambio de tamaño.
     assert!(texto.contains("swapchain creada 3 veces"), "la swapchain no se rehízo:\n{texto}");
+    assert!(texto.contains("2 mapeos persistentes de parámetros"), "{texto}");
     assert!(texto.contains("8 buffers · 6 pipelines · 2 grabaciones compute · 120 pasos · 1920 bytes parámetros · 0 bytes geometría subida · 0 bytes descargados"), "{texto}");
 }
 
