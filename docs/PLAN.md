@@ -57,6 +57,18 @@ Rasterizar la geometría de NUDO en la GPU (vértices y fragmentos con `hilo-spi
 
 **Hecho cuando:** una esfera de un millón de puntos se mueve a 60 fps, sin avisos de validación.
 
+**✅ Hecha.** En la RTX 3060, con las capas de validación activas:
+- una esfera de NUDO de **996 872 puntos** (≈ 2 millones de triángulos) gira a **75 fps**, la frecuencia del monitor (451 fotogramas en 6 s);
+- **0 avisos**, también al rehacer la swapchain y su profundidad en dos cambios de tamaño.
+
+Cómo está hecho:
+- **`nudo`:** la cámara orbital (`Camara`, matrices por columnas, profundidad invertida e infinita) y `Malla`, que parte la geometría en triángulos con normales suaves y aristas de más de 30°.
+- **`hilo-spirv`:** los shaders de vértices y de fragmentos, que pasan `spirv-val`. La luz es difusa, más un ambiente de cielo y suelo.
+- **`telar-gpu`:** renderizado dinámico de Vulkan 1.3, sin render pass. El pipeline gráfico usa 128 bytes de constantes; la malla se sube a memoria de la GPU.
+- **`telar-ventana`:** botones y rueda del ratón, con captura mientras se arrastra.
+
+Las capturas fuera de pantalla (`Calculo::capturar`) dejan probar el dibujo píxel a píxel, sin ventana: arriba es arriba, se descartan las caras traseras y no las delanteras, y lo de delante tapa lo de atrás aunque se dibuje antes. `telar --prueba --puntos 1000000` repite la meta, y `telar --segundos 6` mide los fps.
+
 ## Fase 5 · HILO v0
 
 El lenguaje, por punto como un *wrangle*:

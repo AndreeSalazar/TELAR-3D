@@ -24,6 +24,19 @@ El modelo de Houdini, según su documentación:
 
 `Geometria::comprobar` verifica que es coherente: cada vértice apunta a un punto que existe, cada primitiva cae dentro de los vértices y cada atributo tiene un valor por elemento.
 
+## La malla y la cámara (`malla.rs`, `camara.rs`)
+
+Lo que necesita el visor, todavía en la CPU y en `no_std`:
+
+- **`Malla::de`** parte la geometría en triángulos para la GPU (abanico por cara), con un vértice `[posición, normal]` por punto.
+  - Las normales de cara salen por el método de Newell, que vale también para polígonos no planos.
+  - Un punto es **suave** si sus caras se desvían menos de 30° de su normal media, y comparte vértice.
+  - Si no, es una arista: lleva un vértice por cara. La caja sale con 24 vértices, la esfera con uno por punto.
+- **`Camara`** orbita alrededor de un objetivo: giro e inclinación (que se queda entre ±89°), distancia y campo de visión.
+  - Las matrices van por columnas.
+  - La proyección es de **profundidad invertida e infinita**: el plano cercano da 1 y el infinito 0. Así se usa bien la precisión de un D32.
+  - La Y ya sale dada la vuelta para Vulkan.
+
 ## El grafo (`grafo.rs`)
 
 - **Sin ciclos por construcción:** un nodo solo puede tener como entradas nodos que ya existen.
@@ -49,4 +62,4 @@ Puntos, vértices, primitivas, la caja y el promedio de `P` (sumado en `f64`): l
 cargo test -p nudo
 ```
 
-La matemática contra `std`, y el grafo con un contador, que exige que se cocine exactamente lo que cambió.
+La matemática contra `std`, la cámara (el objetivo al centro, arriba es arriba, la profundidad invertida) y el grafo con un contador, que exige que se cocine exactamente lo que cambió.

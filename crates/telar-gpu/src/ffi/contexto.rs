@@ -14,6 +14,7 @@ use super::tipos::{
     ST_INSTANCE_CREATE_INFO, ST_WIN32_SURFACE_CREATE_INFO_KHR, TIPO_GENERAL, TIPOS_DE_MENSAJE, VK_API_1_3, VK_SUCCESS,
 };
 use super::tipos_calculo::{Monton, PropiedadesMemoria, TipoMemoria};
+use super::tipos_grafico::{Funciones13, RENDERIZADO_DINAMICO, ST_VULKAN_1_3_FEATURES};
 use crate::eleccion::puntuar;
 
 /// Avisos y errores de las capas de validación en todo el proceso.
@@ -231,9 +232,13 @@ impl Contexto {
         };
         let extensiones = [EXT_SWAPCHAIN.as_ptr()];
         let n_ext = u32::from(self.superficie != 0); // sin ventana no hace falta swapchain
+        // Vulkan 1.3: renderizado dinámico (dibujar sin pases de render ni framebuffers).
+        let mut funciones13 =
+            Funciones13 { s_type: ST_VULKAN_1_3_FEATURES, p_next: core::ptr::null_mut(), activas: [0; 15] };
+        funciones13.activas[RENDERIZADO_DINAMICO] = 1;
         let info = InfoDispositivo {
             s_type: ST_DEVICE_CREATE_INFO,
-            p_next: core::ptr::null(),
+            p_next: (&raw const funciones13).cast::<c_void>(),
             flags: 0,
             n_colas: 1,
             colas: &raw const cola,

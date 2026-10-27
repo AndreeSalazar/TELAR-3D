@@ -1,19 +1,36 @@
 # telar-app
 
-`telar`, la aplicación de TELAR 3D. Es **el único sitio que conoce a la vez la ventana y la GPU** (regla `fronteras`, declarado en su `Cargo.toml`):
+`telar`, la aplicación de TELAR 3D. Es **el único sitio que conoce a la vez la ventana, la GPU, los shaders y la geometría** (regla `fronteras`, declarado en su `Cargo.toml`):
 
 ```text
 telar-ventana ──(HINSTANCE, HWND como números)──► telar-app ──► telar-gpu
+nudo + telar-nodos ──(vértices e índices)────────►    │
+hilo-spirv ──(SPIR-V como &[u32])────────────────►    ┘
 ```
 
-Ninguno de los dos crates sabe que existe el otro.
+Ninguno de esos crates sabe que existen los otros.
 
 ```bash
-cargo run -p telar-app --release            # la ventana: respira del negro del cosmos al cian (Esc o la X para salir)
+cargo run -p telar-app --release            # el visor: la esfera de un millón de puntos (Esc o la X para salir)
 cargo run -p telar-app -- --prueba          # oculta, 120 fotogramas y dos cambios de tamaño; sale con 1 si hay avisos
 cargo run -p telar-app -- --segundos 5      # visible, y se cierra sola (para medir los fps)
+cargo run -p telar-app -- --puntos 250000   # otra esfera (por defecto, un millón; en la prueba, 40 000)
 cargo run -p telar-app -- --sin-validacion  # sin las capas de validación
 ```
+
+## El visor (Fase 4)
+
+Arrastrar con el botón izquierdo orbita; la rueda acerca y aleja; quieta 3 s, la cámara gira sola. El título dice los puntos, la GPU y los fps.
+
+En la RTX 3060, con validación:
+
+```text
+telar: esfera de 996872 puntos · 1993740 triángulos · cocinada en 107 ms
+telar: 451 fotogramas · 0 avisos de validación
+telar: 6.0 s · 75.1 fps de media
+```
+
+75 fps es la frecuencia del monitor: la presentación va sincronizada (FIFO).
 
 ## La Fase 1, medida
 
@@ -27,7 +44,8 @@ Los avisos de tipo GENERAL (del cargador de Vulkan y de capas que otros programa
 
 ## Tests
 
-`tests/app.rs` lanza el ejecutable de verdad con `--prueba` y exige «120 fotogramas · 0 avisos de validación».
+- **`tests/app.rs`** lanza el ejecutable de verdad con `--prueba` y exige «120 fotogramas · 0 avisos de validación». Lo repite con el millón de puntos.
+- **`tests/visor.rs`** dibuja esferas de NUDO con los shaders de `hilo-spirv` en capturas fuera de pantalla y mira los píxeles. Comprueba tres cosas: arriba es arriba, se ven las caras de delante (y no las de dentro) y lo de delante tapa lo de atrás.
 
 ## La Fase 2: el primer kernel
 

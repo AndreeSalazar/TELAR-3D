@@ -5,6 +5,7 @@ La GPU de TELAR 3D: **Vulkan a mano**, sin crates y sin enlazar el SDK (`vulkan-
 ```rust
 let mut gpu = Gpu::nueva(&Opciones::default(), Superficie { instancia, ventana }, (1280, 720))?;
 gpu.dibujar(eleccion::hex(0x35e3ff))?;   // limpia a cian y presenta, sincronizado con el monitor
+gpu.dibujar_escena(fondo, &constantes)?;  // o dibuja la malla del visor (Fase 4)
 let calculo = Calculo::nuevo(&Opciones::default())?; // sin ventana: para calcular y para los tests
 ```
 
@@ -16,7 +17,12 @@ let calculo = Calculo::nuevo(&Opciones::default())?; // sin ventana: para calcul
 | `src/ffi/tipos.rs` | las estructuras y constantes, copiadas de `vulkan_core.h`/`vulkan_win32.h` y **comprobadas una a una contra los headers del SDK 1.4.350** |
 | `src/ffi/carga.rs` · `funciones.rs` | `vulkan-1.dll` y cada función con su firma; las de la swapchain son opcionales (sin ventana no existen) |
 | `src/ffi/contexto.rs` | instancia, capas de validación, superficie Win32, elección de la GPU, dispositivo y cola |
-| `src/ffi/presentacion.rs` | swapchain, sincronización por fotograma y el dibujo |
+| `src/ffi/presentacion.rs` | la sincronización por fotograma y su ciclo: esperar, adquirir, grabar, enviar, presentar |
+| `src/ffi/swapchain.rs` | la swapchain con una vista y un semáforo por imagen, y su imagen de profundidad |
+| `src/ffi/dibujo.rs` | grabar un fotograma con renderizado dinámico (barreras, limpiar, dibujar); igual en la ventana y en las capturas |
+| `src/ffi/pipeline_grafico.rs` · `malla_gpu.rs` · `imagen.rs` · `buffer.rs` | los recursos del visor, cada uno con su Drop |
+| `src/ffi/visor.rs` | la escena de la ventana (el pipeline se hace para su formato) y las capturas fuera de pantalla |
+| `src/escena.rs` | `Sombreadores` y `Constantes` (128 bytes), código puro |
 
 Todo el `unsafe` vive en `src/ffi/`, cada bloque con su `// SAFETY:`; los tipos de puntero a función no lo necesitan (no ejecutan nada), y el guardián lo sabe.
 
@@ -40,7 +46,7 @@ Las capas de validación ya cazaron dos fallos en el desarrollo: cargar funcione
 cargo test -p telar-gpu -- --nocapture
 ```
 
-Las decisiones puras, y un contexto de Vulkan de verdad (sin ventana) con validación: **cero avisos**. En una máquina sin Vulkan, el test lo dice y no cuenta como fallo.
+Las decisiones puras, el empaquetado de las constantes, y un contexto de Vulkan de verdad (sin ventana) con validación: **cero avisos**. En una máquina sin Vulkan, el test lo dice y no cuenta como fallo. Las capturas se prueban en `telar-app/tests/visor.rs`: allí están a la vez los shaders y la geometría.
 
 ## Calcular (Fase 2)
 
@@ -58,3 +64,20 @@ r.nanosegundos; // solo el kernel, medido por la GPU
 - Si se piden más grupos de los que admite la GPU, es un error **antes** de tocarla.
 
 `telar-gpu` no conoce `hilo-spirv` (están aislados): recibe el kernel como `&[u32]`, y los une `telar-app`.
+
+## Dibujar (Fase 4)
+
+```rust
+gpu.preparar_visor(Sombreadores { vertices: &vs, fragmentos: &fs })?; // SPIR-V, entrada `main`
+gpu.subir_malla(&malla.vertices, &malla.indices)?;  // [posición, normal] y triángulos
+gpu.dibujar_escena(fondo, &Constantes { matriz, luz, color, cielo, suelo })?;
+let pixeles = calculo.capturar(sombreadores, &vertices, &indices, (64, 64), fondo, &constantes)?; // RGBA8, sin ventana
+```
+
+- **Renderizado dinámico** (Vulkan 1.3, `dynamicRendering`): sin render pass ni framebuffers; el pipeline solo sabe los formatos.
+- **Profundidad invertida e infinita** (D32, se limpia a 0, compara `GREATER`): la precisión está donde hace falta. La Y se da la vuelta en la proyección (`nudo::Camara`), no en el viewport.
+- Caras **antihorarias** delante; se descartan las de detrás.
+- **Constantes empujadas, 128 bytes:** la matriz, la luz y tres colores. Sin descriptores.
+- La malla vive en **memoria de la GPU**: se sube con un buffer intermedio y una copia, con su barrera.
+- La profundidad la comparten los dos fotogramas en vuelo: una barrera hace que cada uno espere a que el anterior termine de escribirla.
+- El pipeline se rehace si cambia el formato de la ventana. El visor espera a la GPU antes de soltar nada.

@@ -39,9 +39,7 @@ pub(crate) const ST_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT: u32 = 1_000_128_004;
 
 pub(crate) const PRESENT_MODE_FIFO: u32 = 2;
 pub(crate) const LAYOUT_UNDEFINED: u32 = 0;
-pub(crate) const LAYOUT_TRANSFER_DST: u32 = 7;
 pub(crate) const LAYOUT_PRESENT_SRC: u32 = 1_000_001_002;
-pub(crate) const USO_TRANSFER_DST: u32 = 0x0000_0002;
 pub(crate) const USO_COLOR_ATTACHMENT: u32 = 0x0000_0010;
 pub(crate) const ETAPA_TRANSFER: u32 = 0x0000_1000;
 pub(crate) const ETAPA_BOTTOM_OF_PIPE: u32 = 0x0000_2000;

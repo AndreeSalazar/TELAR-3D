@@ -1,5 +1,6 @@
-//! La presentación: swapchain, sincronización por fotograma y el primer
-//! dibujo (limpiar la imagen a un color).
+//! La presentación: la sincronización por fotograma y el ciclo de cada uno
+//! (esperar, adquirir, grabar, enviar, presentar). Qué se graba lo decide
+//! `dibujo`; la swapchain y su profundidad, `swapchain`.
 //!
 //! Sincronización, a prueba de las capas de validación:
 //! - un semáforo de «imagen adquirida» y una valla **por fotograma en vuelo** (2);
@@ -8,18 +9,17 @@
 //!   reutilizarlo por fotograma provocaría avisos (y carreras de verdad).
 
 use super::contexto::{Contexto, ok};
+use super::dibujo::{Destino, Escena, grabar};
 use super::funciones::{FnDispositivo, FnSwapchain};
+use super::swapchain::Swapchain;
 use super::tipos::{
-    ACCESO_TRANSFER_WRITE, ALFA_OPACO, ASPECTO_COLOR, BarreraImagen, COMPARTIR_EXCLUSIVO, Capacidades, Cola, Comandos,
-    Disp, ETAPA_BOTTOM_OF_PIPE, ETAPA_TRANSFER, Extension2D, FAMILIA_IGNORADA, FormatoSuperficie, InfoEnvio,
-    InfoInicioComandos, InfoPresentacion, InfoReservaComandos, InfoSimple, InfoSwapchain, LAYOUT_PRESENT_SRC,
-    LAYOUT_TRANSFER_DST, LAYOUT_UNDEFINED, NIVEL_PRIMARIO, Objeto, POOL_REINICIABLE, PRESENT_MODE_FIFO, Rango,
-    ST_COMMAND_BUFFER_ALLOCATE_INFO, ST_COMMAND_BUFFER_BEGIN_INFO, ST_COMMAND_POOL_CREATE_INFO, ST_FENCE_CREATE_INFO,
-    ST_IMAGE_MEMORY_BARRIER, ST_PRESENT_INFO_KHR, ST_SEMAPHORE_CREATE_INFO, ST_SUBMIT_INFO,
-    ST_SWAPCHAIN_CREATE_INFO_KHR, USO_COLOR_ATTACHMENT, USO_TRANSFER_DST, USO_UNA_VEZ, VALLA_SENALADA,
-    VK_ERROR_OUT_OF_DATE_KHR, VK_SUBOPTIMAL_KHR, VK_SUCCESS,
+    Cola, Comandos, Disp, ETAPA_BOTTOM_OF_PIPE, InfoEnvio, InfoInicioComandos, InfoPresentacion, InfoReservaComandos,
+    InfoSimple, LAYOUT_PRESENT_SRC, NIVEL_PRIMARIO, Objeto, POOL_REINICIABLE, ST_COMMAND_BUFFER_ALLOCATE_INFO,
+    ST_COMMAND_BUFFER_BEGIN_INFO, ST_COMMAND_POOL_CREATE_INFO, ST_FENCE_CREATE_INFO, ST_PRESENT_INFO_KHR,
+    ST_SEMAPHORE_CREATE_INFO, ST_SUBMIT_INFO, USO_UNA_VEZ, VALLA_SENALADA, VK_ERROR_OUT_OF_DATE_KHR, VK_SUBOPTIMAL_KHR,
+    VK_SUCCESS,
 };
-use crate::eleccion::{elegir_extension, elegir_formato, elegir_imagenes};
+use super::tipos_grafico::ETAPA_SALIDA_COLOR;
 
 /// Fotogramas en vuelo: la CPU prepara uno mientras la GPU pinta el otro.
 const EN_VUELO: usize = 2;
@@ -30,11 +30,9 @@ pub(crate) struct Presentacion {
     fs: FnSwapchain,
     dispositivo: Disp,
     cola: Cola,
-    swapchain: Objeto,
+    swapchain: Option<Swapchain>,
     pub(crate) formato: u32,
     pub(crate) extension: (u32, u32),
-    imagenes: Vec<Objeto>,
-    listos: Vec<Objeto>,
     adquiridas: [Objeto; EN_VUELO],
     vallas: [Objeto; EN_VUELO],
     pool: Objeto,
@@ -55,11 +53,9 @@ impl Presentacion {
             fs,
             dispositivo: ctx.dispositivo,
             cola: ctx.cola,
-            swapchain: 0,
+            swapchain: None,
             formato: 0,
             extension: (0, 0),
-            imagenes: Vec::new(),
-            listos: Vec::new(),
             adquiridas: [0; EN_VUELO],
             vallas: [0; EN_VUELO],
             pool: 0,
@@ -69,47 +65,32 @@ impl Presentacion {
             rehacer: false,
             creaciones: 0,
         };
+        let nulo = core::ptr::null();
         let pool = InfoSimple {
             s_type: ST_COMMAND_POOL_CREATE_INFO,
-            p_next: core::ptr::null(),
+            p_next: nulo,
             flags: POOL_REINICIABLE,
             familia: ctx.familia,
         };
-        let semaforo = InfoSimple { s_type: ST_SEMAPHORE_CREATE_INFO, p_next: core::ptr::null(), flags: 0, familia: 0 };
-        let valla =
-            InfoSimple { s_type: ST_FENCE_CREATE_INFO, p_next: core::ptr::null(), flags: VALLA_SENALADA, familia: 0 };
+        let semaforo = InfoSimple { s_type: ST_SEMAPHORE_CREATE_INFO, p_next: nulo, flags: 0, familia: 0 };
+        let valla = InfoSimple { s_type: ST_FENCE_CREATE_INFO, p_next: nulo, flags: VALLA_SENALADA, familia: 0 };
+        let d = p.dispositivo;
         // SAFETY: dispositivo válido; cada `info` vive durante su llamada; lo creado
         // queda en `p` y lo suelta su Drop aunque algo falle a medias.
         unsafe {
-            ok(
-                (fd.crear_pool)(p.dispositivo, &raw const pool, core::ptr::null(), &raw mut p.pool),
-                "crear el pool de comandos",
-            )?;
+            ok((fd.crear_pool)(d, &raw const pool, nulo, &raw mut p.pool), "crear el pool de comandos")?;
             let reserva = InfoReservaComandos {
                 s_type: ST_COMMAND_BUFFER_ALLOCATE_INFO,
-                p_next: core::ptr::null(),
+                p_next: nulo,
                 pool: p.pool,
                 nivel: NIVEL_PRIMARIO,
                 cantidad: EN_VUELO_U32,
             };
-            ok(
-                (fd.reservar_comandos)(p.dispositivo, &raw const reserva, p.comandos.as_mut_ptr()),
-                "reservar los comandos",
-            )?;
+            ok((fd.reservar_comandos)(d, &raw const reserva, p.comandos.as_mut_ptr()), "reservar los comandos")?;
             for i in 0..EN_VUELO {
-                ok(
-                    (fd.crear_semaforo)(
-                        p.dispositivo,
-                        &raw const semaforo,
-                        core::ptr::null(),
-                        &raw mut p.adquiridas[i],
-                    ),
-                    "crear un semáforo",
-                )?;
-                ok(
-                    (fd.crear_valla)(p.dispositivo, &raw const valla, core::ptr::null(), &raw mut p.vallas[i]),
-                    "crear una valla",
-                )?;
+                let r = (fd.crear_semaforo)(d, &raw const semaforo, nulo, &raw mut p.adquiridas[i]);
+                ok(r, "crear un semáforo")?;
+                ok((fd.crear_valla)(d, &raw const valla, nulo, &raw mut p.vallas[i]), "crear una valla")?;
             }
         }
         p.crear_swapchain(ctx)?;
@@ -122,119 +103,46 @@ impl Presentacion {
         self.rehacer = true;
     }
 
-    /// (Re)crea la swapchain para el tamaño actual de la ventana.
+    /// (Re)crea la swapchain para el tamaño actual de la ventana. Si está
+    /// minimizada se queda la que había y se reintenta en el próximo dibujo.
     fn crear_swapchain(&mut self, ctx: &Contexto) -> Result<(), String> {
-        let mut cap = Capacidades::default();
-        let mut n = 0u32;
-        // SAFETY: físico y superficie válidos; los datos se piden en dos pasos.
-        let formatos = unsafe {
-            ok((ctx.fi.capacidades)(ctx.fisico, ctx.superficie, &raw mut cap), "leer la superficie")?;
-            ok(
-                (ctx.fi.formatos)(ctx.fisico, ctx.superficie, &raw mut n, core::ptr::null_mut()),
-                "contar los formatos",
-            )?;
-            let mut v = vec![FormatoSuperficie::default(); n as usize];
-            ok((ctx.fi.formatos)(ctx.fisico, ctx.superficie, &raw mut n, v.as_mut_ptr()), "listar los formatos")?;
-            v
-        };
-        let pares: Vec<(u32, u32)> = formatos.iter().map(|f| (f.formato, f.espacio_color)).collect();
-        let (formato, espacio) = elegir_formato(&pares).ok_or("la superficie no ofrece ningún formato")?;
-        let par = |e: Extension2D| (e.ancho, e.alto);
-        let (ancho, alto) = elegir_extension(par(cap.actual), par(cap.minima), par(cap.maxima), self.ventana);
-        if ancho == 0 || alto == 0 {
-            self.rehacer = true; // minimizada: se rehará al volver
+        // SAFETY: dispositivo válido; tras esperar, la GPU ya no usa la swapchain vieja.
+        ok(unsafe { (self.fd.esperar)(self.dispositivo) }, "esperar a la GPU")?;
+        let anterior = self.swapchain.as_ref().map_or(0, |s| s.objeto);
+        let Some(nueva) = Swapchain::nueva(ctx, self.ventana, anterior)? else {
+            self.rehacer = true;
             return Ok(());
-        }
-        if cap.usos & USO_TRANSFER_DST == 0 {
-            return Err("la swapchain no admite escribir en sus imágenes (TRANSFER_DST)".to_owned());
-        }
-        let anterior = self.swapchain;
-        let info = InfoSwapchain {
-            s_type: ST_SWAPCHAIN_CREATE_INFO_KHR,
-            p_next: core::ptr::null(),
-            flags: 0,
-            superficie: ctx.superficie,
-            min_imagenes: elegir_imagenes(cap.min_imagenes, cap.max_imagenes),
-            formato,
-            espacio_color: espacio,
-            extension: Extension2D { ancho, alto },
-            capas: 1,
-            uso: USO_TRANSFER_DST | (cap.usos & USO_COLOR_ATTACHMENT),
-            compartir: COMPARTIR_EXCLUSIVO,
-            n_familias: 0,
-            familias: core::ptr::null(),
-            transformacion: cap.transformacion_actual,
-            alfa: if cap.alfa_compuesto & ALFA_OPACO != 0 {
-                ALFA_OPACO
-            } else {
-                cap.alfa_compuesto & cap.alfa_compuesto.wrapping_neg()
-            },
-            modo_presentacion: PRESENT_MODE_FIFO, // sincronizado con el monitor; siempre disponible
-            recortada: 1,
-            anterior,
         };
-        // SAFETY: se espera a que la GPU termine antes de soltar la swapchain vieja y
-        // sus semáforos; `info` vive durante la llamada; las imágenes se piden en dos pasos.
-        unsafe {
-            ok((self.fd.esperar)(self.dispositivo), "esperar a la GPU")?;
-            let mut nueva = 0;
-            ok(
-                (self.fs.crear)(self.dispositivo, &raw const info, core::ptr::null(), &raw mut nueva),
-                "crear la swapchain",
-            )?;
-            self.swapchain = nueva;
-            if anterior != 0 {
-                (self.fs.destruir)(self.dispositivo, anterior, core::ptr::null());
-            }
-            for &s in &self.listos {
-                (self.fd.destruir_semaforo)(self.dispositivo, s, core::ptr::null());
-            }
-            self.listos.clear();
-            let mut n = 0u32;
-            ok(
-                (self.fs.imagenes)(self.dispositivo, self.swapchain, &raw mut n, core::ptr::null_mut()),
-                "contar las imágenes",
-            )?;
-            self.imagenes = vec![0; n as usize];
-            ok(
-                (self.fs.imagenes)(self.dispositivo, self.swapchain, &raw mut n, self.imagenes.as_mut_ptr()),
-                "listar las imágenes",
-            )?;
-            let semaforo =
-                InfoSimple { s_type: ST_SEMAPHORE_CREATE_INFO, p_next: core::ptr::null(), flags: 0, familia: 0 };
-            for _ in 0..n {
-                let mut s = 0;
-                ok(
-                    (self.fd.crear_semaforo)(self.dispositivo, &raw const semaforo, core::ptr::null(), &raw mut s),
-                    "crear un semáforo",
-                )?;
-                self.listos.push(s);
-            }
-        }
-        (self.formato, self.extension, self.rehacer) = (formato, (ancho, alto), false);
+        (self.formato, self.extension, self.rehacer) = (nueva.formato, nueva.extension, false);
+        self.swapchain = Some(nueva); // la vieja se suelta aquí, ya retirada
         self.creaciones += 1;
         Ok(())
     }
 
-    /// Limpia la siguiente imagen a `color` (ya en el espacio del formato) y la
-    /// presenta. `Ok(false)` si no se dibujó (ventana minimizada o swapchain rehecha).
-    pub(crate) fn dibujar(&mut self, ctx: &Contexto, color: [f32; 4]) -> Result<bool, String> {
+    /// Dibuja el siguiente fotograma: limpia a `limpiar` (ya en el espacio del
+    /// formato), dibuja `escena` si hay, y lo presenta. `Ok(false)` si no se
+    /// dibujó (ventana minimizada o swapchain rehecha).
+    pub(crate) fn dibujar(
+        &mut self,
+        ctx: &Contexto,
+        limpiar: [f32; 4],
+        escena: Option<&Escena>,
+    ) -> Result<bool, String> {
         if self.rehacer {
             self.crear_swapchain(ctx)?;
-            if self.rehacer || self.swapchain == 0 {
+            if self.rehacer {
                 return Ok(false);
             }
         }
+        let Some(sc) = self.swapchain.as_ref() else { return Ok(false) };
         let f = self.cuadro;
         let mut indice = 0u32;
         // SAFETY: la valla y el semáforo son de este fotograma; tras esperar la valla,
         // la GPU ya no usa sus comandos ni su semáforo de adquisición.
         let r = unsafe {
-            ok(
-                (self.fd.esperar_vallas)(self.dispositivo, 1, &raw const self.vallas[f], 1, u64::MAX),
-                "esperar la valla",
-            )?;
-            (self.fs.adquirir)(self.dispositivo, self.swapchain, u64::MAX, self.adquiridas[f], 0, &raw mut indice)
+            let r = (self.fd.esperar_vallas)(self.dispositivo, 1, &raw const self.vallas[f], 1, u64::MAX);
+            ok(r, "esperar la valla")?;
+            (self.fs.adquirir)(self.dispositivo, sc.objeto, u64::MAX, self.adquiridas[f], 0, &raw mut indice)
         };
         if r == VK_ERROR_OUT_OF_DATE_KHR {
             self.rehacer = true;
@@ -243,24 +151,26 @@ impl Presentacion {
         if r != VK_SUCCESS && r != VK_SUBOPTIMAL_KHR {
             ok(r, "adquirir una imagen")?;
         }
-        let imagen = self.imagenes[indice as usize];
-        let listo = self.listos[indice as usize];
-        let cmd = self.comandos[f];
-        let rango = Rango { aspecto: ASPECTO_COLOR, mip_base: 0, n_mips: 1, capa_base: 0, n_capas: 1 };
-        // De «sin definir» a «destino de copia» (tras esperar al semáforo, en la misma
-        // etapa), y de ahí a «presentar».
-        let a_limpiar = barrera(imagen, rango, (0, ACCESO_TRANSFER_WRITE), (LAYOUT_UNDEFINED, LAYOUT_TRANSFER_DST));
-        let a_presentar = barrera(imagen, rango, (ACCESO_TRANSFER_WRITE, 0), (LAYOUT_TRANSFER_DST, LAYOUT_PRESENT_SRC));
+        let i = indice as usize;
+        let destino = Destino {
+            imagen: sc.imagenes[i],
+            vista: sc.vistas[i],
+            profundidad: (sc.profundidad.objeto, sc.profundidad.vista),
+            extension: sc.extension,
+            despues: (LAYOUT_PRESENT_SRC, ETAPA_BOTTOM_OF_PIPE, 0),
+        };
+        let (cmd, listo, nulo) = (self.comandos[f], sc.listos[i], core::ptr::null());
         let inicio = InfoInicioComandos {
             s_type: ST_COMMAND_BUFFER_BEGIN_INFO,
-            p_next: core::ptr::null(),
+            p_next: nulo,
             flags: USO_UNA_VEZ,
-            herencia: core::ptr::null(),
+            herencia: nulo,
         };
-        let etapa = ETAPA_TRANSFER;
+        // La imagen se escribe al sacar el color: ahí es donde hay que esperar a tenerla.
+        let etapa = ETAPA_SALIDA_COLOR;
         let envio = InfoEnvio {
             s_type: ST_SUBMIT_INFO,
-            p_next: core::ptr::null(),
+            p_next: nulo,
             n_esperas: 1,
             esperas: &raw const self.adquiridas[f],
             etapas_espera: &raw const etapa,
@@ -271,35 +181,23 @@ impl Presentacion {
         };
         let presentacion = InfoPresentacion {
             s_type: ST_PRESENT_INFO_KHR,
-            p_next: core::ptr::null(),
+            p_next: nulo,
             n_esperas: 1,
             esperas: &raw const listo,
             n_swapchains: 1,
-            swapchains: &raw const self.swapchain,
+            swapchains: &raw const sc.objeto,
             indices: &raw const indice,
             resultados: core::ptr::null_mut(),
         };
-        let nulo = core::ptr::null();
         // SAFETY: el búfer de comandos es de este fotograma y ya no está en uso (valla
-        // esperada); todo lo que se pasa por puntero vive hasta el final del bloque, y
-        // la valla se reinicia justo antes del envío que la vuelve a señalar.
+        // esperada); la imagen, su vista y la profundidad son de la swapchain actual,
+        // que no se suelta sin esperar a la GPU; todo lo que se pasa por puntero vive
+        // hasta el final del bloque, y la valla se reinicia justo antes del envío que
+        // la vuelve a señalar.
         let r = unsafe {
             ok((self.fd.reiniciar_comandos)(cmd, 0), "reiniciar los comandos")?;
             ok((self.fd.empezar)(cmd, &raw const inicio), "empezar los comandos")?;
-            (self.fd.barrera)(cmd, ETAPA_TRANSFER, ETAPA_TRANSFER, 0, 0, nulo, 0, nulo, 1, &raw const a_limpiar);
-            (self.fd.limpiar_color)(cmd, imagen, LAYOUT_TRANSFER_DST, &raw const color, 1, &raw const rango);
-            (self.fd.barrera)(
-                cmd,
-                ETAPA_TRANSFER,
-                ETAPA_BOTTOM_OF_PIPE,
-                0,
-                0,
-                nulo,
-                0,
-                nulo,
-                1,
-                &raw const a_presentar,
-            );
+            grabar(&self.fd, cmd, &destino, limpiar, escena);
             ok((self.fd.terminar)(cmd), "terminar los comandos")?;
             ok((self.fd.reiniciar_vallas)(self.dispositivo, 1, &raw const self.vallas[f]), "reiniciar la valla")?;
             ok((self.fd.enviar)(self.cola, 1, &raw const envio, self.vallas[f]), "enviar a la GPU")?;
@@ -315,29 +213,13 @@ impl Presentacion {
     }
 }
 
-/// Una barrera de imagen: `(acceso antes, acceso después)` y `(layout viejo, nuevo)`.
-fn barrera(imagen: Objeto, rango: Rango, acceso: (u32, u32), layout: (u32, u32)) -> BarreraImagen {
-    BarreraImagen {
-        s_type: ST_IMAGE_MEMORY_BARRIER,
-        p_next: core::ptr::null(),
-        acceso_origen: acceso.0,
-        acceso_destino: acceso.1,
-        layout_viejo: layout.0,
-        layout_nuevo: layout.1,
-        familia_origen: FAMILIA_IGNORADA,
-        familia_destino: FAMILIA_IGNORADA,
-        imagen,
-        rango,
-    }
-}
-
 impl Drop for Presentacion {
     fn drop(&mut self) {
         // SAFETY: tras esperar a la GPU nada está en uso; cada objeto se destruye una
-        // vez y solo si se creó (0 = no creado).
+        // vez y solo si se creó (0 = no creado). La swapchain se suelta después, sola.
         unsafe {
             (self.fd.esperar)(self.dispositivo);
-            for &s in self.listos.iter().chain(&self.adquiridas).filter(|&&s| s != 0) {
+            for &s in self.adquiridas.iter().filter(|&&s| s != 0) {
                 (self.fd.destruir_semaforo)(self.dispositivo, s, core::ptr::null());
             }
             for &v in self.vallas.iter().filter(|&&v| v != 0) {
@@ -345,9 +227,6 @@ impl Drop for Presentacion {
             }
             if self.pool != 0 {
                 (self.fd.destruir_pool)(self.dispositivo, self.pool, core::ptr::null());
-            }
-            if self.swapchain != 0 {
-                (self.fs.destruir)(self.dispositivo, self.swapchain, core::ptr::null());
             }
         }
     }

@@ -61,6 +61,18 @@ extern "system" fn procedimiento(ventana: isize, mensaje: u32, w: usize, l: isiz
         if mensaje == WM_CLOSE {
             return 0; // la ventana no se destruye sola: decide la app
         }
+        // Mientras se arrastra, el ratón sigue siendo de la ventana aunque salga de
+        // ella: así llega el «soltado» y el arrastre no se queda pegado.
+        if let Evento::Boton { pulsado, .. } = evento {
+            // SAFETY: `ventana` es la nuestra (nos la pasa Windows) y esto corre en su hilo.
+            unsafe {
+                if pulsado {
+                    win32::SetCapture(ventana);
+                } else {
+                    win32::ReleaseCapture();
+                }
+            }
+        }
     }
     // SAFETY: se pasan a Windows los mismos argumentos que nos dio, para el
     // comportamiento por defecto de la ventana que es nuestra.

@@ -107,13 +107,57 @@ pub const INTEGRADA_ID_GLOBAL: u32 = 28;
 /// `FunctionControl None` y `SelectionControl None`.
 pub const CONTROL_NINGUNO: u32 = 0;
 
+// Para los shaders de gráficos (vértices y fragmentos).
+/// `OpExtInstImport`.
+pub const EXT_INST_IMPORT: u16 = 11;
+/// `OpExtInst`.
+pub const EXT_INST: u16 = 12;
+/// `OpTypeFloat`.
+pub const TYPE_FLOAT: u16 = 22;
+/// `OpVectorShuffle`.
+pub const VECTOR_SHUFFLE: u16 = 79;
+/// `OpCompositeConstruct`.
+pub const COMPOSITE_CONSTRUCT: u16 = 80;
+/// `OpCompositeExtract`.
+pub const COMPOSITE_EXTRACT: u16 = 81;
+/// `OpFAdd`.
+pub const F_ADD: u16 = 129;
+/// `OpFSub`.
+pub const F_SUB: u16 = 131;
+/// `OpFMul`.
+pub const F_MUL: u16 = 133;
+/// `OpVectorTimesScalar`.
+pub const VECTOR_TIMES_SCALAR: u16 = 142;
+/// `OpDot`.
+pub const DOT: u16 = 148;
+/// `ExecutionModel Vertex`.
+pub const MODELO_VERTICES: u32 = 0;
+/// `ExecutionModel Fragment`.
+pub const MODELO_FRAGMENTOS: u32 = 4;
+/// `ExecutionMode OriginUpperLeft`: el origen de los fragmentos arriba a la izquierda (obligatorio en Vulkan).
+pub const MODO_ORIGEN_ARRIBA: u32 = 7;
+/// `Decoration Location`.
+pub const DECORACION_UBICACION: u32 = 30;
+/// `BuiltIn Position`.
+pub const INTEGRADA_POSICION: u32 = 0;
+/// `GLSLstd450Normalize` (de `GLSL.std.450.h`).
+pub const GLSL_NORMALIZAR: u32 = 69;
+/// `GLSLstd450FMax`.
+pub const GLSL_MAXIMO: u32 = 40;
+/// `GLSLstd450FMix`.
+pub const GLSL_MEZCLA: u32 = 46;
+
 /// Dónde vive una variable (`StorageClass`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Clase {
     /// `Input`: lo que llega del sistema (`gl_GlobalInvocationID`).
     Entrada = 1,
+    /// `Output`: lo que el shader entrega a la etapa siguiente (`gl_Position`, el color).
+    Salida = 3,
     /// `Function`: variables locales.
     Funcion = 7,
+    /// `PushConstant`: unos pocos bytes que la CPU manda con cada dibujo (la cámara).
+    Constantes = 9,
     /// `StorageBuffer`: un buffer de la GPU que el kernel lee y escribe.
     Almacen = 12,
 }

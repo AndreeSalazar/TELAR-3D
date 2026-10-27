@@ -19,7 +19,10 @@
 extern crate alloc;
 
 pub mod ejemplos;
+mod funcion;
 mod modulo;
 pub mod op;
+pub mod visor;
 
-pub use modulo::{Funcion, Id, Modulo, texto};
+pub use funcion::Funcion;
+pub use modulo::{Id, Modulo, texto};

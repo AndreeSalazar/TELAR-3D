@@ -21,11 +21,15 @@
 
 extern crate alloc;
 
+pub mod camara;
 pub mod estadisticas;
 pub mod geometria;
 pub mod grafo;
+pub mod malla;
 pub mod mate;
 
+pub use camara::{Camara, Mat4};
 pub use estadisticas::Estadisticas;
 pub use geometria::{Clase, Geometria, Valores};
 pub use grafo::{Grafo, IdNodo, Nodo, Valor};
+pub use malla::Malla;

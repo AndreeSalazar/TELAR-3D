@@ -1,6 +1,7 @@
 //! La única puerta de la GPU al sistema: Vulkan a mano. Todo el `unsafe` del
 //! crate vive aquí, cada uno con su `// SAFETY:`; hacia fuera solo salen
-//! `Contexto` y `Presentacion`, con métodos seguros.
+//! `Contexto`, `Presentacion`, `Visor` y las funciones `ejecutar` y `capturar`,
+//! con interfaces seguras.
 //!
 //! - `tipos`: estructuras y constantes, comprobadas contra los headers del SDK.
 //! - `carga`: `vulkan-1.dll`, las funciones globales y las de la instancia.
@@ -8,6 +9,10 @@
 //! - `contexto`: instancia, validación, superficie, dispositivo y cola.
 //! - `presentacion`: swapchain, sincronización y el dibujo de cada fotograma.
 //! - `tipos_calculo`, `funciones_calculo` y `calculo`: buffers, pipelines de cálculo y tiempos.
+//! - `tipos_grafico` y `funciones_grafico`: imágenes, pipeline de gráficos y renderizado dinámico.
+//! - `buffer`, `imagen`, `malla_gpu` y `pipeline_grafico`: los recursos del visor.
+//! - `swapchain`: la swapchain con sus vistas y su profundidad.
+//! - `dibujo`: grabar un fotograma; `visor`: la escena de la ventana y las capturas.
 
 #![allow(unsafe_code, reason = "la puerta a Vulkan: cada unsafe lleva su // SAFETY:")]
 
@@ -26,16 +31,27 @@ macro_rules! cargar {
     }};
 }
 
+mod buffer;
 mod calculo;
 mod carga;
 mod contexto;
+mod dibujo;
 mod funciones;
 mod funciones_calculo;
+mod funciones_grafico;
+mod imagen;
+mod malla_gpu;
+mod pipeline_grafico;
 mod presentacion;
 mod recursos;
+mod swapchain;
 mod tipos;
 mod tipos_calculo;
+mod tipos_grafico;
+mod visor;
 
 pub(crate) use calculo::ejecutar;
 pub(crate) use contexto::{AVISOS, Contexto};
+pub(crate) use pipeline_grafico::TAMANO_CONSTANTES;
 pub(crate) use presentacion::Presentacion;
+pub(crate) use visor::{Visor, capturar};

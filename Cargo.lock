@@ -15,7 +15,9 @@ name = "telar-app"
 version = "0.1.0"
 dependencies = [
  "hilo-spirv",
+ "nudo",
  "telar-gpu",
+ "telar-nodos",
  "telar-ventana",
 ]
 

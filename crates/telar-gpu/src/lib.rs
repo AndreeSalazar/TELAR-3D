@@ -15,9 +15,17 @@
 //! ```
 
 pub mod eleccion;
+mod escena;
 mod ffi;
 
 use core::sync::atomic::Ordering;
+
+pub use escena::{Constantes, Sombreadores};
+
+/// Bytes de [`Constantes`] en la GPU (8 `vec4`).
+pub const TAMANO_CONSTANTES: u32 = ffi::TAMANO_CONSTANTES;
+/// El formato de las capturas: `VK_FORMAT_R8G8B8A8_UNORM` (sin sRGB).
+pub const FORMATO_CAPTURA: u32 = 37;
 
 /// Cómo se crea la GPU.
 #[derive(Debug, Clone)]
@@ -44,9 +52,11 @@ pub struct Superficie {
     pub ventana: isize,
 }
 
-/// La GPU con su ventana: contexto de Vulkan y presentación.
+/// La GPU con su ventana: contexto de Vulkan, presentación y, si se prepara, el visor.
 pub struct Gpu {
-    // Orden de los campos = orden de destrucción: la presentación antes que el dispositivo.
+    // Orden de los campos = orden de destrucción: el visor y la presentación antes
+    // que el dispositivo.
+    visor: Option<ffi::Visor>,
     presentacion: ffi::Presentacion,
     contexto: ffi::Contexto,
 }
@@ -65,7 +75,7 @@ impl Gpu {
             Some((superficie.instancia, superficie.ventana)),
         )?;
         let presentacion = ffi::Presentacion::nueva(&contexto, tamano)?;
-        Ok(Self { presentacion, contexto })
+        Ok(Self { visor: None, presentacion, contexto })
     }
 
     /// El nombre de la GPU elegida.
@@ -106,7 +116,50 @@ impl Gpu {
     /// Si Vulkan falla (no por cambiar de tamaño: eso se rehace solo).
     pub fn dibujar(&mut self, color: [f32; 4]) -> Result<bool, String> {
         let color = eleccion::color_para(self.presentacion.formato, color);
-        self.presentacion.dibujar(&self.contexto, color)
+        self.presentacion.dibujar(&self.contexto, color, None)
+    }
+
+    /// Prepara el visor con estos shaders (o los cambia, si ya estaba). El
+    /// pipeline se hace en el primer dibujo, para el formato de la ventana.
+    ///
+    /// # Errors
+    ///
+    /// Si Vulkan falla al esperar a la GPU.
+    pub fn preparar_visor(&mut self, sombreadores: Sombreadores) -> Result<(), String> {
+        let s = (sombreadores.vertices, sombreadores.fragmentos);
+        if let Some(visor) = &mut self.visor {
+            return visor.cambiar(&self.contexto, s);
+        }
+        self.visor = Some(ffi::Visor::nuevo(&self.contexto, s)?);
+        Ok(())
+    }
+
+    /// Sube una malla al visor (en lugar de la que hubiera): `vertices` =
+    /// posición + normal, `indices` = triángulos (de tres en tres).
+    ///
+    /// # Errors
+    ///
+    /// Si no se preparó el visor, la malla está mal (índices fuera, triángulos
+    /// incompletos) o no cabe en la GPU.
+    pub fn subir_malla(&mut self, vertices: &[[f32; 6]], indices: &[u32]) -> Result<(), String> {
+        let visor = self.visor.as_mut().ok_or("antes de subir una malla hay que preparar el visor")?;
+        visor.subir(&self.contexto, vertices, indices)
+    }
+
+    /// Limpia a `fondo` (sRGB), dibuja la malla del visor con `constantes` y lo
+    /// presenta. Sin visor o sin malla, solo limpia. `Ok(false)` si no tocaba dibujar.
+    ///
+    /// # Errors
+    ///
+    /// Si Vulkan falla o rechaza los shaders.
+    pub fn dibujar_escena(&mut self, fondo: [f32; 4], constantes: &Constantes) -> Result<bool, String> {
+        let formato = self.presentacion.formato;
+        let plana = constantes.plana(formato);
+        let escena = match self.visor.as_mut() {
+            Some(visor) if formato != 0 => visor.escena(&self.contexto, formato, &plana)?,
+            _ => None,
+        };
+        self.presentacion.dibujar(&self.contexto, eleccion::color_para(formato, fondo), escena.as_ref())
     }
 }
 
@@ -154,6 +207,27 @@ impl Calculo {
     pub fn ejecutar(&self, spirv: &[u32], elementos: u32, grupo: u32) -> Result<Resultado, String> {
         let e = ffi::ejecutar(&self.contexto, spirv, elementos, grupo)?;
         Ok(Resultado { datos: e.datos, nanosegundos: e.nanosegundos })
+    }
+
+    /// Dibuja una malla como el visor, pero en una imagen fuera de pantalla de
+    /// `tamano` ([`FORMATO_CAPTURA`]), y devuelve sus píxeles RGBA, fila a fila
+    /// desde arriba. Para comprobar el dibujo sin ventana.
+    ///
+    /// # Errors
+    ///
+    /// Si el tamaño no vale (de 1 a 4096 por lado), la malla está mal o Vulkan falla.
+    pub fn capturar(
+        &self,
+        sombreadores: Sombreadores,
+        vertices: &[[f32; 6]],
+        indices: &[u32],
+        tamano: (u32, u32),
+        fondo: [f32; 4],
+        constantes: &Constantes,
+    ) -> Result<Vec<u8>, String> {
+        let s = (sombreadores.vertices, sombreadores.fragmentos);
+        let plana = constantes.plana(FORMATO_CAPTURA);
+        ffi::capturar(&self.contexto, s, (vertices, indices), tamano, fondo, &plana)
     }
 }
 

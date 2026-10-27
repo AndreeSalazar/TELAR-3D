@@ -73,3 +73,26 @@ fn el_primer_kernel_pasa_spirv_val() {
         );
     }
 }
+
+#[test]
+fn los_shaders_del_visor_pasan_spirv_val() {
+    let Some(validador) = spirv_val() else {
+        eprintln!("sin spirv-val en esta máquina (instala el SDK de Vulkan)");
+        return;
+    };
+    for (nombre, palabras) in
+        [("vertices", hilo_spirv::visor::vertices()), ("fragmentos", hilo_spirv::visor::fragmentos())]
+    {
+        let bytes: Vec<u8> = palabras.iter().flat_map(|w| w.to_le_bytes()).collect();
+        let archivo = std::env::temp_dir().join(format!("telar-visor-{nombre}-{}.spv", std::process::id()));
+        std::fs::write(&archivo, bytes).unwrap();
+        let salida = Command::new(&validador).args(["--target-env", "vulkan1.3"]).arg(&archivo).output().unwrap();
+        let _ = std::fs::remove_file(&archivo);
+        assert!(
+            salida.status.success(),
+            "spirv-val rechaza el shader de {nombre}:\n{}{}",
+            String::from_utf8_lossy(&salida.stdout),
+            String::from_utf8_lossy(&salida.stderr)
+        );
+    }
+}

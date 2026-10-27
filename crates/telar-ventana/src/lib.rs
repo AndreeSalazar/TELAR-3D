@@ -24,7 +24,7 @@ mod ffi;
 
 use core::marker::PhantomData;
 
-pub use evento::{Evento, Tecla};
+pub use evento::{Boton, Evento, Tecla};
 
 /// Cómo se abre la ventana.
 #[derive(Debug, Clone)]

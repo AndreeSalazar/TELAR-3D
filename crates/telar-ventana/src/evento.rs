@@ -2,7 +2,7 @@
 //! habla con el sistema, así que se prueba sin abrir ninguna ventana.
 
 /// Lo que le pasa a la ventana.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Evento {
     /// Se pulsó la X (o Alt+F4). La ventana no se cierra sola: decide la app.
     Cerrar,
@@ -22,6 +22,27 @@ pub enum Evento {
         /// Vertical.
         y: i32,
     },
+    /// Un botón del ratón se pulsó (`pulsado`) o se soltó.
+    Boton {
+        /// Cuál.
+        boton: Boton,
+        /// `true` al pulsarlo, `false` al soltarlo.
+        pulsado: bool,
+    },
+    /// La rueda del ratón giró: en muescas (positivo = hacia delante, alejándose
+    /// de la mano). Puede ser fraccionario con ruedas o paneles de precisión.
+    Rueda(f32),
+}
+
+/// Los botones del ratón.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Boton {
+    /// El izquierdo.
+    Izquierdo,
+    /// El derecho.
+    Derecho,
+    /// El de en medio (la rueda).
+    Medio,
 }
 
 /// Las teclas que TELAR distingue; el resto llega con su código virtual.
@@ -43,6 +64,23 @@ pub const WM_CLOSE: u32 = 0x0010;
 pub const WM_KEYDOWN: u32 = 0x0100;
 /// `WM_MOUSEMOVE`.
 pub const WM_MOUSEMOVE: u32 = 0x0200;
+/// `WM_LBUTTONDOWN`; `UP` es el siguiente. Los del derecho y el de en medio van
+/// detrás, de tres en tres (`DOWN`, `UP`, `DBLCLK`).
+pub const WM_LBUTTONDOWN: u32 = 0x0201;
+/// `WM_LBUTTONUP`.
+pub const WM_LBUTTONUP: u32 = 0x0202;
+/// `WM_RBUTTONDOWN`.
+pub const WM_RBUTTONDOWN: u32 = 0x0204;
+/// `WM_RBUTTONUP`.
+pub const WM_RBUTTONUP: u32 = 0x0205;
+/// `WM_MBUTTONDOWN`.
+pub const WM_MBUTTONDOWN: u32 = 0x0207;
+/// `WM_MBUTTONUP`.
+pub const WM_MBUTTONUP: u32 = 0x0208;
+/// `WM_MOUSEWHEEL`: el giro va en la palabra alta del `wParam`, con signo.
+pub const WM_MOUSEWHEEL: u32 = 0x020A;
+/// `WHEEL_DELTA`: lo que mide una muesca.
+const WHEEL_DELTA: f32 = 120.0;
 /// `SIZE_MINIMIZED`, en el `wParam` de `WM_SIZE`.
 const SIZE_MINIMIZED: usize = 1;
 
@@ -64,6 +102,18 @@ pub fn traducir(mensaje: u32, w: usize, l: isize) -> Option<Evento> {
             x: i32::from(i16::from_ne_bytes(bajo(l).to_ne_bytes())),
             y: i32::from(i16::from_ne_bytes(alto(l).to_ne_bytes())),
         }),
+        WM_LBUTTONDOWN | WM_LBUTTONUP | WM_RBUTTONDOWN | WM_RBUTTONUP | WM_MBUTTONDOWN | WM_MBUTTONUP => {
+            let boton = match mensaje {
+                WM_LBUTTONDOWN | WM_LBUTTONUP => Boton::Izquierdo,
+                WM_RBUTTONDOWN | WM_RBUTTONUP => Boton::Derecho,
+                _ => Boton::Medio,
+            };
+            Some(Evento::Boton { boton, pulsado: matches!(mensaje, WM_LBUTTONDOWN | WM_RBUTTONDOWN | WM_MBUTTONDOWN) })
+        }
+        WM_MOUSEWHEEL => {
+            let giro = i16::from_ne_bytes(alto(w.cast_signed()).to_ne_bytes());
+            Some(Evento::Rueda(f32::from(giro) / WHEEL_DELTA))
+        }
         _ => None,
     }
 }

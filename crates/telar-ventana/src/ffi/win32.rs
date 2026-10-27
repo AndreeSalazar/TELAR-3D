@@ -110,6 +110,8 @@ unsafe extern "system" {
         banderas: u32,
     ) -> i32;
     pub(crate) fn SetWindowTextW(ventana: isize, texto: *const u16) -> i32;
+    pub(crate) fn SetCapture(ventana: isize) -> isize;
+    pub(crate) fn ReleaseCapture() -> i32;
 }
 
 // SAFETY: firmas de libloaderapi.h y errhandlingapi.h (kernel32.dll).

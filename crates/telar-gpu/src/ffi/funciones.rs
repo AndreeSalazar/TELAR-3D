@@ -6,9 +6,10 @@ use core::ffi::c_void;
 
 use super::carga::FnInstancia;
 use super::funciones_calculo::FnCalculo;
+use super::funciones_grafico::FnGrafico;
 use super::tipos::{
     Asig, BarreraImagen, Cola, Comandos, Disp, InfoEnvio, InfoInicioComandos, InfoPresentacion, InfoReservaComandos,
-    InfoSimple, InfoSwapchain, Objeto, Rango,
+    InfoSimple, InfoSwapchain, Objeto,
 };
 
 // Las firmas, tal y como las da vulkan_core.h.
@@ -34,7 +35,6 @@ type Barrera = unsafe extern "system" fn(
     u32,
     *const BarreraImagen,
 );
-type LimpiarColor = unsafe extern "system" fn(Comandos, Objeto, u32, *const [f32; 4], u32, *const Rango);
 type Enviar = unsafe extern "system" fn(Cola, u32, *const InfoEnvio, Objeto) -> i32;
 type CrearSwapchain = unsafe extern "system" fn(Disp, *const InfoSwapchain, Asig, *mut Objeto) -> i32;
 type ListarImagenes = unsafe extern "system" fn(Disp, Objeto, *mut u32, *mut Objeto) -> i32;
@@ -59,12 +59,13 @@ pub(crate) struct FnDispositivo {
     pub(crate) empezar: Empezar,
     pub(crate) terminar: Terminar,
     pub(crate) barrera: Barrera,
-    pub(crate) limpiar_color: LimpiarColor,
     pub(crate) enviar: Enviar,
     /// Solo si el dispositivo activó `VK_KHR_swapchain` (hay ventana).
     pub(crate) swapchain: Option<FnSwapchain>,
     /// Buffers, pipelines de cálculo, despacho y tiempos.
     pub(crate) calculo: FnCalculo,
+    /// Imágenes, pipelines de gráficos y comandos de dibujo.
+    pub(crate) grafico: FnGrafico,
 }
 
 /// Las funciones de `VK_KHR_swapchain`.
@@ -109,10 +110,10 @@ impl FnDispositivo {
             empezar: cargar!(buscar, "vkBeginCommandBuffer", Empezar),
             terminar: cargar!(buscar, "vkEndCommandBuffer", Terminar),
             barrera: cargar!(buscar, "vkCmdPipelineBarrier", Barrera),
-            limpiar_color: cargar!(buscar, "vkCmdClearColorImage", LimpiarColor),
             enviar: cargar!(buscar, "vkQueueSubmit", Enviar),
             swapchain,
             calculo: FnCalculo::cargar(buscar)?,
+            grafico: FnGrafico::cargar(buscar)?,
         })
     }
 }

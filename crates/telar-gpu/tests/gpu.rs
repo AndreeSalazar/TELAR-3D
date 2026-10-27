@@ -12,7 +12,7 @@ use telar_gpu::eleccion::{
     FORMATO_SRGB, FORMATO_UNORM, TIPO_DEDICADA, TIPO_INTEGRADA, color_para, elegir_extension, elegir_formato,
     elegir_imagenes, hex, mezclar, puntuar, srgb_a_lineal,
 };
-use telar_gpu::{Calculo, Opciones, avisos_de_validacion};
+use telar_gpu::{Calculo, Constantes, Opciones, TAMANO_CONSTANTES, avisos_de_validacion};
 
 #[test]
 fn la_gpu_dedicada_gana() {
@@ -101,4 +101,21 @@ fn demasiados_grupos_es_un_error_antes_de_tocar_la_gpu() {
     };
     let error = calculo.ejecutar(&[], u32::MAX, 1).err().unwrap_or_default();
     assert!(error.contains("grupos"), "{error}");
+}
+
+#[test]
+fn las_constantes_van_en_el_orden_de_los_shaders() {
+    let identidad = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]];
+    let c = Constantes { matriz: identidad, luz: [0.0, 1.0, 0.0], color: [0.5; 4], cielo: [1.0; 4], suelo: [0.0; 4] };
+    let p = c.plana(FORMATO_UNORM);
+    assert_eq!(core::mem::size_of_val(&p), TAMANO_CONSTANTES as usize);
+    // c0…c3, luz (con w = 0), color, cielo, suelo.
+    assert_eq!(p[..16], [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]);
+    assert_eq!(p[16..20], [0.0, 1.0, 0.0, 0.0]);
+    assert_eq!(p[20..24], [0.5; 4]);
+    assert_eq!(p[24..32], [1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0]);
+    // En una imagen sRGB, los colores van en lineal (el alfa, tal cual).
+    let s = c.plana(FORMATO_SRGB);
+    assert!(s[20] < 0.5 && s[23] == 0.5);
+    assert_eq!(s[..20], p[..20]);
 }

@@ -6,6 +6,7 @@
 use alloc::collections::BTreeMap;
 use alloc::vec::Vec;
 
+use crate::funcion::Funcion;
 use crate::op::{self, Clase};
 
 /// El identificador de algo del módulo (`<id>` en la especificación).
@@ -16,6 +17,9 @@ pub struct Id(pub u32);
 pub struct Modulo {
     siguiente: u32,
     capacidades: Vec<u32>,
+    /// `OpExtInstImport`: las bibliotecas de instrucciones (GLSL.std.450).
+    importaciones: Vec<u32>,
+    glsl: Option<Id>,
     memoria: Vec<u32>,
     entradas: Vec<u32>,
     modos: Vec<u32>,
@@ -23,13 +27,13 @@ pub struct Modulo {
     anotaciones: Vec<u32>,
     /// Tipos, constantes y variables globales: comparten sección, en orden de declaración.
     globales: Vec<u32>,
-    funciones: Vec<u32>,
+    pub(crate) funciones: Vec<u32>,
     /// Tipos y constantes ya declarados: el mismo tipo, el mismo `Id`.
     unicos: BTreeMap<Vec<u32>, Id>,
 }
 
 /// Escribe una instrucción en `destino`.
-fn instruccion(destino: &mut Vec<u32>, codigo: u16, operandos: &[u32]) {
+pub(crate) fn instruccion(destino: &mut Vec<u32>, codigo: u16, operandos: &[u32]) {
     let palabras = u32::try_from(operandos.len() + 1).unwrap_or(u32::MAX);
     destino.push((palabras << 16) | u32::from(codigo));
     destino.extend_from_slice(operandos);
@@ -60,6 +64,8 @@ impl Modulo {
         let mut m = Self {
             siguiente: 1,
             capacidades: Vec::new(),
+            importaciones: Vec::new(),
+            glsl: None,
             memoria: Vec::new(),
             entradas: Vec::new(),
             modos: Vec::new(),
@@ -197,15 +203,48 @@ impl Modulo {
     /// Punto de entrada de cálculo (`GLCompute`) con su tamaño de grupo. En
     /// SPIR-V 1.3, la interfaz lista solo las variables de entrada y salida.
     pub fn entrada_calculo(&mut self, funcion: Id, nombre: &str, interfaz: &[Id], grupo: [u32; 3]) {
-        let mut operandos = alloc::vec![op::MODELO_CALCULO, funcion.0];
+        self.entrada(op::MODELO_CALCULO, funcion, nombre, interfaz);
+        self.modo(funcion, op::MODO_TAMANO_GRUPO, &grupo);
+    }
+
+    /// Un punto de entrada (`OpEntryPoint`) del modelo dado: vértices, fragmentos
+    /// o cálculo. `interfaz`: sus variables de entrada y salida.
+    pub fn entrada(&mut self, modelo: u32, funcion: Id, nombre: &str, interfaz: &[Id]) {
+        let mut operandos = alloc::vec![modelo, funcion.0];
         operandos.extend(texto(nombre));
         operandos.extend(interfaz.iter().map(|i| i.0));
         instruccion(&mut self.entradas, op::ENTRY_POINT, &operandos);
-        instruccion(
-            &mut self.modos,
-            op::EXECUTION_MODE,
-            &[funcion.0, op::MODO_TAMANO_GRUPO, grupo[0], grupo[1], grupo[2]],
-        );
+    }
+
+    /// Un modo de ejecución (`OpExecutionMode`) con sus literales.
+    pub fn modo(&mut self, funcion: Id, modo: u32, literales: &[u32]) {
+        let mut operandos = alloc::vec![funcion.0, modo];
+        operandos.extend_from_slice(literales);
+        instruccion(&mut self.modos, op::EXECUTION_MODE, &operandos);
+    }
+
+    /// Real de 32 bits.
+    pub fn tipo_f32(&mut self) -> Id {
+        self.unico(op::TYPE_FLOAT, &[32])
+    }
+
+    /// Una constante `f32` (sus bits, tal cual).
+    pub fn constante_f32(&mut self, valor: f32) -> Id {
+        let tipo = self.tipo_f32();
+        self.unico(op::CONSTANT, &[tipo.0, valor.to_bits()])
+    }
+
+    /// La biblioteca `GLSL.std.450` (`normalize`, `max`, `mix`…), importada una sola vez.
+    pub fn glsl(&mut self) -> Id {
+        if let Some(id) = self.glsl {
+            return id;
+        }
+        let id = self.id();
+        let mut operandos = alloc::vec![id.0];
+        operandos.extend(texto("GLSL.std.450"));
+        instruccion(&mut self.importaciones, op::EXT_INST_IMPORT, &operandos);
+        self.glsl = Some(id);
+        id
     }
 
     /// Empieza una función que devuelve `retorno` y es de tipo `tipo`.
@@ -222,6 +261,7 @@ impl Modulo {
         let mut out = alloc::vec![op::MAGIA, op::VERSION_1_3, 0, self.siguiente, 0];
         for seccion in [
             &self.capacidades,
+            &self.importaciones,
             &self.memoria,
             &self.entradas,
             &self.modos,
@@ -233,100 +273,5 @@ impl Modulo {
             out.extend_from_slice(seccion);
         }
         out
-    }
-}
-
-/// Una función en construcción. Sus instrucciones van a su propio cuerpo; los
-/// tipos y constantes que necesite se declaran en el módulo ([`Funcion::modulo`]).
-pub struct Funcion<'a> {
-    modulo: &'a mut Modulo,
-    id: Id,
-    cuerpo: Vec<u32>,
-}
-
-impl Funcion<'_> {
-    /// El `Id` de la función (para el punto de entrada).
-    #[must_use]
-    pub fn id(&self) -> Id {
-        self.id
-    }
-
-    /// El módulo, para declarar tipos y constantes.
-    pub fn modulo(&mut self) -> &mut Modulo {
-        self.modulo
-    }
-
-    /// Una instrucción con resultado: `tipo`, el `Id` nuevo y los operandos.
-    fn con_resultado(&mut self, codigo: u16, tipo: Id, operandos: &[u32]) -> Id {
-        let id = self.modulo.id();
-        let mut todo = alloc::vec![tipo.0, id.0];
-        todo.extend_from_slice(operandos);
-        instruccion(&mut self.cuerpo, codigo, &todo);
-        id
-    }
-
-    /// Reserva el `Id` de un bloque que se abrirá más tarde (para saltar a él).
-    pub fn etiqueta(&mut self) -> Id {
-        self.modulo.id()
-    }
-
-    /// Abre el bloque `etiqueta` (`OpLabel`).
-    pub fn bloque(&mut self, etiqueta: Id) {
-        instruccion(&mut self.cuerpo, op::LABEL, &[etiqueta.0]);
-    }
-
-    /// `OpLoad`.
-    pub fn cargar(&mut self, tipo: Id, puntero: Id) -> Id {
-        self.con_resultado(op::LOAD, tipo, &[puntero.0])
-    }
-
-    /// `OpStore`.
-    pub fn guardar(&mut self, puntero: Id, valor: Id) {
-        instruccion(&mut self.cuerpo, op::STORE, &[puntero.0, valor.0]);
-    }
-
-    /// `OpAccessChain`: un puntero a un elemento de `base`.
-    pub fn acceso(&mut self, tipo_puntero: Id, base: Id, indices: &[Id]) -> Id {
-        let mut operandos = alloc::vec![base.0];
-        operandos.extend(indices.iter().map(|i| i.0));
-        self.con_resultado(op::ACCESS_CHAIN, tipo_puntero, &operandos)
-    }
-
-    /// `OpArrayLength`: cuántos elementos tiene el array dinámico del miembro `miembro`.
-    pub fn longitud(&mut self, tipo_u32: Id, estructura: Id, miembro: u32) -> Id {
-        self.con_resultado(op::ARRAY_LENGTH, tipo_u32, &[estructura.0, miembro])
-    }
-
-    /// Una operación de dos operandos (`OpIAdd`, `OpBitwiseXor`, `OpULessThan`…).
-    pub fn binaria(&mut self, codigo: u16, tipo: Id, a: Id, b: Id) -> Id {
-        self.con_resultado(codigo, tipo, &[a.0, b.0])
-    }
-
-    /// `OpSelectionMerge`: dónde se juntan las dos ramas del `if` que sigue.
-    pub fn fusion(&mut self, fusion: Id) {
-        instruccion(&mut self.cuerpo, op::SELECTION_MERGE, &[fusion.0, op::CONTROL_NINGUNO]);
-    }
-
-    /// `OpBranchConditional`.
-    pub fn saltar_si(&mut self, condicion: Id, si: Id, no: Id) {
-        instruccion(&mut self.cuerpo, op::BRANCH_CONDITIONAL, &[condicion.0, si.0, no.0]);
-    }
-
-    /// `OpBranch`.
-    pub fn saltar(&mut self, destino: Id) {
-        instruccion(&mut self.cuerpo, op::BRANCH, &[destino.0]);
-    }
-
-    /// `OpReturn`.
-    pub fn volver(&mut self) {
-        instruccion(&mut self.cuerpo, op::RETURN, &[]);
-    }
-
-    /// Cierra la función (`OpFunctionEnd`) y la añade al módulo. Devuelve su `Id`.
-    #[must_use = "el Id de la función hace falta para su punto de entrada"]
-    pub fn terminar(mut self) -> Id {
-        instruccion(&mut self.cuerpo, op::FUNCTION_END, &[]);
-        self.modulo.funciones.append(&mut self.cuerpo);
-        self.id
     }
 }

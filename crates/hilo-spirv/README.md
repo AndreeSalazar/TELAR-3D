@@ -20,8 +20,23 @@ Es del núcleo (regla `nucleo-sin-std`): solo `core` y `alloc`, así que el mism
 | Archivo | Qué |
 |---|---|
 | `src/op.rs` | códigos de operación, capacidades, clases y decoraciones, **comprobados uno a uno contra `spirv.h`** del SDK de Vulkan 1.4.350 |
-| `src/modulo.rs` | el constructor: secciones en el orden de la especificación (2.4), tipos y constantes sin repetir, funciones con sus bloques |
+| `src/modulo.rs` | el constructor: secciones en el orden de la especificación (2.4), tipos y constantes sin repetir, entradas y modos, `GLSL.std.450` importado una vez |
+| `src/funcion.rs` | el cuerpo de una función: bloques, cargas, aritmética, vectores (`construir`, `extraer`, `barajar`) e instrucciones de `GLSL.std.450` |
 | `src/ejemplos.rs` | el primer kernel: llena un buffer con `hash_pcg(i)`, con su referencia en la CPU |
+| `src/visor.rs` | los shaders del visor (Fase 4): vértices y fragmentos |
+
+## Los shaders del visor
+
+```glsl
+// vértices: 128 bytes de constantes (la matriz por columnas, la luz y tres colores)
+gl_Position = c0*posicion.x + c1*posicion.y + c2*posicion.z + c3;   n = normal;
+// fragmentos
+vec3 N = normalize(n);
+vec3 ambiente = mix(suelo, cielo, N.y*0.5 + 0.5);
+color = vec4(base * (ambiente + max(dot(N, luz), 0)*0.85), 1);
+```
+
+Los dos pasan `spirv-val`. El contrato con `telar-gpu`: vértice = posición (ubicación 0) + normal (ubicación 1); la constante `TAMANO_CONSTANTES` es la misma en los dos lados.
 
 ## El primer kernel
 
@@ -43,7 +58,7 @@ void main() {
 
 ## Verificado por otros
 
-- **`spirv-val`** (el validador oficial de Khronos, del SDK) aprueba el kernel con `--target-env vulkan1.3`. En su primera ejecución cazó un fallo: `OpConstant` lleva primero el tipo y después el resultado, al revés que los tipos.
+- **`spirv-val`** (el validador oficial de Khronos, del SDK) aprueba el kernel y los dos shaders del visor con `--target-env vulkan1.3`. En su primera ejecución cazó un fallo: `OpConstant` lleva primero el tipo y después el resultado, al revés que los tipos.
 - **`hash_pcg`** se compara con una implementación independiente en JavaScript (`Math.imul`): 0 → 129 708 002, 1 → 2 831 084 092…
 - **La GPU** se compara con la CPU bit a bit, en el test de `telar-app`.
 

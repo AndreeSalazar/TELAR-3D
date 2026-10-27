@@ -2,8 +2,11 @@
 
 #![allow(clippy::unwrap_used, clippy::expect_used, reason = "en los tests, un fallo es un panic con su mensaje")]
 
-use telar_ventana::evento::{WM_CLOSE, WM_KEYDOWN, WM_MOUSEMOVE, WM_SIZE, traducir, utf16};
-use telar_ventana::{Config, Evento, Tecla, Ventana};
+use telar_ventana::evento::{
+    WM_CLOSE, WM_KEYDOWN, WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP, WM_MOUSEMOVE, WM_MOUSEWHEEL,
+    WM_RBUTTONDOWN, WM_RBUTTONUP, WM_SIZE, traducir, utf16,
+};
+use telar_ventana::{Boton, Config, Evento, Tecla, Ventana};
 
 #[test]
 fn traduce_los_mensajes_que_importan() {
@@ -21,6 +24,27 @@ fn traduce_los_mensajes_que_importan() {
 fn el_raton_puede_estar_en_negativo() {
     // x = -5 (0xFFFB), y = 10.
     assert_eq!(traducir(WM_MOUSEMOVE, 0, (10 << 16) | 0xFFFB), Some(Evento::Raton { x: -5, y: 10 }));
+}
+
+#[test]
+fn botones_del_raton() {
+    let boton = |boton, pulsado| Some(Evento::Boton { boton, pulsado });
+    assert_eq!(traducir(WM_LBUTTONDOWN, 0, 0), boton(Boton::Izquierdo, true));
+    assert_eq!(traducir(WM_LBUTTONUP, 0, 0), boton(Boton::Izquierdo, false));
+    assert_eq!(traducir(WM_RBUTTONDOWN, 0, 0), boton(Boton::Derecho, true));
+    assert_eq!(traducir(WM_RBUTTONUP, 0, 0), boton(Boton::Derecho, false));
+    assert_eq!(traducir(WM_MBUTTONDOWN, 0, 0), boton(Boton::Medio, true));
+    assert_eq!(traducir(WM_MBUTTONUP, 0, 0), boton(Boton::Medio, false));
+    assert_eq!(traducir(0x0203, 0, 0), None); // WM_LBUTTONDBLCLK: la clase no lo pide
+}
+
+#[test]
+fn la_rueda_en_muescas_con_signo() {
+    // La palabra alta del wParam: +120 hacia delante, −120 (0xFF88) hacia atrás; la
+    // baja lleva las teclas pulsadas (aquí, MK_CONTROL) y no cuenta.
+    assert_eq!(traducir(WM_MOUSEWHEEL, (120 << 16) | 0x8, 0), Some(Evento::Rueda(1.0)));
+    assert_eq!(traducir(WM_MOUSEWHEEL, 0xFF88 << 16, 0), Some(Evento::Rueda(-1.0)));
+    assert_eq!(traducir(WM_MOUSEWHEEL, 30 << 16, 0), Some(Evento::Rueda(0.25)));
 }
 
 #[test]

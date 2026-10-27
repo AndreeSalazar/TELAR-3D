@@ -138,3 +138,22 @@ pub fn rotar(v: Vec3, eje: usize, grados: f32) -> Vec3 {
         _ => [x * c - y * s, x * s + y * c, z],
     }
 }
+
+/// Producto escalar.
+#[must_use]
+pub fn punto(a: Vec3, b: Vec3) -> f32 {
+    a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+}
+
+/// Producto vectorial (mano derecha).
+#[must_use]
+pub fn cruz(a: Vec3, b: Vec3) -> Vec3 {
+    [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+}
+
+/// `v` con longitud 1. Un vector nulo se queda nulo (no hay dirección que darle).
+#[must_use]
+pub fn normalizar(v: Vec3) -> Vec3 {
+    let l = longitud(v);
+    if l > 0.0 { [v[0] / l, v[1] / l, v[2] / l] } else { [0.0; 3] }
+}
