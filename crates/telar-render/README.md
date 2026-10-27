@@ -13,8 +13,10 @@ Es implementación propia; no integra RenderMan ni es compatible con sus escenas
 o materiales. No se presenta como resultado equivalente a una película Pixar.
 
 **Implementado:** rasterización, material metálico/rugoso, distribución GGX,
-Fresnel Schlick, visibilidad Schlick-GGX aproximada, dos luces direccionales sin
-sombras, ambiente hemisférico aproximado y exposición con mapeo Reinhard.
+Fresnel Schlick, visibilidad Schlick-GGX aproximada y exposición con mapeo Reinhard.
+El estudio usa luz de área de cuatro muestras y autosombras aproximadas de la rejilla
+residente; conserva relleno direccional y ambiente hemisférico aproximado.
+La variante histórica de dos luces direccionales sigue disponible.
 La salida sRGB se codifica una vez: en shader para UNORM, en hardware para sRGB.
 La matemática de microfacetas se referencia en [PBRT](https://www.pbr-book.org/4ed/Reflection_Models/Roughness_Using_Microfacet_Theory);
 el código SPIR-V y la composición son propios.
@@ -31,18 +33,19 @@ Bloque: matriz (64 B), ojo/exposición (16), luz/intensidad (16), color lineal/r
 material. Las normalizaciones y divisiones tienen límites inferiores explícitos.
 La rugosidad efectiva mínima es 0,08 para evitar una singularidad especular.
 
-No hay iluminación global, sombras de área, trazado de caminos, texturas, pelo,
-subsurface, volúmenes ni denoiser. Son futuras etapas; no activar todo a la vez.
-Siguiente avance de render: sombras y luz de área con una escena verificable;
-después acumulación de muestras y transporte de luz. La cola GPU sigue siendo
-el siguiente hito del coordinador del kernel.
+No hay iluminación global, trazado de caminos, texturas, pelo, subsurface, volúmenes
+ni denoiser. Las sombras actuales son de campo de alturas: 32 pasos, sesgo vertical
+y cuatro muestras fijas; pueden perder oclusores y no sirven para mallas arbitrarias.
+Ver [contrato, mediciones y ruta progresiva](../../docs/RENDER-AREA.md).
 
 ## Riesgo y consumo
 
 Ver los SEMAFORO.md de esta carpeta y sus subcarpetas. El shader consume ALU por
 fragmento y ancho de banda de vértices; el coste crece con área visible, resolución
 y sobre-dibujo. No reserva VRAM directamente. El backend mantiene destinos, profundidad,
-malla y presentación. No hay una medición comparativa que demuestre aceleración.
+malla y presentación. La medición RTX 3060 de la escena documentada dio 0,834 ms con cuatro muestras
+y sombras frente a 0,048 ms sin sombras; DISTINTO, más calidad y mayor coste.
+El pico de VRAM y otras escenas siguen ABIERTOS.
 
 Las pruebas validan SPIR-V, rechazo de materiales inválidos y cambios reales de
 píxeles por material/exposición en RTX 3060/Windows. Otros dispositivos quedan ABIERTOS.

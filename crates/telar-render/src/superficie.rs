@@ -1,5 +1,5 @@
 //! GGX isotrópico con Fresnel Schlick y visibilidad Schlick-GGX aproximada.
-//! Dos luces direccionales sin sombras; ambiente hemisférico aproximado.
+//! Variantes de luces direccionales o área con autosombra de rejilla; ambiente aproximado.
 use crate::tipos::{Tipos, variable};
 use alloc::vec::Vec;
 use hilo_spirv::{
@@ -7,7 +7,7 @@ use hilo_spirv::{
     op::{self, Clase},
 };
 
-struct Superficie {
+pub(super) struct Superficie {
     normal: Id,
     vista: Id,
     color: Id,
@@ -38,7 +38,7 @@ fn geometria(f: &mut Funcion, t: &Tipos, coseno: Id, k: Id) -> Id {
     f.binaria(op::F_DIV, t.real, coseno, divisor)
 }
 
-fn iluminar(f: &mut Funcion, t: &Tipos, s: &Superficie, luz: Id) -> Id {
+pub(super) fn iluminar(f: &mut Funcion, t: &Tipos, s: &Superficie, luz: Id) -> Id {
     let uno = Tipos::constante(f, 1.0);
     let pi = Tipos::constante(f, core::f32::consts::PI);
     let suma = f.binaria(op::F_ADD, t.v3, s.vista, luz);
@@ -119,8 +119,13 @@ fn salida(f: &mut Funcion, t: &Tipos, radiancia: Id, exposicion: Id, codificar: 
 /// Shader GGX de vista previa. No implementa trazado de caminos ni sombras.
 #[must_use]
 pub fn fragmentos() -> Vec<u32> {
+    emitir(None)
+}
+
+pub(super) fn emitir(area: Option<crate::LuzArea>) -> Vec<u32> {
     let mut m = Modulo::nuevo();
     let t = Tipos::nuevos(&mut m);
+    let rejilla = area.map(|_| crate::sombras::Rejilla::nueva(&mut m, &t));
     let normal_entrada = variable(&mut m, t.v3, Clase::Entrada, 0);
     let posicion_entrada = variable(&mut m, t.v3, Clase::Entrada, 1);
     let color_salida = variable(&mut m, t.v4, Clase::Salida, 0);
@@ -147,7 +152,10 @@ pub fn fragmentos() -> Vec<u32> {
     let superficie = Superficie { normal, vista, color, rugosidad, metal };
     let luz = t.xyz(&mut f, luz4);
     let luz = t.normalizar(&mut f, luz);
-    let principal = iluminar(&mut f, &t, &superficie, luz);
+    let principal = match (area, rejilla.as_ref()) {
+        (Some(area), Some(rejilla)) => crate::area::iluminar_area(&mut f, &t, &superficie, mundo, rejilla, area),
+        _ => iluminar(&mut f, &t, &superficie, luz),
+    };
     let intensidad = f.extraer(t.real, luz4, 3);
     let principal = f.binaria(op::VECTOR_TIMES_SCALAR, t.v3, principal, intensidad);
     let calida = t.rgb(&mut f, [1.0, 0.90, 0.78]);
@@ -157,6 +165,12 @@ pub fn fragmentos() -> Vec<u32> {
     let relleno = iluminar(&mut f, &t, &superficie, relleno);
     let fria = t.rgb(&mut f, [0.65, 0.85, 1.25]);
     let relleno = f.binaria(op::F_MUL, t.v3, relleno, fria);
+    let relleno = if area.is_some() {
+        let factor = Tipos::constante(&mut f, 0.12);
+        f.binaria(op::VECTOR_TIMES_SCALAR, t.v3, relleno, factor)
+    } else {
+        relleno
+    };
     let altura = f.extraer(t.real, normal, 1);
     let medio = Tipos::constante(&mut f, 0.5);
     let altura = multiplicar(&mut f, &t, altura, medio);

@@ -80,6 +80,8 @@ pub const I_EQUAL: u16 = 170;
 pub const U_LESS_THAN_EQUAL: u16 = 178;
 /// `OpLogicalAnd`.
 pub const LOGICAL_AND: u16 = 167;
+/// `OpLogicalOr`.
+pub const LOGICAL_OR: u16 = 166;
 /// `OpFDiv`.
 pub const F_DIV: u16 = 136;
 /// `OpFOrdGreaterThan`.

@@ -20,7 +20,7 @@ pub(crate) fn bloque(
             metal: [0.8, 0.0, 0.0][indice],
         },
         exposicion: 1.4,
-        intensidad: 4.0,
+        intensidad: 16.0,
         codificar_srgb,
     }
     .bloque()

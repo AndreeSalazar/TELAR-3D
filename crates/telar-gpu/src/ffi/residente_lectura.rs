@@ -25,7 +25,7 @@ impl Residente {
         fondo: [f32; 4],
         constantes: &[f32; 32],
         capa: crate::CapaInterfaz,
-    ) -> Result<Vec<u8>, String> {
+    ) -> Result<crate::CapturaEstudio, String> {
         if self.actividad.pasos == 0 || self.pendiente {
             return Err("primero hay que ejecutar un paso".to_owned());
         }
@@ -34,7 +34,9 @@ impl Residente {
         {
             return Err("área de estudio fuera de la captura".to_owned());
         }
-        let pipeline = PipelineGrafico::nuevo(ctx, shaders.vertices, shaders.fragmentos, FORMATO_CAPTURA)?;
+        let disposicion = self.ranuras[0].etapas[0].recursos.disposicion;
+        let pipeline =
+            PipelineGrafico::residente(ctx, shaders.vertices, shaders.fragmentos, FORMATO_CAPTURA, disposicion)?;
         let mut ui = super::interfaz::InterfazGpu::nueva(ctx, capa.shaders, FORMATO_CAPTURA)?;
         if let Some(atlas) = capa.atlas {
             ui.fuente(ctx, atlas.ancho, atlas.alto, atlas.cobertura)?;
@@ -47,6 +49,7 @@ impl Residente {
             malla: &ranura.malla,
             constantes,
             indirecto: Some(ranura.control.objeto),
+            conjunto: Some(ranura.etapas[0].recursos.conjunto),
             calculo: None,
         };
         super::captura_interfaz::capturar(ctx, &escena, &dibujo, tamano, fondo)

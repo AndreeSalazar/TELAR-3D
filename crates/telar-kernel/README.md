@@ -58,8 +58,8 @@ syscalls de Windows/Linux. No acceden a archivos, red ni recursos externos.
 ## ABI y memoria
 
 Enlace 0: cuatro u32 de parámetros (lado, fase, amplitud, capacidad). Enlaces 1/2:
-geometría, usada por los trabajadores. Enlace 3: control de **32 u32 / 128 bytes**,
-reservado e inicializado una sola vez por el backend.
+geometría, usada por los trabajadores. Enlace 3: prefijo de control de **32 u32 / 128 bytes**,
+más ocho palabras de caché optativa. El backend reserva e inicializa 160 bytes una vez.
 
 - `[0..16)`: ABI de geometría anterior, compatible con sus trabajadores.
 - `[16..25)`: solicitud, suspensión, resultado, atendidas, versión, último código,
@@ -96,3 +96,12 @@ AMD, Intel y otras configuraciones requieren pruebas propias.
 `telar-app/tests/kernel_gpu.rs` comprueba solicitudes, regeneración, suspensión,
 reanudación, ocupación, errores y límites en GPU real. Sus descargas son diagnóstico
 explícito; ninguna lectura decide el siguiente paso. El visor vivo no descarga.
+
+## Caché opcional del plan de deformación
+
+`compilar_con_cache()` añade clave exacta lado/fase/amplitud y omite el despacho
+por puntos en planes fijos y puros. La extensión usa control[32..40]; el prefijo
+ABI v1 permanece intacto. Con un buffer antiguo de 32 palabras ejecuta sin caché.
+No aplicarla a simulaciones acumulativas o dependencias no declaradas en esa clave.
+El visor la usa para Onda y el relieve fijo; no almacena píxeles ni iluminación.
+Ver [contrato y evidencia](../../docs/RENDER-AREA.md).

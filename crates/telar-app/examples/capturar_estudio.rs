@@ -18,8 +18,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let alto = argumentos.next().map(|v| v.parse::<u32>()).transpose()?.unwrap_or(720);
     let tamano = (ancho, alto);
     let gpu = Calculo::nuevo(&Opciones::default())?;
-    let codigo =
-        [telar_kernel::compilar_con_arranque(), hilo_spirv::rejilla::generar(), hilo_spirv::rejilla::deformar()];
+    let codigo = [telar_kernel::compilar_con_cache(), hilo_spirv::rejilla::generar(), hilo_spirv::rejilla::deformar()];
     let relieve = hilo::ejemplos::relieve(1.3)?.compilar();
     let mut etapas =
         KernelsProcedurales { preparar: &codigo[0], generar: &codigo[1], deformar: &codigo[2] }.etapas().to_vec();
@@ -29,7 +28,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let estudio = Estudio::default();
     let diseno = estudio.distribucion(tamano);
     residente.paso(ParametrosProcedurales { lado: 256, fase: 0.6, amplitud: estudio.amplitud })?;
-    let escena = [telar_render::vertices(), telar_render::fragmentos()];
+    let escena = [telar_render::vertices(), telar_render::fragmentos_rejilla(telar_render::LuzArea::default())?];
     let ui = [hilo_spirv::interfaz::vertices(), hilo_spirv::interfaz::fragmentos()];
     let fuente = tipografia::crear()?;
     let vertices = estudio.dibujar_con_fuente(diseno, 65_536, &fuente)?;

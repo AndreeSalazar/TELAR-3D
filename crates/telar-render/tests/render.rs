@@ -8,7 +8,11 @@ fn shaders_del_render_pasan_validador_oficial() {
         .map(|p| PathBuf::from(p).join("Bin/spirv-val.exe"))
         .filter(|p| p.exists())
         .unwrap_or_else(|| PathBuf::from("spirv-val"));
-    for (nombre, codigo) in [("vertices", telar_render::vertices()), ("fragmentos", telar_render::fragmentos())] {
+    for (nombre, codigo) in [
+        ("vertices", telar_render::vertices()),
+        ("fragmentos", telar_render::fragmentos()),
+        ("area", telar_render::fragmentos_rejilla(telar_render::LuzArea::default()).unwrap()),
+    ] {
         let ruta = std::env::temp_dir().join(format!("telar-render-{nombre}-{}.spv", std::process::id()));
         std::fs::write(&ruta, codigo.iter().flat_map(|p| p.to_le_bytes()).collect::<Vec<_>>()).unwrap();
         let salida =
@@ -38,4 +42,18 @@ fn material_y_energia_invalidos_se_rechazan_antes_de_gpu() {
     parametros.material.metal = 0.8;
     parametros.exposicion = 0.0;
     assert!(parametros.bloque().is_err());
+}
+
+#[test]
+fn luz_rechaza_presupuestos_y_geometria_de_fuente_invalidos() {
+    let base = telar_render::LuzArea::default();
+    for luz in [
+        telar_render::LuzArea { centro: [f32::NAN, 1.0, 0.0], ..base },
+        telar_render::LuzArea { semilado: 0.0, ..base },
+        telar_render::LuzArea { muestras: 0, ..base },
+        telar_render::LuzArea { muestras: 2, ..base },
+        telar_render::LuzArea { pasos: 65, ..base },
+    ] {
+        assert!(telar_render::fragmentos_rejilla(luz).is_err());
+    }
 }

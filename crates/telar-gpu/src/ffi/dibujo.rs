@@ -42,6 +42,7 @@ pub(crate) struct Escena<'a> {
     pub(crate) malla: &'a MallaGpu,
     pub(crate) constantes: &'a [f32; 32],
     pub(crate) indirecto: Option<Objeto>,
+    pub(crate) conjunto: Option<Objeto>,
     pub(crate) calculo: Option<(&'a Ranura, ParametrosProcedurales)>,
 }
 
@@ -120,20 +121,7 @@ pub(crate) unsafe fn grabar(
         if let Some(e) = escena {
             let (viewport_escena, tijera_escena) =
                 interfaz.map_or_else(|| region([0, 0, ancho, alto]), |ui| region(ui.area));
-            (fd.calculo.usar_pipeline)(cmd, PUNTO_GRAFICOS, e.pipeline.pipeline);
-            (fg.poner_viewport)(cmd, 0, 1, &raw const viewport_escena);
-            (fg.poner_tijera)(cmd, 0, 1, &raw const tijera_escena);
-            let etapas = ETAPA_VERTICES | ETAPA_FRAGMENTOS;
-            let constantes = e.constantes.as_ptr().cast();
-            (fg.empujar_constantes)(cmd, e.pipeline.disposicion, etapas, 0, TAMANO_CONSTANTES, constantes);
-            let desde = 0u64;
-            (fg.usar_vertices)(cmd, 0, 1, &raw const e.malla.vertices.objeto, &raw const desde);
-            (fg.usar_indices)(cmd, e.malla.indices.objeto, 0, INDICES_U32);
-            if let Some(argumentos) = e.indirecto {
-                (fg.dibujar_indirecto)(cmd, argumentos, 12, 1, 20);
-            } else {
-                (fg.dibujar_indices)(cmd, e.malla.n_indices, 1, 0, 0, 0);
-            }
+            dibujar_escena(fd, cmd, e, &viewport_escena, tijera_escena);
         }
         if let Some(ui) = interfaz {
             (fd.calculo.usar_pipeline)(cmd, PUNTO_GRAFICOS, ui.pipeline.pipeline);
@@ -190,5 +178,46 @@ pub(crate) fn barrera(imagen: Objeto, rango: Rango, acceso: (u32, u32), layout: 
         familia_destino: FAMILIA_IGNORADA,
         imagen,
         rango,
+    }
+}
+
+/// # Safety
+/// El comando graba y todos los recursos de la escena viven hasta completar su valla.
+unsafe fn dibujar_escena(
+    fd: &FnDispositivo,
+    cmd: Comandos,
+    e: &Escena,
+    viewport_escena: &Viewport,
+    tijera_escena: Rect2D,
+) {
+    let fg = fd.grafico;
+    // SAFETY: quien llama garantiza vida útil, formato y grabación del comando.
+    unsafe {
+        (fd.calculo.usar_pipeline)(cmd, PUNTO_GRAFICOS, e.pipeline.pipeline);
+        (fg.poner_viewport)(cmd, 0, 1, core::ptr::from_ref(viewport_escena));
+        (fg.poner_tijera)(cmd, 0, 1, &raw const tijera_escena);
+        let etapas = ETAPA_VERTICES | ETAPA_FRAGMENTOS;
+        let constantes = e.constantes.as_ptr().cast();
+        (fg.empujar_constantes)(cmd, e.pipeline.disposicion, etapas, 0, TAMANO_CONSTANTES, constantes);
+        if let Some(conjunto) = e.conjunto {
+            (fd.calculo.usar_conjuntos)(
+                cmd,
+                PUNTO_GRAFICOS,
+                e.pipeline.disposicion,
+                0,
+                1,
+                &raw const conjunto,
+                0,
+                NULO.cast(),
+            );
+        }
+        let desde = 0u64;
+        (fg.usar_vertices)(cmd, 0, 1, &raw const e.malla.vertices.objeto, &raw const desde);
+        (fg.usar_indices)(cmd, e.malla.indices.objeto, 0, INDICES_U32);
+        if let Some(argumentos) = e.indirecto {
+            (fg.dibujar_indirecto)(cmd, argumentos, 12, 1, 20);
+        } else {
+            (fg.dibujar_indices)(cmd, e.malla.n_indices, 1, 0, 0, 0);
+        }
     }
 }

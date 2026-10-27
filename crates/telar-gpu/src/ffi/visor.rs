@@ -69,11 +69,16 @@ impl Visor {
         if self.pipeline.as_ref().is_none_or(|p| p.formato != formato) {
             esperar(ctx)?;
             self.pipeline = None;
-            self.pipeline = Some(PipelineGrafico::nuevo(ctx, &self.vertices, &self.fragmentos, formato)?);
+            self.pipeline = Some(if let Some(residente) = &self.procedural {
+                let disposicion = residente.ranuras[0].etapas[0].recursos.disposicion;
+                PipelineGrafico::residente(ctx, &self.vertices, &self.fragmentos, formato, disposicion)?
+            } else {
+                PipelineGrafico::nuevo(ctx, &self.vertices, &self.fragmentos, formato)?
+            });
         }
         Ok(match (&self.pipeline, &self.malla) {
             (Some(pipeline), Some(malla)) => {
-                Some(Escena { pipeline, malla, constantes, indirecto: None, calculo: None })
+                Some(Escena { pipeline, malla, constantes, indirecto: None, conjunto: None, calculo: None })
             }
             _ => None,
         })
@@ -86,6 +91,7 @@ impl Visor {
         plan: PlanProcedural,
     ) -> Result<(), String> {
         esperar(ctx)?;
+        self.pipeline = None;
         self.procedural = Some(Residente::nuevo(ctx, capacidad, plan, 2)?);
         self.malla = None;
         Ok(())
@@ -110,6 +116,7 @@ impl Visor {
             malla: &ranura.malla,
             constantes,
             indirecto: Some(ranura.control.objeto),
+            conjunto: Some(ranura.etapas[0].recursos.conjunto),
             calculo: Some((ranura, parametros)),
         })
     }
@@ -183,7 +190,7 @@ pub(super) fn capturar_buffers(
         extension: (ancho, alto),
         despues: (LAYOUT_TRANSFER_SRC, ETAPA_TRANSFER, ACCESO_TRANSFER_READ),
     };
-    let escena = Escena { pipeline, malla, constantes, indirecto, calculo: None };
+    let escena = Escena { pipeline, malla, constantes, indirecto, conjunto: None, calculo: None };
     let copia = CopiaImagen {
         desplazamiento: 0,
         largo_fila: 0, // filas seguidas, sin relleno

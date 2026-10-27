@@ -37,7 +37,11 @@ impl Ranura {
             ok((fd.empezar)(cmd, &raw const inicio), "grabar el lote residente")?;
         }
         barrera(
-            ETAPA_CALCULO | ETAPA_INDIRECTO | ETAPA_ENTRADA_VERTICES | ETAPA_TRANSFER,
+            ETAPA_CALCULO
+                | ETAPA_INDIRECTO
+                | ETAPA_ENTRADA_VERTICES
+                | super::tipos_grafico::ETAPA_PIPELINE_FRAGMENTOS
+                | ETAPA_TRANSFER,
             ETAPA_CALCULO,
             ACCESO_SHADER_WRITE
                 | ACCESO_SHADER_READ
@@ -103,9 +107,9 @@ impl Ranura {
         }
         barrera(
             ETAPA_CALCULO,
-            ETAPA_ENTRADA_VERTICES | ETAPA_INDIRECTO | ETAPA_TRANSFER,
+            ETAPA_ENTRADA_VERTICES | super::tipos_grafico::ETAPA_PIPELINE_FRAGMENTOS | ETAPA_INDIRECTO | ETAPA_TRANSFER,
             ACCESO_SHADER_WRITE,
-            ACCESO_LEER_ATRIBUTOS | ACCESO_LEER_INDICES | ACCESO_INDIRECTO | ACCESO_TRANSFER_READ,
+            ACCESO_LEER_ATRIBUTOS | ACCESO_LEER_INDICES | ACCESO_SHADER_READ | ACCESO_INDIRECTO | ACCESO_TRANSFER_READ,
         );
         // SAFETY: todas las pasadas del plan y sus barreras están completas.
         unsafe { ok((fd.terminar)(cmd), "cerrar el lote residente") }

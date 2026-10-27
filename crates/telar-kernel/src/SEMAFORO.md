@@ -12,3 +12,7 @@ Limites: Buzón de una entrada, productores serializados, región/ABI verificado
 Evidencia: docs/ARRANQUE-GPU.md, docs/FORMATO-TLAR.md y pruebas de kernel/hilo/SPIR-V.
 
 Clasificación de riesgo, no certificación absoluta ni medición de rendimiento.
+
+Extensión de caché optativa: 32 bytes adicionales de control por ranura; omite
+la cadena de puntos con clave idéntica. Solo planes fijos/puramente funcionales.
+Evidencia y medición: docs/RENDER-AREA.md.

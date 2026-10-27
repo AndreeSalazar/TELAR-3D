@@ -1,12 +1,52 @@
-//! Render original para TELAR: microfacetas GGX, dos luces y ambiente aproximado.
+//! Render original: GGX, luz de área y autosombras aproximadas de rejilla residente.
 //! Genera SPIR-V; no conoce Vulkan, ventanas, archivos ni objetos de escena.
 #![no_std]
 extern crate alloc;
+mod area;
 mod programa;
+mod sombras;
 mod superficie;
 mod tipos;
 pub use programa::vertices;
 pub use superficie::fragmentos;
+
+/// Luz rectangular horizontal, orientada hacia abajo; muestreo fijo de vista previa.
+#[derive(Clone, Copy)]
+pub struct LuzArea {
+    /// Centro de la fuente en coordenadas de mundo.
+    pub centro: [f32; 3],
+    /// Semilado del cuadrado luminoso, en unidades de mundo.
+    pub semilado: f32,
+    /// Muestras estratificadas: 1 o 4. No hay acumulación temporal.
+    pub muestras: u32,
+    /// Pasos de sombra por segmento, de 8 a 64.
+    pub pasos: u32,
+    /// Autosombra aproximada de la rejilla residente, no de mallas arbitrarias.
+    pub sombras: bool,
+}
+
+impl Default for LuzArea {
+    fn default() -> Self {
+        Self { centro: [2.5, 1.4, 1.8], semilado: 0.7, muestras: 4, pasos: 32, sombras: true }
+    }
+}
+
+/// Shader de rejilla x/z en [-2,2], con luz de área y lectura de geometría residente.
+/// Enlaces de solo lectura: vértices f32[] en 1, control u32[] en 3.
+///
+/// # Errors
+/// Rechaza luces no finitas, tamaños o presupuestos fuera del contrato.
+pub fn fragmentos_rejilla(luz: LuzArea) -> Result<alloc::vec::Vec<u32>, &'static str> {
+    if !luz.centro.iter().all(|v| v.is_finite() && v.abs() <= 100.0)
+        || !luz.semilado.is_finite()
+        || !(0.01..=10.0).contains(&luz.semilado)
+        || !matches!(luz.muestras, 1 | 4)
+        || !(8..=64).contains(&luz.pasos)
+    {
+        return Err("luz de área fuera del contrato");
+    }
+    Ok(superficie::emitir(Some(luz)))
+}
 
 /// Material de vista previa con color lineal y respuesta microfacetada.
 #[derive(Clone, Copy)]

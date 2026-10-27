@@ -18,6 +18,7 @@
 
 extern crate alloc;
 
+mod bucles;
 pub mod ejemplos;
 mod funcion;
 pub mod interfaz;

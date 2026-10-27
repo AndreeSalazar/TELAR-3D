@@ -8,7 +8,7 @@ use telar_nodos::Esfera;
 
 pub(crate) fn preparar(gpu: &mut Gpu, modo: &Modo) -> Result<(u32, usize), String> {
     let (vertices, fragmentos) = if modo.procedural {
-        (telar_render::vertices(), telar_render::fragmentos())
+        (telar_render::vertices(), telar_render::fragmentos_rejilla(telar_render::LuzArea::default())?)
     } else {
         (hilo_spirv::visor::vertices(), hilo_spirv::visor::fragmentos())
     };
@@ -16,7 +16,7 @@ pub(crate) fn preparar(gpu: &mut Gpu, modo: &Modo) -> Result<(u32, usize), Strin
     let capacidad = modo.puntos.isqrt().clamp(2, 1024);
     let puntos = if modo.procedural {
         let (preparar, generar, deformar) =
-            (telar_kernel::compilar_con_arranque(), hilo_spirv::rejilla::generar(), hilo_spirv::rejilla::deformar());
+            (telar_kernel::compilar_con_cache(), hilo_spirv::rejilla::generar(), hilo_spirv::rejilla::deformar());
         let relieve = hilo::ejemplos::relieve(1.3).map_err(|error| error.to_string())?.compilar();
         let mut etapas =
             KernelsProcedurales { preparar: &preparar, generar: &generar, deformar: &deformar }.etapas().to_vec();

@@ -68,7 +68,8 @@ fn un_trabajador_pide_servicio_segun_datos_residentes_y_no_un_calendario_host() 
 
 #[test]
 fn gpu_solicita_rehacer_suspender_reanudar_y_rechaza_servicios_invalidos() {
-    assert_eq!(abi::PALABRAS, telar_gpu::PALABRAS_CONTROL_PROCEDURAL, "frontera ABI explícita");
+    assert_eq!(abi::PALABRAS, 32, "el prefijo ABI v1 permanece intacto");
+    assert_eq!(telar_kernel::cache::PALABRAS, telar_gpu::PALABRAS_CONTROL_PROCEDURAL, "extensión de caché explícita");
     let gpu = Calculo::nuevo(&Opciones::default()).expect("Vulkan real");
     assert!(gpu.validacion());
     let codigo = [telar_kernel::compilar(), hilo_spirv::rejilla::generar(), hilo_spirv::rejilla::deformar()];

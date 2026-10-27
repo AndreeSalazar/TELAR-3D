@@ -124,7 +124,8 @@ impl Recursos {
                 numero,
                 tipo: DESCRIPTOR_ALMACEN,
                 cantidad: 1,
-                etapas: ETAPA_SHADER_CALCULO,
+                etapas: ETAPA_SHADER_CALCULO
+                    | if matches!(numero, 1 | 3) { super::tipos_grafico::ETAPA_FRAGMENTOS } else { 0 },
                 muestreadores: core::ptr::null(),
             })
             .collect();

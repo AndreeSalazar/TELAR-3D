@@ -45,6 +45,17 @@ impl PipelineGrafico {
         Self::crear_modo(ctx, vertices, fragmentos, formato, false, 0)
     }
 
+    /// Pipeline gráfico con el conjunto residente de solo lectura en fragmentos.
+    pub(crate) fn residente(
+        ctx: &Contexto,
+        vertices: &[u32],
+        fragmentos: &[u32],
+        formato: u32,
+        conjunto: Objeto,
+    ) -> Result<Self, String> {
+        Self::crear_modo(ctx, vertices, fragmentos, formato, false, conjunto)
+    }
+
     pub(crate) fn interfaz(
         ctx: &Contexto,
         vertices: &[u32],
@@ -71,8 +82,8 @@ impl PipelineGrafico {
             s_type: ST_PIPELINE_LAYOUT_CREATE_INFO,
             p_next: NULO,
             flags: 0,
-            n_conjuntos: u32::from(interfaz),
-            conjuntos: if interfaz { &raw const conjunto } else { core::ptr::null() },
+            n_conjuntos: u32::from(conjunto != 0),
+            conjuntos: if conjunto != 0 { &raw const conjunto } else { core::ptr::null() },
             n_constantes: 1,
             constantes: (&raw const rango).cast(),
         };

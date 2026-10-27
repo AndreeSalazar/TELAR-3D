@@ -45,15 +45,17 @@ coordinador SPIR-V, con versión y CRC32. Todavía no guarda escenas completas.
 Ver [el formato](docs/FORMATO-TLAR.md) y el ejemplo de `docs/ejemplos/`.
 
 **Render separado:** `telar-render` genera los shaders originales de materiales
-GGX, luces y exposición. Es una primera vista de materiales con dirección visual
-cinematográfica; sombras, transporte de luz y volúmenes siguen pendientes.
+GGX, luces y exposición. El estudio ya incluye luz de área y autosombras aproximadas
+de la rejilla; el kernel omite deformación cuando sus parámetros no cambian.
+[Contrato y mediciones GPU](docs/RENDER-AREA.md). Transporte de luz progresivo y
+volúmenes siguen pendientes.
 
 **Semáforos obligatorios:** cada carpeta fuente/configuración/documentación declara
 ROJO crítico, AMARILLO probable o VERDE seguro en su contexto y explica su consumo.
 El guardián bloquea carpetas sin informe. [Política](docs/SEMAFOROS.md),
 [mapa](docs/MAPA-SEMAFOROS.md).
 
-![Estudio nativo de TELAR](docs/capturas/estudio-render.png)
+![Estudio nativo de TELAR](docs/capturas/estudio-area.png)
 
 | Pieza | Nombre | Qué es |
 |---|---|---|

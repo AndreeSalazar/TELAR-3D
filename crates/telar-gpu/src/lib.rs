@@ -25,7 +25,7 @@ mod procedural;
 use core::sync::atomic::Ordering;
 
 pub use escena::{Constantes, Sombreadores};
-pub use interfaz::{AtlasInterfaz, CapaInterfaz};
+pub use interfaz::{AtlasInterfaz, CapaInterfaz, CapturaEstudio};
 pub use perfil::PerfilGpu;
 pub use plan::{DominioProcedural, EtapaProcedural, PlanProcedural};
 pub use procedural::{

@@ -25,6 +25,14 @@ pub struct AtlasInterfaz<'a> {
     pub cobertura: &'a [u8],
 }
 
+/// Diagnóstico fuera de pantalla; los tiempos excluyen preparación y descarga.
+pub struct CapturaEstudio {
+    /// Píxeles RGBA8 de la captura.
+    pub pixeles: Vec<u8>,
+    /// Tiempo GPU de renderizado y overlay, si la cola soporta timestamps.
+    pub nanosegundos: Option<f64>,
+}
+
 impl Procedural<'_> {
     /// Captura el resultado GPU con la interfaz, sin ventanas ni descargas en vivo.
     ///
@@ -53,6 +61,25 @@ impl Procedural<'_> {
         bloque: &[f32; 32],
         interfaz: CapaInterfaz,
     ) -> Result<Vec<u8>, String> {
+        if !bloque.iter().all(|v| v.is_finite()) {
+            return Err("constantes de render no finitas".to_owned());
+        }
+        Ok(self.medir_estudio(shaders, tamano, fondo, bloque, interfaz)?.pixeles)
+    }
+
+    /// Captura y mide explícitamente el dibujo con timestamps GPU, sin medir FPS.
+    /// No debe llamarse en el bucle vivo: espera y descarga píxeles de diagnóstico.
+    ///
+    /// # Errors
+    /// Si las constantes no son finitas, el área no vale o Vulkan falla.
+    pub fn medir_estudio(
+        &self,
+        shaders: Sombreadores,
+        tamano: (u32, u32),
+        fondo: [f32; 4],
+        bloque: &[f32; 32],
+        interfaz: CapaInterfaz,
+    ) -> Result<CapturaEstudio, String> {
         if !bloque.iter().all(|v| v.is_finite()) {
             return Err("constantes de render no finitas".to_owned());
         }

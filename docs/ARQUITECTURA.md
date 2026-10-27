@@ -137,3 +137,13 @@ GPU: emitir ─► advectar ─► fuerzas ─► presión ─► combustión �
      ─► marcha de rayos con emisión de cuerpo negro ─► tonemap ─► presentar
      └─► (anillo asíncrono) estadísticas para la interfaz
 ```
+
+## Avance de render y reutilización (27 de octubre de 2026)
+
+El visor ya usa luz de área y autosombra aproximada sobre las alturas finales de
+la rejilla residente. La variante optativa del coordinador omite toda la cadena
+de puntos si lado/fase/amplitud no cambian en un plan fijo. El backend reserva
+160 bytes de control: prefijo ABI v1 de 128 bytes más 32 de caché. La cabecera
+TLAR v1 conserva su mínimo de 32 palabras. Cada ranura tiene estado independiente.
+Contrato, mediciones y límites: [RENDER-AREA.md](RENDER-AREA.md).
+No equivale a invalidación de grafos generales ni a render progresivo todavía.

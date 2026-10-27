@@ -11,6 +11,7 @@ fn coordinador_y_productores_validan_en_vulkan_11_y_13() {
     for (indice, codigo) in [
         telar_kernel::compilar(),
         telar_kernel::compilar_con_arranque(),
+        telar_kernel::compilar_con_cache(),
         telar_kernel::solicitar_en(1, 2),
         telar_kernel::solicitar_en(999, 4),
     ]

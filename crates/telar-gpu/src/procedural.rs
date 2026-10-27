@@ -2,8 +2,8 @@
 
 use crate::{Calculo, Constantes, DominioProcedural, EtapaProcedural, Gpu, PlanProcedural, Sombreadores, ffi};
 
-/// Palabras del control procedural: 16 de geometría y 16 de servicios GPU.
-pub const PALABRAS_CONTROL_PROCEDURAL: usize = 32;
+/// Prefijo de 32 palabras de geometría/servicios más ocho de caché optativa.
+pub const PALABRAS_CONTROL_PROCEDURAL: usize = 40;
 pub(crate) const TAMANO_CONTROL: u64 = (PALABRAS_CONTROL_PROCEDURAL * 4) as u64;
 
 /// Tres programas con el ABI documentado en hilo-spirv: productor, generador y deformador.

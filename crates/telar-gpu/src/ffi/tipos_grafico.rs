@@ -50,6 +50,8 @@ pub(crate) const POR_VERTICE: u32 = 0;
 pub(crate) const INDICES_U32: u32 = 1;
 pub(crate) const ETAPA_VERTICES: u32 = 0x0000_0001;
 pub(crate) const ETAPA_FRAGMENTOS: u32 = 0x0000_0010;
+/// Etapa de pipeline; distinta de la máscara de visibilidad del shader.
+pub(crate) const ETAPA_PIPELINE_FRAGMENTOS: u32 = 0x0000_0080;
 pub(crate) const PUNTO_GRAFICOS: u32 = 0;
 pub(crate) const BUFFER_VERTICES: u32 = 0x0000_0080;
 pub(crate) const BUFFER_INDICES: u32 = 0x0000_0040;
