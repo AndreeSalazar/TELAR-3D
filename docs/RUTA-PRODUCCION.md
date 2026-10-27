@@ -70,6 +70,9 @@ de un kernel propio no sustituye esos componentes.
 
 ## Documentos que se complementan
 
+- [FSR-RECONSTRUCCION.md](FSR-RECONSTRUCCION.md): estudio de versiones FSR y
+  requisitos de una futura reconstrucción temporal GPU; todavía no integrada.
+
 - [RASTERIZACION-LECTURAS.md](RASTERIZACION-LECTURAS.md): fuentes históricas y
   vigentes; guía de estudio y experimentos medibles para el visor.
 

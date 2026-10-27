@@ -1,5 +1,8 @@
 # Bordes suaves: MSAA nativo en Vulkan
 
+La siguiente vía de investigación, distinta del MSAA ya implementado, es la
+[reconstrucción temporal inspirada en el estudio de FSR](FSR-RECONSTRUCCION.md).
+
 El contorno escalonado observado por el usuario era aliasing de cobertura: el
 visor rasterizaba con una sola muestra en el centro de cada píxel. Una superficie
 curva proyectada sobre píxeles enteros produce escalones, aunque tenga muchos vértices.
