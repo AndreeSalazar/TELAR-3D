@@ -19,11 +19,12 @@ pub(crate) struct InterfazGpu {
     fd: FnDispositivo,
     dispositivo: Disp,
     pipeline: PipelineGrafico,
+    fuente: super::fuente_gpu::FuenteGpu,
     shaders: [Vec<u32>; 2],
     juegos: Vec<BufferMapeado>,
     versiones: [Option<u64>; 2],
     revision: u64,
-    vertices: Vec<[f32; 6]>,
+    vertices: Vec<[f32; 8]>,
     area: [u32; 4],
 }
 
@@ -32,16 +33,19 @@ pub(crate) struct DibujoInterfaz<'a> {
     pub(crate) buffer: &'a BufferMapeado,
     pub(crate) cantidad: u32,
     pub(crate) area: [u32; 4],
+    pub(crate) conjunto: super::tipos::Objeto,
 }
 
 impl InterfazGpu {
     pub(crate) fn nueva(ctx: &Contexto, shaders: Sombreadores, formato: u32) -> Result<Self, String> {
         let fd = ctx.fd.ok_or("falta el dispositivo")?;
-        let pipeline = PipelineGrafico::interfaz(ctx, shaders.vertices, shaders.fragmentos, formato)?;
+        let fuente = super::fuente_gpu::FuenteGpu::nueva(ctx)?;
+        let pipeline =
+            PipelineGrafico::interfaz(ctx, shaders.vertices, shaders.fragmentos, formato, fuente.disposicion())?;
         let mut juegos = Vec::new();
         for _ in 0..2 {
             juegos.push(
-                Buffer::nuevo(ctx, (CAPACIDAD * 24) as u64, BUFFER_VERTICES, (MEMORIA_VISIBLE | MEMORIA_COHERENTE, 0))?
+                Buffer::nuevo(ctx, (CAPACIDAD * 32) as u64, BUFFER_VERTICES, (MEMORIA_VISIBLE | MEMORIA_COHERENTE, 0))?
                     .mapear_persistente()?,
             );
         }
@@ -49,6 +53,7 @@ impl InterfazGpu {
             fd,
             dispositivo: ctx.dispositivo,
             pipeline,
+            fuente,
             shaders: [shaders.vertices.to_vec(), shaders.fragmentos.to_vec()],
             juegos,
             versiones: [None; 2],
@@ -62,13 +67,14 @@ impl InterfazGpu {
         if self.pipeline.formato != formato {
             // SAFETY: dispositivo propio; se espera antes de reemplazar el pipeline en vuelo.
             ok(unsafe { (self.fd.esperar)(self.dispositivo) }, "esperar interfaz")?;
-            self.pipeline = PipelineGrafico::interfaz(ctx, &self.shaders[0], &self.shaders[1], formato)?;
+            self.pipeline =
+                PipelineGrafico::interfaz(ctx, &self.shaders[0], &self.shaders[1], formato, self.fuente.disposicion())?;
             self.versiones = [None; 2];
         }
         Ok(())
     }
 
-    pub(crate) fn actualizar(&mut self, vertices: &[[f32; 6]], area: [u32; 4]) -> Result<(), String> {
+    pub(crate) fn actualizar(&mut self, vertices: &[[f32; 8]], area: [u32; 4]) -> Result<(), String> {
         if vertices.len() > CAPACIDAD
             || !vertices.len().is_multiple_of(3)
             || !vertices.iter().flatten().all(|v| v.is_finite())
@@ -85,6 +91,10 @@ impl InterfazGpu {
         Ok(())
     }
 
+    pub(crate) fn fuente(&mut self, ctx: &Contexto, ancho: u32, alto: u32, cobertura: &[u8]) -> Result<(), String> {
+        self.fuente.actualizar(ctx, ancho, alto, cobertura)
+    }
+
     /// Se llama tras la valla del juego, antes del envío que publica la escritura host.
     pub(crate) fn juego(&mut self, indice: usize) -> Result<DibujoInterfaz<'_>, String> {
         if self.versiones[indice] != Some(self.revision) {
@@ -92,12 +102,12 @@ impl InterfazGpu {
             let mut anterior = None;
             let mut lineal = [0.0; 4];
             for vertice in &mut vertices {
-                let bits = [vertice[3].to_bits(), vertice[4].to_bits(), vertice[5].to_bits()];
+                let bits = [vertice[4].to_bits(), vertice[5].to_bits(), vertice[6].to_bits()];
                 if anterior != Some(bits) {
-                    lineal = color_para(self.pipeline.formato, [vertice[3], vertice[4], vertice[5], 1.0]);
+                    lineal = color_para(self.pipeline.formato, [vertice[4], vertice[5], vertice[6], 1.0]);
                     anterior = Some(bits);
                 }
-                vertice[3..6].copy_from_slice(&lineal[..3]);
+                vertice[4..7].copy_from_slice(&lineal[..3]);
             }
             self.juegos[indice].escribir(como_bytes(&vertices))?;
             self.versiones[indice] = Some(self.revision);
@@ -107,6 +117,7 @@ impl InterfazGpu {
             buffer: &self.juegos[indice],
             cantidad: u32::try_from(self.vertices.len()).map_err(|_| "demasiados vértices UI")?,
             area: self.area,
+            conjunto: self.fuente.recursos.conjunto,
         })
     }
 }

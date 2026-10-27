@@ -37,6 +37,7 @@ mod captura_interfaz;
 mod carga;
 mod contexto;
 mod dibujo;
+mod fuente_gpu;
 mod funciones;
 mod funciones_calculo;
 mod funciones_grafico;

@@ -4,7 +4,7 @@ Interfaz pura en `no_std + alloc`, sin crates externos ni conocimiento de Vulkan
 Win32, NUDO o HILO. Produce triángulos 2D y consume posiciones de ratón; la app
 conecta eventos, parámetros y renderizado. No se modifica la geometría 3D en CPU.
 
-![Estudio nativo](../../docs/capturas/estudio-grafo.png)
+![Estudio nativo](../../docs/capturas/estudio-tipografia.png)
 
 ## Qué funciona
 
@@ -20,12 +20,14 @@ conecta eventos, parámetros y renderizado. No se modifica la geometría 3D en C
   Bézier. Los cables siguen el movimiento; las posiciones relativas se conservan
   al redimensionar. La selección aparece por encima de nodos superpuestos.
 - Composición grafito/cian/cobre, puntos discretos y controles mínimos.
+- Tipografía proporcional con antialias y atlas residente; realce de nodos,
+  deslizadores, pausa y colores al pasar el cursor. Tab recorre los cuatro nodos.
 - Bajo 720×600 se ocultan paneles para conservar un visor utilizable.
 
 La red todavía no permite reconectar cables, crear operaciones,
 guardar escenas ni inspeccionar tablas de atributos. Los colores de vista
-previa no son materiales PBR. La fuente 5×7 es provisional: faltan tipografía
-vectorial, escalado DPI completo, accesibilidad y navegación por teclado de
+previa no son materiales PBR. Faltan escalado DPI completo, composición de texto
+Unicode más allá del alfabeto latino, accesibilidad y navegación por teclado de
 todos los controles. Espacio pausa/reanuda desde la ventana.
 Mover un nodo cambia la disposición visual; el orden y las conexiones de las
 cuatro etapas de ejecución siguen fijos. No se presenta como edición de topología.
@@ -36,7 +38,8 @@ cuatro etapas de ejecución siguen fijos. No se presenta como edición de topolo
 |---|---|
 | `src/lib.rs` | distribución, estado y consumo de eventos de controles |
 | `src/dibujo.rs` | composición de paneles, red e inspector |
-| `src/lienzo.rs` | triángulos y glifos provisionales |
+| `src/lienzo.rs` | triángulos, glifos de atlas y fuente 5×7 de respaldo |
+| `src/fuente.rs` | validación de métricas y cobertura sin conocer Windows |
 | `tests/estudio.rs` | límites, interacción, distribución y geometría finita |
 
 La app compone triángulos solo al cambiar estado o tamaño. El backend conserva
@@ -44,6 +47,12 @@ dos buffers mapeados y solo copia la revisión nueva cuando la valla del juego
 permite escribir. El overlay se dibuja en GPU, sin profundidad, después de la
 escena. La CPU prepara esta geometría pequeña de interfaz, separada de los datos
 procedurales residentes.
+
+`telar-ventana` rasteriza Segoe UI a 24 px una vez usando GDI aislado en su FFI;
+la app entrega métricas a `telar-ui` y cobertura a `telar-gpu`. El shader interpola
+la cobertura y mezcla alfa. No se rasterizan letras en CPU por fotograma. La UI
+emite seis vértices por glifo, con posición, coordenada de atlas y RGBA (32 bytes).
+La fuente 5×7 sigue disponible para componer sin atlas en pruebas puras.
 
 `telar-app/tests/interfaz_gpu.rs` captura la escena con el overlay y verifica
 píxeles y cambios reales de superficie al usar el deslizador. La captura de

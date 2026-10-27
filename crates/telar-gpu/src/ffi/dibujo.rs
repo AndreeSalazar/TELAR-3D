@@ -137,6 +137,16 @@ pub(crate) unsafe fn grabar(
         }
         if let Some(ui) = interfaz {
             (fd.calculo.usar_pipeline)(cmd, PUNTO_GRAFICOS, ui.pipeline.pipeline);
+            (fd.calculo.usar_conjuntos)(
+                cmd,
+                PUNTO_GRAFICOS,
+                ui.pipeline.disposicion,
+                0,
+                1,
+                &raw const ui.conjunto,
+                0,
+                NULO.cast(),
+            );
             (fg.poner_viewport)(cmd, 0, 1, &raw const viewport);
             (fg.poner_tijera)(cmd, 0, 1, &raw const area);
             let desde = 0;

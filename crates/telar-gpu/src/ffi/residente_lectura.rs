@@ -35,6 +35,9 @@ impl Residente {
         }
         let pipeline = PipelineGrafico::nuevo(ctx, shaders.vertices, shaders.fragmentos, FORMATO_CAPTURA)?;
         let mut ui = super::interfaz::InterfazGpu::nueva(ctx, capa.shaders, FORMATO_CAPTURA)?;
+        if let Some(atlas) = capa.atlas {
+            ui.fuente(ctx, atlas.ancho, atlas.alto, atlas.cobertura)?;
+        }
         ui.actualizar(capa.vertices, capa.area)?;
         let dibujo = ui.juego(0)?;
         let ranura = &self.ranuras[0];

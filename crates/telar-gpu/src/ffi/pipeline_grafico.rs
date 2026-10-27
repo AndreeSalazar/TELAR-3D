@@ -42,11 +42,17 @@ pub(crate) struct PipelineGrafico {
 impl PipelineGrafico {
     /// `vertices` y `fragmentos`: SPIR-V con la entrada `main`.
     pub(crate) fn nuevo(ctx: &Contexto, vertices: &[u32], fragmentos: &[u32], formato: u32) -> Result<Self, String> {
-        Self::crear_modo(ctx, vertices, fragmentos, formato, false)
+        Self::crear_modo(ctx, vertices, fragmentos, formato, false, 0)
     }
 
-    pub(crate) fn interfaz(ctx: &Contexto, vertices: &[u32], fragmentos: &[u32], formato: u32) -> Result<Self, String> {
-        Self::crear_modo(ctx, vertices, fragmentos, formato, true)
+    pub(crate) fn interfaz(
+        ctx: &Contexto,
+        vertices: &[u32],
+        fragmentos: &[u32],
+        formato: u32,
+        conjunto: Objeto,
+    ) -> Result<Self, String> {
+        Self::crear_modo(ctx, vertices, fragmentos, formato, true, conjunto)
     }
 
     fn crear_modo(
@@ -55,6 +61,7 @@ impl PipelineGrafico {
         fragmentos: &[u32],
         formato: u32,
         interfaz: bool,
+        conjunto: Objeto,
     ) -> Result<Self, String> {
         let fd = ctx.fd.ok_or("el contexto no tiene dispositivo")?;
         let mut p = Self { fd, d: ctx.dispositivo, disposicion: 0, pipeline: 0, formato, interfaz };
@@ -64,8 +71,8 @@ impl PipelineGrafico {
             s_type: ST_PIPELINE_LAYOUT_CREATE_INFO,
             p_next: NULO,
             flags: 0,
-            n_conjuntos: 0,
-            conjuntos: core::ptr::null(),
+            n_conjuntos: u32::from(interfaz),
+            conjuntos: if interfaz { &raw const conjunto } else { core::ptr::null() },
             n_constantes: 1,
             constantes: (&raw const rango).cast(),
         };
@@ -118,21 +125,22 @@ impl PipelineGrafico {
             especializacion: NULO,
         };
         let etapas = [etapa(ETAPA_VERTICES, modulos[0]), etapa(ETAPA_FRAGMENTOS, modulos[1])];
-        let enlace = EnlaceVertices { numero: 0, paso: PASO_VERTICE, ritmo: POR_VERTICE };
-        let atributo = |ubicacion, desplazamiento| AtributoVertice {
-            ubicacion,
-            enlace: 0,
-            formato: FORMATO_RGB32F,
-            desplazamiento,
+        let enlace =
+            EnlaceVertices { numero: 0, paso: if self.interfaz { 32 } else { PASO_VERTICE }, ritmo: POR_VERTICE };
+        let atributo =
+            |ubicacion, desplazamiento, formato| AtributoVertice { ubicacion, enlace: 0, formato, desplazamiento };
+        let atributos = if self.interfaz {
+            vec![atributo(0, 0, 103), atributo(1, 8, 103), atributo(2, 16, 109)]
+        } else {
+            vec![atributo(0, 0, FORMATO_RGB32F), atributo(1, 12, FORMATO_RGB32F)]
         };
-        let atributos = [atributo(0, 0), atributo(1, 12)];
         let vertices = EstadoVertices {
             s_type: ST_VERTEX_INPUT,
             p_next: NULO,
             flags: 0,
             n_enlaces: 1,
             enlaces: &raw const enlace,
-            n_atributos: 2,
+            n_atributos: if self.interfaz { 3 } else { 2 },
             atributos: atributos.as_ptr(),
         };
         let (ensamblado, viewport) = (ensamblado(), viewport());
@@ -142,8 +150,11 @@ impl PipelineGrafico {
             profundidad.prueba = 0;
             profundidad.escritura = 0;
         }
-        let adjunto =
-            MezclaAdjunto { activa: 0, factores_color: [0; 3], factores_alfa: [0; 3], mascara: ESCRIBIR_RGBA };
+        let adjunto = if self.interfaz {
+            MezclaAdjunto { activa: 1, factores_color: [6, 7, 0], factores_alfa: [1, 7, 0], mascara: ESCRIBIR_RGBA }
+        } else {
+            MezclaAdjunto { activa: 0, factores_color: [0; 3], factores_alfa: [0; 3], mascara: ESCRIBIR_RGBA }
+        };
         let mezcla = EstadoMezcla {
             s_type: ST_COLOR_BLEND,
             p_next: NULO,

@@ -4,6 +4,7 @@
 
 #![allow(unsafe_code, reason = "la puerta a Win32: cada unsafe lleva su // SAFETY:")]
 
+pub(crate) mod fuente;
 mod win32;
 
 use core::cell::RefCell;

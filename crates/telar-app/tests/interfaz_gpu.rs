@@ -7,6 +7,8 @@ use telar_gpu::{
     avisos_de_validacion,
 };
 use telar_ui::{Distribucion, Estudio};
+#[path = "../src/tipografia.rs"]
+mod tipografia;
 
 #[test]
 fn estudio_capturado_dibuja_paneles_y_reacciona_al_inspector() {
@@ -20,6 +22,7 @@ fn estudio_capturado_dibuja_paneles_y_reacciona_al_inspector() {
     let shaders = Sombreadores { vertices: &escena[0], fragmentos: &escena[1] };
     let diseno = Distribucion::nueva((1280, 720));
     let mut estudio = Estudio::default();
+    let fuente = tipografia::crear().unwrap();
     let constantes = Constantes {
         matriz: Camara { distancia: 7.0, ..Camara::default() }.matriz(diseno.visor.ancho / diseno.visor.alto),
         luz: [0.0, 1.0, 0.0],
@@ -28,11 +31,12 @@ fn estudio_capturado_dibuja_paneles_y_reacciona_al_inspector() {
         suelo: [0.1; 4],
     };
     residente.paso(ParametrosProcedurales { lado: 64, fase: 0.6, amplitud: estudio.amplitud }).unwrap();
-    let triangulos = estudio.dibujar(diseno, 4096);
+    let triangulos = estudio.dibujar_con_fuente(diseno, 4096, &fuente).unwrap();
     let captura = |vertices| CapaInterfaz {
         shaders: Sombreadores { vertices: &ui[0], fragmentos: &ui[1] },
         vertices,
         area: diseno.area(),
+        atlas: Some(telar_gpu::AtlasInterfaz { ancho: fuente.ancho, alto: fuente.alto, cobertura: &fuente.cobertura }),
     };
     let fondo = [0.04, 0.06, 0.09, 1.0];
     let primera = residente.capturar_estudio(shaders, (1280, 720), fondo, &constantes, captura(&triangulos)).unwrap();
@@ -44,7 +48,7 @@ fn estudio_capturado_dibuja_paneles_y_reacciona_al_inspector() {
     estudio.mover(diseno, 5000.0);
     estudio.soltar();
     residente.paso(ParametrosProcedurales { lado: 64, fase: 0.6, amplitud: estudio.amplitud }).unwrap();
-    let triangulos = estudio.dibujar(diseno, 4096);
+    let triangulos = estudio.dibujar_con_fuente(diseno, 4096, &fuente).unwrap();
     let segunda = residente.capturar_estudio(shaders, (1280, 720), fondo, &constantes, captura(&triangulos)).unwrap();
     let diferencias = (100..550)
         .flat_map(|y| (32..820).map(move |x| (x, y)))

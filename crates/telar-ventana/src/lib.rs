@@ -21,6 +21,8 @@
 
 pub mod evento;
 mod ffi;
+mod fuente;
+pub use fuente::{FuenteSistema, fuente_interfaz};
 
 use core::marker::PhantomData;
 

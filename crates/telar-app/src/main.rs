@@ -19,6 +19,7 @@
 mod calculo;
 mod controles;
 mod escena;
+mod tipografia;
 mod visor;
 
 use std::process::ExitCode;

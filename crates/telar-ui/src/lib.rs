@@ -4,7 +4,9 @@
 extern crate alloc;
 
 mod dibujo;
+mod fuente;
 mod lienzo;
+pub use fuente::Fuente;
 
 /// Coordenadas en píxeles lógicos de la ventana.
 #[derive(Clone, Copy, Debug)]
@@ -115,6 +117,15 @@ pub struct Estudio {
     pub material: usize,
     arrastre: Option<Arrastre>,
     nodos: [[f32; 2]; 4],
+    encima: Option<Objetivo>,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Objetivo {
+    Nodo(usize),
+    Control(usize),
+    Pausa,
+    Material(usize),
 }
 
 #[derive(Clone, Copy)]
@@ -133,11 +144,29 @@ impl Default for Estudio {
             material: 0,
             arrastre: None,
             nodos: [[0.03, 0.02], [0.97, 0.26], [0.03, 0.56], [0.97, 0.85]],
+            encima: None,
         }
     }
 }
 
 impl Estudio {
+    /// Actualiza el realce del puntero; solo pide recomponer cuando cambia su destino.
+    pub fn apuntar(&mut self, diseno: Distribucion, x: f32, y: f32) -> bool {
+        let anterior = self.encima;
+        self.encima = None;
+        if diseno.completa {
+            let preferido = self.seleccionado.min(3);
+            self.encima = core::iter::once(preferido)
+                .chain((0..4).rev().filter(|i| *i != preferido))
+                .find(|i| self.nodo(diseno, *i).contiene(x, y))
+                .map(Objetivo::Nodo)
+                .or_else(|| (0..2).find(|i| diseno.control(*i).contiene(x, y)).map(Objetivo::Control))
+                .or_else(|| diseno.pausa().contiene(x, y).then_some(Objetivo::Pausa))
+                .or_else(|| (0..3).find(|i| diseno.muestra(*i).contiene(x, y)).map(Objetivo::Material));
+        }
+        anterior != self.encima
+    }
+
     /// Tarjeta del nodo; la posición se conserva al redimensionar el lienzo.
     #[must_use]
     pub fn nodo(&self, diseno: Distribucion, indice: usize) -> Rectangulo {

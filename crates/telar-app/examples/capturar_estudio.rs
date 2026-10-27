@@ -4,6 +4,8 @@ use telar_gpu::{
     ParametrosProcedurales, PlanProcedural, Sombreadores,
 };
 use telar_ui::{Distribucion, Estudio};
+#[path = "../src/tipografia.rs"]
+mod tipografia;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut argumentos = std::env::args().skip(1);
@@ -23,7 +25,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     residente.paso(ParametrosProcedurales { lado: 256, fase: 0.6, amplitud: estudio.amplitud })?;
     let escena = [hilo_spirv::visor::vertices(), hilo_spirv::visor::fragmentos()];
     let ui = [hilo_spirv::interfaz::vertices(), hilo_spirv::interfaz::fragmentos()];
-    let vertices = estudio.dibujar(diseno, 65_536);
+    let fuente = tipografia::crear()?;
+    let vertices = estudio.dibujar_con_fuente(diseno, 65_536, &fuente)?;
     let constantes = Constantes {
         matriz: nudo::Camara { distancia: 7.0, ..nudo::Camara::default() }
             .matriz(diseno.visor.ancho / diseno.visor.alto),
@@ -41,6 +44,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             shaders: Sombreadores { vertices: &ui[0], fragmentos: &ui[1] },
             vertices: &vertices,
             area: diseno.area(),
+            atlas: Some(telar_gpu::AtlasInterfaz {
+                ancho: fuente.ancho,
+                alto: fuente.alto,
+                cobertura: &fuente.cobertura,
+            }),
         },
     )?;
     std::fs::write(&ruta, pixeles)?;

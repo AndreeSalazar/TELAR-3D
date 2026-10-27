@@ -49,7 +49,7 @@ fn composicion_finitas_y_visor_adaptable() {
         if tamano.0 >= 720 && tamano.1 >= 600 {
             assert!(vertices.len() > 1000);
         } else {
-            assert_eq!(vertices, [] as [[f32; 6]; 0]);
+            assert_eq!(vertices, [] as [[f32; 8]; 0]);
         }
     }
     let diseno = Distribucion::nueva((300, 200));
@@ -77,4 +77,18 @@ fn mover_nudos_conserva_parametros_y_limita_el_lienzo() {
     let estrecho = Distribucion::nueva((800, 600));
     let adaptado = estudio.nodo(estrecho, 1);
     assert!(adaptado.x >= estrecho.grafo.x && adaptado.x + adaptado.ancho <= estrecho.grafo.x + estrecho.grafo.ancho);
+}
+#[test]
+fn realce_solo_recompone_al_cambiar_objetivo_y_no_modifica_parametros() {
+    let mut estudio = telar_ui::Estudio::default();
+    let diseno = telar_ui::Distribucion::nueva((1280, 720));
+    let antes = estudio.dibujar(diseno, 4096);
+    let nodo = estudio.nodo(diseno, 0);
+    assert!(estudio.apuntar(diseno, nodo.x + 8.0, nodo.y + 8.0));
+    assert!(!estudio.apuntar(diseno, nodo.x + 10.0, nodo.y + 10.0));
+    assert_ne!(antes, estudio.dibujar(diseno, 4096));
+    assert_eq!(estudio.seleccionado, 1);
+    assert_eq!(estudio.amplitud, 0.35);
+    assert!(estudio.apuntar(diseno, 0.0, 0.0));
+    assert_eq!(antes, estudio.dibujar(diseno, 4096));
 }

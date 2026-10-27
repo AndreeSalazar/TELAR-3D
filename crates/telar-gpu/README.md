@@ -18,6 +18,12 @@ cada uno). Tras esperar la valla del juego, solo escribe si la revisión cambió
 El dibujo reserva un viewport central para la escena y restaura el área completa
 al pintar el overlay. La escena y la UI comparten la imagen de presentación.
 
+Cada vértice UI ocupa 32 bytes: posición NDC, coordenada de atlas en píxeles y
+color RGBA. `fuente_interfaz` sube una máscara de cobertura a un SSBO residente;
+el shader de fragmentos limita coordenadas, interpola cobertura y mezcla alfa.
+El atlas se sube al preparar/cambiar la fuente y tiene su descriptor propio.
+Sin atlas se conserva un píxel blanco para formas sólidas y pruebas de respaldo.
+
 Son dos buffers y dos mapeos **adicionales**, separados de los 8 buffers y dos
 mapeos de la superficie. La interfaz añade su pipeline gráfico; los contadores
 de `ActividadProcedural` no incluyen recursos o triángulos UI. Al editar controles

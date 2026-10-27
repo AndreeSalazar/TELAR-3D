@@ -18,7 +18,10 @@ CPU para verificar los resultados. La sintaxis textual del lenguaje sigue pendie
 velocidad, pausa y tres colores de vista previa. La interfaz se dibuja en Vulkan
 y deja el cálculo procedural en GPU. Todavía no es un editor de grafos libre.
 
-![Estudio nativo de TELAR](docs/capturas/estudio-grafo.png)
+Tipografía proporcional con antialias, realce de controles al pasar el cursor y
+selección de nodos con Tab. El atlas se prepara una vez y permanece en GPU.
+
+![Estudio nativo de TELAR](docs/capturas/estudio-tipografia.png)
 
 | Pieza | Nombre | Qué es |
 |---|---|---|

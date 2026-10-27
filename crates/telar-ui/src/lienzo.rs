@@ -1,21 +1,24 @@
-//! Geometría de interfaz. Fuente 5×7 provisional, dibujada por la GPU sin dependencias.
+//! Geometría de interfaz y glifos de atlas; fuente 5×7 de respaldo para pruebas.
 use alloc::vec::Vec;
 
-pub(super) struct Lienzo {
-    pub(super) vertices: Vec<[f32; 6]>,
+pub(super) struct Lienzo<'a> {
+    pub(super) vertices: Vec<[f32; 8]>,
     tamano: (f32, f32),
+    fuente: Option<&'a crate::Fuente>,
 }
 
-impl Lienzo {
+impl<'a> Lienzo<'a> {
     fn triangulo(&mut self, puntos: [[f32; 2]; 3], color: [f32; 3]) {
         for punto in puntos {
             self.vertices.push([
                 punto[0] * 2.0 / self.tamano.0 - 1.0,
                 punto[1] * 2.0 / self.tamano.1 - 1.0,
                 0.0,
+                0.0,
                 color[0],
                 color[1],
                 color[2],
+                1.0,
             ]);
         }
     }
@@ -77,8 +80,8 @@ impl Lienzo {
         }
     }
     #[allow(clippy::cast_precision_loss, reason = "dimensiones de la ventana en píxeles")]
-    pub(super) fn nuevo(tamano: (u32, u32)) -> Self {
-        Self { vertices: Vec::new(), tamano: (tamano.0.max(1) as f32, tamano.1.max(1) as f32) }
+    pub(super) fn nuevo(tamano: (u32, u32), fuente: Option<&'a crate::Fuente>) -> Self {
+        Self { vertices: Vec::new(), tamano: (tamano.0.max(1) as f32, tamano.1.max(1) as f32), fuente }
     }
 
     pub(super) fn rect(&mut self, x: f32, y: f32, ancho: f32, alto: f32, color: [f32; 3]) {
@@ -89,14 +92,20 @@ impl Lienzo {
                 punto[0] * 2.0 / self.tamano.0 - 1.0,
                 punto[1] * 2.0 / self.tamano.1 - 1.0,
                 0.0,
+                0.0,
                 color[0],
                 color[1],
                 color[2],
+                1.0,
             ]);
         }
     }
 
     pub(super) fn texto(&mut self, x: f32, y: f32, texto: &str, escala: f32, color: [f32; 3]) {
+        if self.fuente.is_some() {
+            self.texto_suave(x, y, texto, escala, color);
+            return;
+        }
         let mut cursor = x;
         for letra in texto.chars() {
             for (fila, bits) in glifo(letra).into_iter().enumerate() {
@@ -114,6 +123,49 @@ impl Lienzo {
                 }
             }
             cursor += 6.0 * escala;
+        }
+    }
+
+    #[allow(clippy::cast_precision_loss, reason = "métricas del atlas y coordenadas de glifos")]
+    fn texto_suave(&mut self, x: f32, y: f32, texto: &str, escala: f32, color: [f32; 3]) {
+        let Some(fuente) = self.fuente else {
+            return;
+        };
+        let factor = escala * 12.0 / fuente.altura;
+        let celda = fuente.celda as f32;
+        let mut cursor = x;
+        for letra in texto.chars() {
+            let codigo = u32::from(letra)
+                .checked_sub(fuente.primero)
+                .filter(|i| (*i as usize) < fuente.avances.len())
+                .unwrap_or(u32::from('?') - fuente.primero);
+            let columnas = fuente.ancho / fuente.celda;
+            if letra == ' ' {
+                cursor += fuente.avances[codigo as usize] * factor;
+                continue;
+            }
+            let (u, v) = ((codigo % columnas * fuente.celda) as f32, (codigo / columnas * fuente.celda) as f32);
+            let (izquierda, arriba, lado) = (cursor - 2.0 * factor, y - 2.0 * factor, celda * factor);
+            let esquinas = [
+                [izquierda, arriba, u, v],
+                [izquierda + lado, arriba, u + celda, v],
+                [izquierda + lado, arriba + lado, u + celda, v + celda],
+                [izquierda, arriba + lado, u, v + celda],
+            ];
+            for indice in [0, 1, 2, 0, 2, 3] {
+                let punto = esquinas[indice];
+                self.vertices.push([
+                    punto[0] * 2.0 / self.tamano.0 - 1.0,
+                    punto[1] * 2.0 / self.tamano.1 - 1.0,
+                    punto[2],
+                    punto[3],
+                    color[0],
+                    color[1],
+                    color[2],
+                    1.0,
+                ]);
+            }
+            cursor += fuente.avances[codigo as usize] * factor;
         }
     }
 }

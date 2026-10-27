@@ -55,9 +55,15 @@ pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
     let (capacidad, puntos) = crate::escena::preparar(&mut gpu, modo)?;
     let titulo = format!("TELAR 3D · {puntos} puntos · {}", gpu.dispositivo());
 
-    if modo.procedural {
+    let fuente = if modo.procedural { Some(crate::tipografia::crear()?) } else { None };
+    if let Some(fuente) = &fuente {
         let (vertices, fragmentos) = (hilo_spirv::interfaz::vertices(), hilo_spirv::interfaz::fragmentos());
         gpu.preparar_interfaz(Sombreadores { vertices: &vertices, fragmentos: &fragmentos })?;
+        gpu.fuente_interfaz(telar_gpu::AtlasInterfaz {
+            ancho: fuente.ancho,
+            alto: fuente.alto,
+            cobertura: &fuente.cobertura,
+        })?;
     }
     let mut controles = Controles::nuevo(modo.procedural);
     let mut tamano_ui = (0, 0);
@@ -84,7 +90,8 @@ pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
             ancho.max(1) as f32 / alto.max(1) as f32
         };
         if modo.procedural && (controles.sucio || tamano_ui != (ancho, alto)) {
-            let triangulos = controles.estudio.dibujar(diseno, capacidad * capacidad);
+            let fuente = fuente.as_ref().ok_or("falta la fuente de interfaz")?;
+            let triangulos = controles.estudio.dibujar_con_fuente(diseno, capacidad * capacidad, fuente)?;
             gpu.actualizar_interfaz(&triangulos, diseno.area())?;
             controles.sucio = false;
             tamano_ui = (ancho, alto);

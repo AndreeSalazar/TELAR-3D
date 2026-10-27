@@ -45,6 +45,9 @@ impl Controles {
                 self.tocado = Some(Instant::now());
             }
             Evento::Raton { x, y } => {
+                if self.interfaz {
+                    self.sucio |= self.estudio.apuntar(diseno, x as f32, y as f32);
+                }
                 if self.interfaz && self.estudio.mover_en(diseno, x as f32, y as f32) {
                     self.sucio = true;
                 }
@@ -63,6 +66,10 @@ impl Controles {
             }
             Evento::Tecla(Tecla::Otra(32)) if self.interfaz => {
                 self.estudio.pausado = !self.estudio.pausado;
+                self.sucio = true;
+            }
+            Evento::Tecla(Tecla::Otra(9)) if self.interfaz => {
+                self.estudio.seleccionado = (self.estudio.seleccionado + 1) % 4;
                 self.sucio = true;
             }
             _ => {}
