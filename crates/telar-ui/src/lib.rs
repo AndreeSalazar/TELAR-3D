@@ -5,6 +5,10 @@ extern crate alloc;
 
 mod calidad;
 mod dibujo;
+mod estado;
+pub use estado::PALABRAS_ESTUDIO;
+mod proyecto;
+pub use proyecto::AccionProyecto;
 mod fuente;
 mod lienzo;
 mod parametros;
@@ -33,6 +37,8 @@ pub struct Estudio {
     nodos: [[f32; 2]; 4],
     encima: Option<Objetivo>,
     hoja: telar_estilo::Hoja,
+    accion_proyecto: Option<AccionProyecto>,
+    mensaje_proyecto: alloc::string::String,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -42,6 +48,7 @@ enum Objetivo {
     Pausa,
     Material(usize),
     Calidad(usize),
+    Proyecto(usize),
 }
 
 #[derive(Clone, Copy)]
@@ -63,6 +70,8 @@ impl Default for Estudio {
             nodos: [[0.03, 0.02], [0.97, 0.31], [0.03, 0.62], [0.97, 0.99]],
             encima: None,
             hoja: telar_estilo::Hoja::analizar(telar_estilo::TEMA_TELAR).unwrap_or_default(),
+            accion_proyecto: None,
+            mensaje_proyecto: "Escena sin guardar".into(),
         }
     }
 }
@@ -101,6 +110,7 @@ impl Estudio {
                 .chain((0..4).rev().filter(|i| *i != preferido))
                 .find(|i| self.nodo(diseno, *i).contiene(x, y))
                 .map(Objetivo::Nodo)
+                .or_else(|| (0..2).find(|i| diseno.proyecto(*i).contiene(x, y)).map(Objetivo::Proyecto))
                 .or_else(|| {
                     (0..2)
                         .find(|i| self.control(*i).is_some() && diseno.control(*i).contiene(x, y))
@@ -139,6 +149,13 @@ impl Estudio {
     pub fn pulsar(&mut self, diseno: Distribucion, x: f32, y: f32) -> bool {
         if !diseno.completa {
             return false;
+        }
+        for (indice, accion) in [AccionProyecto::Guardar, AccionProyecto::Abrir].into_iter().enumerate() {
+            if diseno.proyecto(indice).contiene(x, y) {
+                self.soltar();
+                self.solicitar_proyecto(accion);
+                return true;
+            }
         }
         let preferido = self.seleccionado.min(3);
         for indice in core::iter::once(preferido).chain((0..4).rev().filter(|i| *i != preferido)) {

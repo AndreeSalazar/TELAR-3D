@@ -40,7 +40,9 @@ nodos comparten reglas de estilo; `--estilo mi-tema.css` carga personalizaciones
 al arrancar, sin recompilar. Sigue usando el renderizador Vulkan.
 
 **Archivo propio `.tlar`:** exporta e inspecciona el contrato de arranque y su
-coordinador SPIR-V, con versión y CRC32. Todavía no guarda escenas completas.
+coordinador SPIR-V en v1. **V2 guarda el estudio procedural**: parámetros, cámara,
+fase y posiciones, con Guardar/F5 y Abrir/F9. [Uso y límites](docs/ESCENAS.md).
+La red sigue teniendo cuatro etapas fijas; las escenas generales están pendientes.
 Ver [el formato](docs/FORMATO-TLAR.md) y el ejemplo de `docs/ejemplos/`.
 
 **Render separado:** `telar-render` genera los shaders originales de materiales
@@ -62,7 +64,7 @@ ROJO crítico, AMARILLO probable o VERDE seguro en su contexto y explica su cons
 El guardián bloquea carpetas sin informe. [Política](docs/SEMAFOROS.md),
 [mapa](docs/MAPA-SEMAFOROS.md).
 
-![Estudio nativo de TELAR](docs/capturas/salida-calidad.png)
+![Estudio nativo de TELAR](docs/capturas/escena-guardable.png)
 
 | Pieza | Nombre | Qué es |
 |---|---|---|

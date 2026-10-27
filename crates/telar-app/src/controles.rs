@@ -13,9 +13,18 @@ pub(crate) struct Controles {
     arrastrando: bool,
     raton: Option<(i32, i32)>,
     tocado: Option<Instant>,
+    espera_giro: Option<Duration>,
 }
 
 impl Controles {
+    pub(crate) fn restaurar_interaccion(&mut self) {
+        self.arrastrando = false;
+        self.raton = None;
+        self.tocado = Some(Instant::now());
+        self.espera_giro = None;
+        self.sucio = true;
+    }
+
     pub(crate) fn nuevo(interfaz: bool) -> Self {
         Self {
             camara: Camara { distancia: if interfaz { 7.0 } else { 5.0 }, ..Camara::default() },
@@ -26,6 +35,7 @@ impl Controles {
             arrastrando: false,
             raton: None,
             tocado: None,
+            espera_giro: Some(Duration::from_secs(3)),
         }
     }
 
@@ -73,6 +83,13 @@ impl Controles {
                 self.estudio.seleccionado = (self.estudio.seleccionado + 1) % 4;
                 self.sucio = true;
             }
+            Evento::Tecla(Tecla::Otra(tecla @ (116 | 120))) if self.interfaz => {
+                let accion =
+                    if tecla == 116 { telar_ui::AccionProyecto::Guardar } else { telar_ui::AccionProyecto::Abrir };
+                self.estudio.soltar();
+                self.arrastrando = false;
+                self.estudio.solicitar_proyecto(accion);
+            }
             _ => {}
         }
     }
@@ -81,7 +98,8 @@ impl Controles {
         if !self.estudio.pausado {
             self.fase = (self.fase + dt * self.estudio.onda.velocidad) % 1000.0;
         }
-        if !self.arrastrando && self.tocado.is_none_or(|t| t.elapsed() >= Duration::from_secs(3)) {
+        if !self.arrastrando && self.espera_giro.is_some_and(|espera| self.tocado.is_none_or(|t| t.elapsed() >= espera))
+        {
             self.camara.orbitar(12.0 * dt, 0.0);
         }
     }

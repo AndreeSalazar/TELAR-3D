@@ -32,6 +32,14 @@ pub(crate) fn procesar(args: &[String]) -> Option<Result<(), String>> {
                 .take(4_194_453)
                 .read_to_end(&mut bytes)
                 .map_err(|e| format!("leer {ruta}: {e}"))?;
+            if bytes.get(4..8) == Some(&2u32.to_le_bytes()) {
+                let escena = crate::proyecto::Proyecto::decodificar(&bytes)?;
+                println!(
+                    "telar: .tlar v2 · escena procedural · lado {} · capacidad {} · MSAA solicitado {}x · fase {}",
+                    escena.estudio[0], escena.estudio[1], escena.estudio[8], escena.fase
+                );
+                return Ok(());
+            }
             let paquete = telar_kernel::paquete::decodificar(&bytes)?;
             println!(
                 "telar: .tlar v1 · arranque, no escena completa · GPU declarada {:04x}:{:04x} · capacidad {} · SPIR-V {} palabras",

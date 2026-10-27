@@ -16,3 +16,10 @@ Clasificación de riesgo, no certificación absoluta ni medición de rendimiento
 Cada nodo conserva sus parámetros y el inspector expone solo los controles propios.
 No calcula geometría 3D; envía valores a la app. Evidencia: tests/parametros.rs
 y docs/NODOS-PARAMETROS.md.
+
+Escena v2: registro de 128 B; la UI serializa solo valores/posiciones y solicita
+E/S a la app. Cámara/fase y CRC se validan antes de aplicar. Guardar/abrir es
+síncrono y solo explícito; sin E/S de disco en cuadros estables. Reemplazo por
+temporal en el mismo directorio; guardado no sube geometría ni añade buffers GPU.
+La reapertura inicial reconstruye recursos; en vivo requiere igual capacidad.
+Ver docs/ESCENAS.md y pruebas proyecto.rs, proyecto_render.rs y estado.rs.

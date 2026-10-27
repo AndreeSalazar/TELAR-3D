@@ -63,12 +63,7 @@ impl Estudio {
         texto(&mut lienzo, [48.0, 13.0, 100.0, 28.0], "TELAR", &self.estilo("titulo", false, false));
         texto(&mut lienzo, [152.0, 17.0, 80.0, 22.0], "Estudio", &base);
         lienzo.rect(152.0, diseno.cabecera - 3.0, 46.0, 2.0, acento.color);
-        texto(
-            &mut lienzo,
-            [252.0, 17.0, ancho - 440.0, 22.0],
-            "Superficie sin título",
-            &self.estilo("etiqueta", false, false),
-        );
+        self.dibujar_proyecto(&mut lienzo, diseno);
         texto(&mut lienzo, [ancho - 142.0, 17.0, 126.0, 22.0], "GPU conectada", &acento);
         marco(self, &mut lienzo, diseno.escena, "Escena", Some("Perspectiva · Sombreado"));
         inspector(self, &mut lienzo, diseno);

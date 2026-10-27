@@ -1,2 +1,4 @@
 /target/
 *.log
+# Proyecto local del usuario; el guardado no forma parte del código fuente.
+/escena.tlar

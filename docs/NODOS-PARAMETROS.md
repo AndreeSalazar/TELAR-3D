@@ -76,6 +76,6 @@ Vulkan. Siguen diez buffers, ocho pipelines compute, dos grabaciones y dos mapeo
 
 La red sigue siendo Rejilla → Onda → Relieve → Salida. No se pueden crear dos
 Ondas ni reconectar cables todavía; tampoco hay tablas de atributos o vista del
-resultado intermedio. `.tlar` guarda arranque/coordinador y todavía no conserva
-estos ajustes de escena. Esta entrega aporta parámetros reales a las cuatro
-etapas existentes; la edición de grafos y la persistencia de proyectos son próximas etapas.
+resultado intermedio. [`.tlar` v2 ya conserva estos ajustes](ESCENAS.md), la cámara,
+fase y distribución. V1 mantiene su contrato de arranque/coordinador.
+La edición de topología e instancias de nodos sigue pendiente.

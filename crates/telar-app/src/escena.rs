@@ -6,14 +6,14 @@ use std::time::Instant;
 use telar_gpu::{DominioProcedural, EtapaProcedural, Gpu, KernelsProcedurales, PlanProcedural, Sombreadores};
 use telar_nodos::Esfera;
 
-pub(crate) fn preparar(gpu: &mut Gpu, modo: &Modo) -> Result<(u32, usize), String> {
+pub(crate) fn preparar(gpu: &mut Gpu, modo: &Modo, capacidad_guardada: Option<u32>) -> Result<(u32, usize), String> {
     let (vertices, fragmentos) = if modo.procedural {
         (telar_render::vertices(), telar_render::fragmentos_rejilla(telar_render::LuzArea::default())?)
     } else {
         (hilo_spirv::visor::vertices(), hilo_spirv::visor::fragmentos())
     };
     gpu.preparar_visor(Sombreadores { vertices: &vertices, fragmentos: &fragmentos })?;
-    let capacidad = modo.puntos.isqrt().clamp(2, 1024);
+    let capacidad = capacidad_guardada.unwrap_or_else(|| modo.puntos.isqrt().clamp(2, 1024));
     let puntos = if modo.procedural {
         let (preparar, generar, deformar) =
             (telar_kernel::compilar_con_cache(), hilo_spirv::rejilla::generar(), hilo_spirv::rejilla::deformar());

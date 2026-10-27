@@ -32,6 +32,10 @@ pub(crate) struct Modo {
     pub(crate) puntos: u32,
     /// Personalizaciones CSS cargadas una vez al abrir el estudio.
     pub(crate) estilo: Option<String>,
+    /// Escena de datos v2; se valida antes de preparar Vulkan.
+    pub(crate) abrir: Option<String>,
+    /// Guardar también al salir; sin esta opción solo se escribe por F5/botón.
+    pub(crate) guardar: Option<String>,
 }
 
 /// Lo que pasó.
@@ -42,10 +46,19 @@ pub(crate) struct Resumen {
 
 /// Abre la ventana y lleva el bucle del visor.
 pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
+    if !modo.procedural && (modo.abrir.is_some() || modo.guardar.is_some()) {
+        return Err("las escenas .tlar v2 requieren el visor procedural".into());
+    }
+    let inicial = modo.abrir.as_deref().map(|r| crate::proyecto::leer(std::path::Path::new(r))).transpose()?;
+    let ruta = std::path::Path::new(modo.guardar.as_deref().or(modo.abrir.as_deref()).unwrap_or("escena.tlar"));
     let config = Config { titulo: "TELAR 3D".to_owned(), ancho: 1280, alto: 720, visible: !modo.prueba };
     let mut ventana = Ventana::nueva(&config)?;
     let m = ventana.manejadores();
-    let opciones = Opciones { validacion: modo.validacion, ..Opciones::default() };
+    let opciones = Opciones {
+        validacion: modo.validacion,
+        muestras: inicial.as_ref().map_or(4, |p| p.estudio[8]),
+        ..Opciones::default()
+    };
     let mut gpu = Gpu::nueva(&opciones, Superficie { instancia: m.instancia, ventana: m.ventana }, ventana.tamano())?;
     let (formato, (ancho, alto)) = gpu.imagenes();
     println!(
@@ -53,19 +66,24 @@ pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
         gpu.dispositivo(),
         if gpu.validacion() { "activa" } else { "apagada" }
     );
-    let (capacidad, puntos) = crate::escena::preparar(&mut gpu, modo)?;
+    let (capacidad, puntos) = crate::escena::preparar(&mut gpu, modo, inicial.as_ref().map(|p| p.estudio[1]))?;
     println!("telar: antialias MSAA {}x · resolución nativa", gpu.muestras()?);
-    let titulo = format!("TELAR 3D · {puntos} puntos · {}", gpu.dispositivo());
+    let titulo = format!("TELAR 3D · {} · {puntos} puntos · {}", ruta.display(), gpu.dispositivo());
+    ventana.poner_titulo(&titulo);
 
     let fuente = if modo.procedural { Some(crate::tipografia::crear()?) } else { None };
     preparar_interfaz(&mut gpu, fuente.as_ref())?;
     let mut controles = Controles::nuevo(modo.procedural);
     controles.estudio.salida.muestras_reales = gpu.muestras()?;
-    let mut muestras_aplicadas = 4;
     controles.estudio.configurar_capacidad(capacidad);
+    if let Some(proyecto) = &inicial {
+        crate::sesion::aplicar(&mut controles, proyecto)?;
+        controles.estudio.informar_proyecto("Escena abierta");
+    }
+    let mut muestras_aplicadas = controles.estudio.salida.muestras;
+    println!("telar: escena activa {} · Guardar/F5 · Abrir/F9", ruta.display());
     let fondo = cargar_estilos(modo, &mut controles)?;
     let mut tamano_ui = (0, 0);
-    let luz = normalizar([0.45, 0.8, 0.4]);
     let (inicio, mut anterior, mut segundo) = (Instant::now(), Instant::now(), Instant::now());
     let (mut cuadros, mut en_este_segundo) = (0u32, 0u32);
     'principal: loop {
@@ -79,44 +97,12 @@ pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
         }
         let dt = anterior.elapsed().as_secs_f32();
         if modo.procedural {
+            crate::sesion::procesar(ruta, &mut controles, &mut gpu);
             crate::calidad::sincronizar(&mut gpu, &mut controles, &mut muestras_aplicadas)?;
         }
         anterior = Instant::now();
         controles.avanzar(dt);
-        let (_, (ancho, alto)) = gpu.imagenes();
-        #[allow(clippy::cast_precision_loss, reason = "el tamaño de la ventana cabe de sobra en un f32")]
-        let aspecto = if modo.procedural {
-            diseno.visor.ancho / diseno.visor.alto
-        } else {
-            ancho.max(1) as f32 / alto.max(1) as f32
-        };
-        if modo.procedural && (controles.sucio || tamano_ui != (ancho, alto)) {
-            let fuente = fuente.as_ref().ok_or("falta la fuente de interfaz")?;
-            let triangulos =
-                controles.estudio.dibujar_con_fuente(diseno, controles.estudio.rejilla.lado.pow(2), fuente)?;
-            gpu.actualizar_interfaz(&triangulos, diseno.area())?;
-            controles.sucio = false;
-            tamano_ui = (ancho, alto);
-        }
-        let dibujado = if modo.procedural {
-            // La prueba cambia el tamaño lógico dentro de capacidad sin volver a
-            // grabar compute. La GPU calcula los recuentos y todos los argumentos.
-            let lado = if modo.prueba && (40..80).contains(&cuadros) {
-                capacidad / 2
-            } else {
-                controles.estudio.rejilla.lado.min(capacidad)
-            };
-            dibujar_superficie(&mut gpu, &controles, aspecto, lado, fondo)?
-        } else {
-            let constantes = Constantes {
-                matriz: controles.camara.matriz(aspecto),
-                luz,
-                color: hex(BRASA),
-                cielo: hex(CIELO),
-                suelo: hex(SUELO),
-            };
-            gpu.dibujar_escena(fondo, &constantes)?
-        };
+        let dibujado = dibujar_cuadro(&mut gpu, &mut controles, fuente.as_ref(), &mut tamano_ui, modo, cuadros, fondo)?;
         if dibujado {
             cuadros += 1;
             en_este_segundo += 1;
@@ -138,6 +124,10 @@ pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
         }
     }
     let segundos = inicio.elapsed().as_secs_f32();
+    if modo.guardar.is_some() {
+        crate::sesion::guardar(ruta, &controles)?;
+        println!("telar: escena guardada al salir: {}", ruta.display());
+    }
     let (_, (ancho, alto)) = gpu.imagenes();
     println!("telar: swapchain creada {} veces · tamaño final {ancho}×{alto}", gpu.swapchains_creadas());
     if modo.procedural {
@@ -190,4 +180,46 @@ fn dibujar_superficie(
         gpu.imagenes().0 != telar_gpu::eleccion::FORMATO_SRGB,
     )?;
     gpu.dibujar_nodos(fondo, &bloque, parametros)
+}
+
+fn dibujar_cuadro(
+    gpu: &mut Gpu,
+    controles: &mut Controles,
+    fuente: Option<&telar_ui::Fuente>,
+    tamano_ui: &mut (u32, u32),
+    modo: &Modo,
+    cuadros: u32,
+    fondo: [f32; 4],
+) -> Result<bool, String> {
+    let diseno = controles.estudio.distribucion(gpu.imagenes().1);
+    let (_, (ancho, alto)) = gpu.imagenes();
+    #[allow(clippy::cast_precision_loss, reason = "el tamaño de la ventana cabe de sobra en un f32")]
+    let aspecto =
+        if modo.procedural { diseno.visor.ancho / diseno.visor.alto } else { ancho.max(1) as f32 / alto.max(1) as f32 };
+    if modo.procedural && (controles.sucio || *tamano_ui != (ancho, alto)) {
+        let fuente = fuente.ok_or("falta la fuente de interfaz")?;
+        let triangulos = controles.estudio.dibujar_con_fuente(diseno, controles.estudio.rejilla.lado.pow(2), fuente)?;
+        gpu.actualizar_interfaz(&triangulos, diseno.area())?;
+        controles.sucio = false;
+        *tamano_ui = (ancho, alto);
+    }
+    if modo.procedural {
+        // La prueba cambia el tamaño lógico dentro de capacidad sin volver a
+        // grabar compute. La GPU calcula los recuentos y todos los argumentos.
+        let lado = if modo.prueba && (40..80).contains(&cuadros) {
+            controles.estudio.rejilla.capacidad / 2
+        } else {
+            controles.estudio.rejilla.lado.min(controles.estudio.rejilla.capacidad)
+        };
+        dibujar_superficie(gpu, controles, aspecto, lado, fondo)
+    } else {
+        let constantes = Constantes {
+            matriz: controles.camara.matriz(aspecto),
+            luz: normalizar([0.45, 0.8, 0.4]),
+            color: hex(BRASA),
+            cielo: hex(CIELO),
+            suelo: hex(SUELO),
+        };
+        gpu.dibujar_escena(fondo, &constantes)
+    }
 }

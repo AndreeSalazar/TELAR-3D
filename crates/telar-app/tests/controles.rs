@@ -8,6 +8,24 @@ use telar_ui::Distribucion;
 use telar_ventana::{Boton, Evento, Tecla};
 
 #[test]
+fn restaurar_interaccion_corta_arrastre_y_atajos_no_modifican_la_escena() {
+    let mut control = Controles::nuevo(true);
+    let diseno = control.estudio.distribucion((1280, 720));
+    control.evento(Evento::Raton { x: 300, y: 300 }, diseno);
+    control.evento(Evento::Boton { boton: Boton::Izquierdo, pulsado: true }, diseno);
+    control.restaurar_interaccion();
+    let camara = control.camara.clone();
+    control.evento(Evento::Raton { x: 400, y: 350 }, diseno);
+    assert_eq!(camara, control.camara);
+    let estado = control.estudio.guardar_estado();
+    for (tecla, accion) in [(116, telar_ui::AccionProyecto::Guardar), (120, telar_ui::AccionProyecto::Abrir)] {
+        control.evento(Evento::Tecla(Tecla::Otra(tecla)), diseno);
+        assert_eq!(control.estudio.tomar_accion_proyecto(), Some(accion));
+        assert_eq!(control.estudio.guardar_estado(), estado);
+    }
+}
+
+#[test]
 #[allow(clippy::cast_possible_truncation, reason = "coordenadas de controles dentro de una ventana de 1280×720")]
 fn inspector_camara_y_pausa_tienen_eventos_separados() {
     let diseno = Distribucion::nueva((1280, 720));

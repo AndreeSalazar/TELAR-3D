@@ -22,3 +22,10 @@ el modo efectivo espera trabajo GPU y reemplaza adjuntos/pipelines gráficos.
 Compute se conserva. Incremento lógico 2x: 12 B/píxel; 4x: 28 B/píxel
 (RGBA8/D32). El pico durante el reemplazo no se midió.
 Evidencia adicional: docs/CALIDAD-RENDER.md y tests/calidad_visor.rs de telar-app.
+
+Escena v2: registro de 128 B; la UI serializa solo valores/posiciones y solicita
+E/S a la app. Cámara/fase y CRC se validan antes de aplicar. Guardar/abrir es
+síncrono y solo explícito; sin E/S de disco en cuadros estables. Reemplazo por
+temporal en el mismo directorio; guardado no sube geometría ni añade buffers GPU.
+La reapertura inicial reconstruye recursos; en vivo requiere igual capacidad.
+Ver docs/ESCENAS.md y pruebas proyecto.rs, proyecto_render.rs y estado.rs.

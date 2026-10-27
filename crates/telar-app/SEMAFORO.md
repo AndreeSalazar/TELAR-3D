@@ -12,3 +12,10 @@ Limites: 32 B de parámetros procedurales por paso y 128 B de constantes de dibu
 Evidencia: tests/app.rs, archivo_tlar.rs, render_gpu.rs y docs/ARRANQUE-GPU.md.
 
 Clasificación de riesgo, no certificación absoluta ni medición de rendimiento.
+
+Escena v2: registro de 128 B; la UI serializa solo valores/posiciones y solicita
+E/S a la app. Cámara/fase y CRC se validan antes de aplicar. Guardar/abrir es
+síncrono y solo explícito; sin E/S de disco en cuadros estables. Reemplazo por
+temporal en el mismo directorio; guardado no sube geometría ni añade buffers GPU.
+La reapertura inicial reconstruye recursos; en vivo requiere igual capacidad.
+Ver docs/ESCENAS.md y pruebas proyecto.rs, proyecto_render.rs y estado.rs.

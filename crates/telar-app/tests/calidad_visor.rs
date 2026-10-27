@@ -9,6 +9,11 @@
 mod calidad;
 #[path = "../src/controles.rs"]
 mod controles;
+#[allow(dead_code, reason = "comparte codec con la CLI; sus argumentos se prueban en proyecto.rs")]
+#[path = "../src/proyecto.rs"]
+mod proyecto;
+#[path = "../src/sesion.rs"]
+mod sesion;
 use telar_gpu::{Constantes, Gpu, KernelsProcedurales, Opciones, ParametrosProcedurales, Sombreadores, Superficie};
 use telar_ventana::{Boton, Config, Evento, Ventana};
 
@@ -36,6 +41,7 @@ fn selector_de_salida_cambia_msaa_en_vivo_con_redimensionado() {
     gpu.preparar_interfaz(Sombreadores { vertices: &ui[0], fragmentos: &ui[1] }).unwrap();
     let inicial = gpu.actividad_procedural();
     let mut control = controles::Controles::nuevo(true);
+    control.restaurar_interaccion();
     control.estudio.seleccionado = 3;
     control.estudio.salida.muestras_reales = gpu.muestras().unwrap();
     control.estudio.configurar_capacidad(33);
@@ -87,7 +93,54 @@ fn selector_de_salida_cambia_msaa_en_vivo_con_redimensionado() {
         (inicial.buffers, inicial.pipelines, inicial.grabaciones, inicial.mapeos)
     );
     assert_eq!(finalizado.geometria_subida, 0);
+    comprobar_sesion(&mut control, &mut gpu);
     drop(gpu);
     drop(ventana);
     assert_eq!(telar_gpu::avisos_de_validacion(), 0);
+}
+
+fn comprobar_sesion(control: &mut controles::Controles, gpu: &mut Gpu) {
+    use telar_ui::AccionProyecto;
+    let ruta = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join(format!("../../target/sesion-gpu-{}.tlar", std::process::id()));
+    control.estudio.salida.muestras = 2;
+    control.estudio.rejilla.lado = 19;
+    control.estudio.onda.amplitud = 0.7;
+    control.estudio.relieve.factor = 2.2;
+    control.estudio.pausado = true;
+    control.fase = 0.6;
+    let original = proyecto::Proyecto::capturar(&control.estudio, &control.camara, control.fase).codificar().unwrap();
+    // Botones de cabecera por la misma ruta de entrada que usa la ventana.
+    let diseno = control.estudio.distribucion(gpu.imagenes().1);
+    for indice in [0, 1] {
+        let rect = diseno.proyecto(indice);
+        control.evento(Evento::Raton { x: (rect.x + 10.0) as i32, y: (rect.y + 10.0) as i32 }, diseno);
+        control.evento(Evento::Boton { boton: Boton::Izquierdo, pulsado: true }, diseno);
+        control.evento(Evento::Boton { boton: Boton::Izquierdo, pulsado: false }, diseno);
+        sesion::procesar(&ruta, control, gpu);
+        if indice == 0 {
+            control.estudio.onda.amplitud = 0.1;
+            control.estudio.salida.muestras = 4;
+            control.fase = 3.0;
+            control.camara.orbitar(15.0, 10.0);
+        }
+    }
+    let reabierto = proyecto::Proyecto::capturar(&control.estudio, &control.camara, control.fase).codificar().unwrap();
+    assert_eq!(reabierto, original);
+    assert_eq!(control.estudio.salida.muestras_reales, gpu.muestras().unwrap());
+    let comprobar_error = |control: &mut controles::Controles, gpu: &mut Gpu| {
+        control.estudio.solicitar_proyecto(AccionProyecto::Abrir);
+        sesion::procesar(&ruta, control, gpu);
+        assert_eq!(
+            proyecto::Proyecto::capturar(&control.estudio, &control.camara, control.fase).codificar().unwrap(),
+            original
+        );
+    };
+    let mut otra = proyecto::leer(&ruta).unwrap();
+    otra.estudio[1] = 64;
+    proyecto::guardar(&ruta, &otra).unwrap();
+    comprobar_error(control, gpu);
+    std::fs::write(&ruta, b"corrupto").unwrap();
+    comprobar_error(control, gpu);
+    std::fs::remove_file(ruta).unwrap();
 }

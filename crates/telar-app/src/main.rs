@@ -13,6 +13,8 @@
 //! cargo run -p telar-app -- --puntos N        rejilla de unos N puntos (máximo 1024²)
 //! cargo run -p telar-app -- --esfera-cpu      esfera de referencia, cocinada en CPU
 //! cargo run -p telar-app -- --estilo tema.css personaliza la interfaz nativa
+//! cargo run -p telar-app -- --abrir-escena escena.tlar  abre datos de escena v2
+//! cargo run -p telar-app -- --guardar-escena escena.tlar guarda al salir; F5/F9 en vivo
 //! cargo run -p telar-app --release -- --calculo [--elementos N]
 //!                                             Fase 2: el primer kernel en la GPU, bit a bit contra la CPU
 //! ```
@@ -23,7 +25,9 @@ mod calculo;
 mod calidad;
 mod controles;
 mod escena;
+mod proyecto;
 mod render;
+mod sesion;
 mod tipografia;
 mod visor;
 
@@ -80,6 +84,20 @@ fn main() -> ExitCode {
         puntos: valor("--puntos").unwrap_or(if prueba { PUNTOS_DE_PRUEBA } else { PUNTOS }),
         procedural: !args.iter().any(|a| a == "--esfera-cpu"),
         estilo,
+        abrir: match proyecto::argumento(&args, "--abrir-escena") {
+            Ok(ruta) => ruta,
+            Err(error) => {
+                eprintln!("telar: {error}");
+                return ExitCode::FAILURE;
+            }
+        },
+        guardar: match proyecto::argumento(&args, "--guardar-escena") {
+            Ok(ruta) => ruta,
+            Err(error) => {
+                eprintln!("telar: {error}");
+                return ExitCode::FAILURE;
+            }
+        },
     };
     match visor::ejecutar(&modo) {
         Ok(r) => {

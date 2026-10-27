@@ -155,6 +155,13 @@ impl Distribucion {
         }
     }
 
+    /// Botón de guardar o abrir en la cabecera.
+    #[must_use]
+    #[allow(clippy::cast_precision_loss, reason = "dos botones")]
+    pub fn proyecto(self, indice: usize) -> Rectangulo {
+        Rectangulo { x: 252.0 + indice.min(1) as f32 * 116.0, y: 12.0, ancho: 108.0, alto: 28.0 }
+    }
+
     /// Botón de pausa.
     #[must_use]
     pub fn pausa(self) -> Rectangulo {

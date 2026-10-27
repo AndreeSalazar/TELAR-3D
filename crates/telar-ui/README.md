@@ -24,8 +24,10 @@ conecta eventos, parámetros y renderizado. No se modifica la geometría 3D en C
   deslizadores, pausa y colores al pasar el cursor. Tab recorre los cuatro nodos.
 - Bajo 720×600 se ocultan paneles para conservar un visor utilizable.
 
-La red todavía no permite reconectar cables, crear operaciones,
-guardar escenas ni inspeccionar tablas de atributos. Los colores de vista
+Guardar/Abrir solicitan E/S a la app; el codec puro de estado conserva los
+parámetros y posiciones. Ver [escenas v2](../../docs/ESCENAS.md).
+La red todavía no permite reconectar cables, crear operaciones
+ni inspeccionar tablas de atributos. Los colores de vista
 previa seleccionan perfiles GGX opacos del renderizador, todavía sin transmisión
 ni asignaciones de material por objeto. Faltan escalado DPI completo, composición de texto
 Unicode más allá del alfabeto latino, accesibilidad y navegación por teclado de
@@ -74,3 +76,7 @@ Contrato y evidencia de parámetros vivos: [NODOS-PARAMETROS.md](../../docs/NODO
 Salida expone calidad MSAA 1x/2x/4x. El backend acepta `Opciones::muestras`
 y `Gpu::configurar_muestras`; el inspector muestra la cantidad efectiva.
 [Contrato, pruebas y coste](../../docs/CALIDAD-RENDER.md).
+
+Persistencia del estudio: `.tlar` v2, Guardar/F5 y Abrir/F9; la E/S queda en
+la app y el estado portable en UI. `--abrir-escena` reconstruye capacidad y
+`--guardar-escena` elige destino y guarda al salir. [Contrato](../../docs/ESCENAS.md).

@@ -127,3 +127,7 @@ recompilar al editar. Ver [contrato y pruebas](../../docs/NODOS-PARAMETROS.md).
 Salida expone calidad MSAA 1x/2x/4x. El backend acepta `Opciones::muestras`
 y `Gpu::configurar_muestras`; el inspector muestra la cantidad efectiva.
 [Contrato, pruebas y coste](../../docs/CALIDAD-RENDER.md).
+
+Persistencia del estudio: `.tlar` v2, Guardar/F5 y Abrir/F9; la E/S queda en
+la app y el estado portable en UI. `--abrir-escena` reconstruye capacidad y
+`--guardar-escena` elige destino y guarda al salir. [Contrato](../../docs/ESCENAS.md).

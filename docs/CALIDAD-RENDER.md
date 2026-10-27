@@ -85,5 +85,5 @@ cargo run -p telar-app --example capturar_estudio -- target/salida.rgba 1280 720
 La reutilización de una imagen completa en reposo sigue pendiente; existe caché
 de geometría, pero el visor continúa dibujando. Reconstrucción temporal/FSR y
 acumulación HDR son trabajos posteriores. El grafo aún tiene cuatro etapas fijas
-y `.tlar` todavía no guarda estos parámetros. El siguiente paso de uso sigue
-siendo persistencia de escena y grafo editable, según RUTA-PRODUCCION.md.
+y [`.tlar` v2 ya guarda estos parámetros](ESCENAS.md). El siguiente paso de uso
+es crear instancias y conectar el grafo, según RUTA-PRODUCCION.md.
