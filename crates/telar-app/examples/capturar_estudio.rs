@@ -6,6 +6,11 @@ use telar_gpu::{
 use telar_ui::{Distribucion, Estudio};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut argumentos = std::env::args().skip(1);
+    let ruta = argumentos.next().unwrap_or_else(|| "target/estudio.rgba".to_owned());
+    let ancho = argumentos.next().map(|v| v.parse::<u32>()).transpose()?.unwrap_or(1280);
+    let alto = argumentos.next().map(|v| v.parse::<u32>()).transpose()?.unwrap_or(720);
+    let tamano = (ancho, alto);
     let gpu = Calculo::nuevo(&Opciones::default())?;
     let codigo = [hilo_spirv::rejilla::preparar(), hilo_spirv::rejilla::generar(), hilo_spirv::rejilla::deformar()];
     let relieve = hilo::ejemplos::relieve(1.3)?.compilar();
@@ -14,7 +19,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     etapas.push(EtapaProcedural { nombre: "relieve", codigo: &relieve, dominio: DominioProcedural::Puntos });
     let mut residente = gpu.procedural_con_plan(256, PlanProcedural::nuevo(&etapas)?)?;
     let estudio = Estudio::default();
-    let diseno = Distribucion::nueva((1280, 720));
+    let diseno = Distribucion::nueva(tamano);
     residente.paso(ParametrosProcedurales { lado: 256, fase: 0.6, amplitud: estudio.amplitud })?;
     let escena = [hilo_spirv::visor::vertices(), hilo_spirv::visor::fragmentos()];
     let ui = [hilo_spirv::interfaz::vertices(), hilo_spirv::interfaz::fragmentos()];
@@ -29,7 +34,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let pixeles = residente.capturar_estudio(
         Sombreadores { vertices: &escena[0], fragmentos: &escena[1] },
-        (1280, 720),
+        tamano,
         telar_gpu::eleccion::hex(0x0b_1118),
         &constantes,
         CapaInterfaz {
@@ -38,8 +43,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             area: diseno.area(),
         },
     )?;
-    let ruta = std::env::args().nth(1).unwrap_or_else(|| "target/estudio.rgba".to_owned());
     std::fs::write(&ruta, pixeles)?;
-    println!("captura RGBA8 1280x720: {ruta}");
+    println!("captura RGBA8 {ancho}x{alto}: {ruta}");
     Ok(())
 }

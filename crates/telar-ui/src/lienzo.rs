@@ -7,6 +7,75 @@ pub(super) struct Lienzo {
 }
 
 impl Lienzo {
+    fn triangulo(&mut self, puntos: [[f32; 2]; 3], color: [f32; 3]) {
+        for punto in puntos {
+            self.vertices.push([
+                punto[0] * 2.0 / self.tamano.0 - 1.0,
+                punto[1] * 2.0 / self.tamano.1 - 1.0,
+                0.0,
+                color[0],
+                color[1],
+                color[2],
+            ]);
+        }
+    }
+
+    pub(super) fn linea(&mut self, a: [f32; 2], b: [f32; 2], grosor: f32, color: [f32; 3]) {
+        let (dx, dy) = (b[0] - a[0], b[1] - a[1]);
+        let mut longitud = dx.abs().max(dy.abs());
+        if longitud == 0.0 {
+            return;
+        }
+        // Newton sobre una distancia de interfaz, sin dependencia matemática externa.
+        for _ in 0..4 {
+            longitud = f32::midpoint(longitud, (dx * dx + dy * dy) / longitud);
+        }
+        let (nx, ny) = (-dy / longitud * grosor * 0.5, dx / longitud * grosor * 0.5);
+        let puntos = [[a[0] + nx, a[1] + ny], [b[0] + nx, b[1] + ny], [b[0] - nx, b[1] - ny], [a[0] - nx, a[1] - ny]];
+        self.triangulo([puntos[0], puntos[1], puntos[2]], color);
+        self.triangulo([puntos[0], puntos[2], puntos[3]], color);
+    }
+
+    pub(super) fn hilo(&mut self, a: [f32; 2], b: [f32; 2], color: [f32; 3]) {
+        let medio = f32::midpoint(a[1], b[1]);
+        let mut previo = a;
+        for paso in 1..=24u16 {
+            let t = f32::from(paso) / 24.0;
+            let u = 1.0 - t;
+            let punto = [
+                u * u * u * a[0] + 3.0 * u * u * t * a[0] + 3.0 * u * t * t * b[0] + t * t * t * b[0],
+                u * u * u * a[1] + 3.0 * u * u * t * medio + 3.0 * u * t * t * medio + t * t * t * b[1],
+            ];
+            self.linea(previo, punto, 1.5, color);
+            previo = punto;
+        }
+    }
+
+    pub(super) fn redondo(&mut self, rect: crate::Rectangulo, radio: f32, color: [f32; 3]) {
+        let r = radio.min(rect.ancho * 0.5).min(rect.alto * 0.5);
+        let centro = [rect.x + rect.ancho * 0.5, rect.y + rect.alto * 0.5];
+        let mut puntos = Vec::with_capacity(20);
+        for esquina in 0..4 {
+            for (seno, coseno) in [
+                (0.0, 1.0),
+                (0.382_683, 0.923_880),
+                (core::f32::consts::FRAC_1_SQRT_2, core::f32::consts::FRAC_1_SQRT_2),
+                (0.923_880, 0.382_683),
+                (1.0, 0.0),
+            ] {
+                let (x, y) = match esquina {
+                    0 => (rect.x + rect.ancho - r + seno * r, rect.y + r - coseno * r),
+                    1 => (rect.x + rect.ancho - r + coseno * r, rect.y + rect.alto - r + seno * r),
+                    2 => (rect.x + r - seno * r, rect.y + rect.alto - r + coseno * r),
+                    _ => (rect.x + r - coseno * r, rect.y + r - seno * r),
+                };
+                puntos.push([x, y]);
+            }
+        }
+        for indice in 0..puntos.len() {
+            self.triangulo([centro, puntos[indice], puntos[(indice + 1) % puntos.len()]], color);
+        }
+    }
     #[allow(clippy::cast_precision_loss, reason = "dimensiones de la ventana en píxeles")]
     pub(super) fn nuevo(tamano: (u32, u32)) -> Self {
         Self { vertices: Vec::new(), tamano: (tamano.0.max(1) as f32, tamano.1.max(1) as f32) }

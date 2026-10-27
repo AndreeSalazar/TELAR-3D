@@ -45,7 +45,7 @@ impl Controles {
                 self.tocado = Some(Instant::now());
             }
             Evento::Raton { x, y } => {
-                if self.interfaz && self.estudio.mover(diseno, x as f32) {
+                if self.interfaz && self.estudio.mover_en(diseno, x as f32, y as f32) {
                     self.sucio = true;
                 }
                 if let (true, Some((anterior_x, anterior_y))) = (self.arrastrando, self.raton) {

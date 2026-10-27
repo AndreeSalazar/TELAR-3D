@@ -38,15 +38,16 @@ fn estudio_capturado_dibuja_paneles_y_reacciona_al_inspector() {
     let primera = residente.capturar_estudio(shaders, (1280, 720), fondo, &constantes, captura(&triangulos)).unwrap();
     let pixel = |datos: &[u8], x: usize, y: usize| datos[(y * 1280 + x) * 4..(y * 1280 + x) * 4 + 4].to_vec();
     assert_eq!(pixel(&primera, 4, 20), vec![16, 20, 25, 255], "fondo del encabezado");
-    assert!(pixel(&primera, 22, 22)[1] > 180, "acento cian del logo");
-    estudio.pulsar(diseno, 1230.0, 248.0);
+    assert!(pixel(&primera, 26, 25)[1] > 180, "acento cian del logo");
+    let control = diseno.control(0);
+    estudio.pulsar(diseno, control.x + 10.0, control.y + 12.0);
     estudio.mover(diseno, 5000.0);
     estudio.soltar();
     residente.paso(ParametrosProcedurales { lado: 64, fase: 0.6, amplitud: estudio.amplitud }).unwrap();
     let triangulos = estudio.dibujar(diseno, 4096);
     let segunda = residente.capturar_estudio(shaders, (1280, 720), fondo, &constantes, captura(&triangulos)).unwrap();
-    let diferencias = (100..570)
-        .flat_map(|y| (230..1000).map(move |x| (x, y)))
+    let diferencias = (100..550)
+        .flat_map(|y| (32..820).map(move |x| (x, y)))
         .filter(|&(x, y)| pixel(&primera, x, y) != pixel(&segunda, x, y))
         .count();
     assert!(diferencias > 1000, "el deslizador cambia la superficie, no solo el rótulo");

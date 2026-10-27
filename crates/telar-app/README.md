@@ -1,11 +1,13 @@
 # telar-app
 
-El modo predeterminado muestra el estudio nativo de `telar-ui`: red fija a la
-izquierda, inspector de controles de escena a la derecha y visor central. Los
+El modo predeterminado muestra el estudio nativo de `telar-ui`: visor amplio a la
+izquierda, inspector arriba a la derecha y grafo debajo. Los nodos se pueden
+seleccionar y arrastrar, y sus cables curvos siguen el movimiento; las conexiones
+de ejecución continúan fijas. Los
 deslizadores cambian amplitud y velocidad; Pausar o Espacio congela la fase.
 Los tres recuadros cambian el color difuso de vista previa. Solo el visor recibe
 órbita y zoom. La selección de nodo cambia el título, sin recocinar ni mostrar
-todavía una salida intermedia. Bajo 720×580 se ocultan los paneles.
+todavía una salida intermedia. Bajo 720×600 se ocultan los paneles.
 
 La geometría 3D sigue residente. La CPU compone triángulos UI al cambiar estado
 o tamaño; el backend mantiene dos buffers mapeados para ellos. Estos recursos

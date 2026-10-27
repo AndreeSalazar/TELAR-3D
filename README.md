@@ -14,11 +14,11 @@ en GPU. La esfera histórica se conserva con `--esfera-cpu`.
 El relieve del visor ya se compila desde el IR tipado de **HILO**, con intérprete
 CPU para verificar los resultados. La sintaxis textual del lenguaje sigue pendiente.
 
-**Primer estudio visual:** red fija seleccionable, inspector con amplitud y
+**Primer estudio visual:** visor amplio y grafo con nodos seleccionables y arrastrables, inspector con amplitud y
 velocidad, pausa y tres colores de vista previa. La interfaz se dibuja en Vulkan
 y deja el cálculo procedural en GPU. Todavía no es un editor de grafos libre.
 
-![Estudio nativo de TELAR](docs/capturas/estudio-v0.png)
+![Estudio nativo de TELAR](docs/capturas/estudio-grafo.png)
 
 | Pieza | Nombre | Qué es |
 |---|---|---|

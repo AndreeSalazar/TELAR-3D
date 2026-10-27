@@ -4,24 +4,31 @@ Interfaz pura en `no_std + alloc`, sin crates externos ni conocimiento de Vulkan
 Win32, NUDO o HILO. Produce triángulos 2D y consume posiciones de ratón; la app
 conecta eventos, parámetros y renderizado. No se modifica la geometría 3D en CPU.
 
-![Estudio nativo](../../docs/capturas/estudio-v0.png)
+![Estudio nativo](../../docs/capturas/estudio-grafo.png)
 
 ## Qué funciona
 
-- Red fija seleccionable: rejilla, onda, relieve y salida. La preparación de
+- Grafo con nodos seleccionables y arrastrables: rejilla, onda, relieve y salida. La preparación de
   argumentos GPU es interna y no ocupa un nodo visual.
 - Inspector con controles globales de amplitud, velocidad, pausa y tres colores
   de vista previa. Seleccionar un nodo cambia selección y título; aún no expone
   parámetros distintos por nodo ni su resultado intermedio.
 - El visor central recibe órbita y zoom; arrastrar un deslizador no orbita.
-- Composición grafito/cian/cobre y encuadre con margen alrededor de la superficie.
-- Bajo 720×580 se ocultan paneles para conservar un visor utilizable.
+- Visor a la izquierda; ajustes arriba a la derecha y lienzo de grafo debajo,
+  tomando la distribución de la referencia aportada por el usuario.
+- Identidad propia: símbolo de tejido, tarjetas redondeadas, puertos y cables
+  Bézier. Los cables siguen el movimiento; las posiciones relativas se conservan
+  al redimensionar. La selección aparece por encima de nodos superpuestos.
+- Composición grafito/cian/cobre, puntos discretos y controles mínimos.
+- Bajo 720×600 se ocultan paneles para conservar un visor utilizable.
 
-La red todavía no permite mover nodos, reconectar cables, crear operaciones,
+La red todavía no permite reconectar cables, crear operaciones,
 guardar escenas ni inspeccionar tablas de atributos. Los colores de vista
 previa no son materiales PBR. La fuente 5×7 es provisional: faltan tipografía
 vectorial, escalado DPI completo, accesibilidad y navegación por teclado de
 todos los controles. Espacio pausa/reanuda desde la ventana.
+Mover un nodo cambia la disposición visual; el orden y las conexiones de las
+cuatro etapas de ejecución siguen fijos. No se presenta como edición de topología.
 
 ## Responsabilidades
 

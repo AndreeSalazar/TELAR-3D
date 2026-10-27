@@ -171,7 +171,13 @@ solo al cambiar la revisión; el cálculo de superficie continúa residente.
 
 Capturas Vulkan prueban que el deslizador modifica la superficie y que los
 paneles se dibujan. El test de ventana conserva 120 fotogramas y dos cambios de
-tamaño. Ver `docs/capturas/estudio-v0.png` y `crates/telar-ui/README.md`.
+tamaño. Ver `docs/capturas/estudio-grafo.png` y `crates/telar-ui/README.md`.
+
+**Distribución revisada a partir de la referencia del usuario:** visor grande
+a la izquierda, ajustes arriba a la derecha y grafo debajo. Nodos arrastrables
+con símbolo de tejido, puertos y cables curvos que siguen la disposición.
+Se conservan posiciones relativas al redimensionar. Mover nodos no cambia
+todavía el orden ni las conexiones de la ejecución GPU.
 
 **Pendiente:** edición real de nodos/cables, parámetros propios de cada nodo,
 inspector de atributos y resultados intermedios, guardar/abrir escenas,

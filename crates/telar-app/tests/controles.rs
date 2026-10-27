@@ -12,9 +12,9 @@ fn inspector_camara_y_pausa_tienen_eventos_separados() {
     let diseno = Distribucion::nueva((1280, 720));
     let mut control = Controles::nuevo(true);
     let inicial = control.camara.clone();
-    control.evento(Evento::Raton { x: 1100, y: 248 }, diseno);
+    control.evento(Evento::Raton { x: 1000, y: 182 }, diseno);
     control.evento(Evento::Boton { boton: Boton::Izquierdo, pulsado: true }, diseno);
-    control.evento(Evento::Raton { x: 1300, y: 248 }, diseno);
+    control.evento(Evento::Raton { x: 1300, y: 182 }, diseno);
     assert_eq!(control.estudio.amplitud, 0.8);
     assert_eq!(control.camara, inicial);
     control.evento(Evento::Boton { boton: Boton::Izquierdo, pulsado: false }, diseno);
@@ -33,4 +33,10 @@ fn inspector_camara_y_pausa_tienen_eventos_separados() {
     let distancia = control.camara.distancia;
     control.evento(Evento::Rueda(1.0), diseno);
     assert!(control.camara.distancia < distancia);
+    let antes_del_grafo = control.camara.clone();
+    control.evento(Evento::Raton { x: 1150, y: 480 }, diseno);
+    control.evento(Evento::Boton { boton: Boton::Izquierdo, pulsado: true }, diseno);
+    control.evento(Evento::Raton { x: 1050, y: 600 }, diseno);
+    control.evento(Evento::Boton { boton: Boton::Izquierdo, pulsado: false }, diseno);
+    assert_eq!(control.camara, antes_del_grafo, "arrastrar un nudo no orbita la escena");
 }

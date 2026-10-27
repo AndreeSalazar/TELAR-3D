@@ -19,7 +19,8 @@ matemática pura de `nudo`; `telar-app` pasa los bytes al backend GPU aislado.
 Ya existe una primera interfaz: `telar-ui` es independiente y produce estado y
 triángulos; la app conecta sus controles con los parámetros GPU. El backend
 dibuja el overlay en un pipeline 2D y mantiene sus propios buffers por juego.
-La red es fija y seleccionable, todavía sin edición de conexiones ni atributos.
+La red tiene nodos seleccionables y arrastrables en un lienzo bajo el inspector;
+las conexiones de ejecución siguen fijas, todavía sin edición de topología ni atributos.
 
 ## La idea en una frase
 
