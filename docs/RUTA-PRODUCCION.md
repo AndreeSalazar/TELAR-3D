@@ -52,6 +52,54 @@ sombras entre objetos y acumulación progresiva. Mantendremos el visor interacti
 para editar y un modo final que invierta más muestras en converger. No se promete
 que cualquier escena de producción converja en tiempo real en una RTX 3060.
 
+## Dos perfiles de calidad: edición y producción
+
+Decisión del usuario: usar **MSAA 2x como referencia para el visor interactivo**
+y permitir más trabajo GPU en la salida de producción. El selector actual sigue
+ofreciendo 1x/2x/4x; su valor inicial todavía es 4x. Esta decisión queda anotada
+como dirección del perfil, sin afirmar que ya existe un modo final.
+
+La propuesta de «16x» se divide en dos controles con unidades diferentes:
+
+| Control | Qué mejora | Plan |
+|---|---|---|
+| Muestras MSAA | Cobertura rasterizada de bordes | 2x para editar; estudiar 8x/16x solo si los formatos y la GPU lo admiten y la comparación demuestra utilidad |
+| Muestras por píxel (spp) del trazador | Estimación del transporte de luz, con integración de cámara y materiales | Acumular en HDR; 16 spp puede ser un punto inicial de prueba, no un techo ni una garantía de calidad |
+
+MSAA 16x no equivale a 16 caminos por píxel y no añade iluminación global,
+reflejos, profundidad de campo o desenfoque de movimiento por sí solo.
+Vulkan permite consultar las cantidades admitidas para cada configuración de
+imagen; no debe activarse una cantidad que la GPU no anuncie. El backend actual
+de TELAR acepta exclusivamente 1/2/4; 8x y 16x aún no están implementados.
+
+Para el nodo Salida del futuro modo de producción se propone exponer:
+
+- Mínimo y máximo de muestras por píxel, con recuento efectivo visible.
+- Umbral de error/ruido para muestreo adaptativo, acompañado de una vista de
+  muestras usadas; detenerse al cumplir el criterio o alcanzar el máximo.
+- Límite de rebotes y controles separados para cámara, luces y materiales
+  cuando sus algoritmos existan; no mostrar controles que todavía no tienen efecto.
+- Resolución, tiempo GPU, memoria estimada y motivo de parada. Más presupuesto
+  significa poder tardar más, conservando límites de memoria, cancelación y
+  recuperación de errores.
+
+La acumulación y sus estadísticas deberán permanecer en GPU; al editar escena,
+cámara, luz o material se invalidará el historial correspondiente. Se decidirá el
+trabajo adicional por necesidad de convergencia, en lugar de repetir trabajo ya
+suficiente. Los umbrales y tamaños de lote deben verificarse con escenas reales.
+
+**Siguiente entrega de render, después de la base de escena:** una escena pequeña
+con intersecciones y sombras entre objetos, seguida de acumulación HDR con
+recuento de muestras. Comparar 16/64/256 spp con una referencia de mayor muestreo,
+medir error, ruido, tiempo y memoria; esos valores son casos de prueba, no presets
+profesionales prometidos. Después añadir muestreo adaptativo. Nada de esto se
+presenta como integrado en el visor actual.
+
+Referencias primarias: [capacidades de imágenes Vulkan](https://docs.vulkan.org/refpages/latest/refpages/source/VkImageFormatProperties.html)
+y [muestreo y optimización en RenderMan](https://renderman.pixar.com/debugging-and-optimization).
+RenderMan expone mínimo, máximo y varianza de píxel; sirven de inspiración para
+un contrato propio de TELAR, sin afirmar equivalencia con su implementación.
+
 ## Qué significa mejorar con evidencia
 
 - Corregir aliasing de contorno con MSAA ahora; revisar sombras/reflejos con sus
