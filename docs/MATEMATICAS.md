@@ -1,5 +1,8 @@
 # La matemática necesaria y de dónde sale
 
+Bibliografía histórica y vigente de cobertura, rasterización, muestreo y
+arquitecturas GPU: [RASTERIZACION-LECTURAS.md](RASTERIZACION-LECTURAS.md).
+
 Todo lo que hace falta para TELAR es **público**: artículos, libros y especificaciones. Cada nodo cita en su `libreto.md` la fuente exacta de su matemática. Se marca **★** lo imprescindible para la esfera de fuego.
 
 ## 1. Álgebra y transformaciones (P0)

@@ -70,6 +70,9 @@ de un kernel propio no sustituye esos componentes.
 
 ## Documentos que se complementan
 
+- [RASTERIZACION-LECTURAS.md](RASTERIZACION-LECTURAS.md): fuentes históricas y
+  vigentes; guía de estudio y experimentos medibles para el visor.
+
 - [PLAN.md](PLAN.md): fases históricas de construcción y objetivo de esfera de fuego.
 - [RUMBO-KERNEL.md](RUMBO-KERNEL.md): H1..H5 de autonomía, cola, regiones y efectos.
 - [NODOS-PARAMETROS.md](NODOS-PARAMETROS.md): controles reales y límites del grafo.
