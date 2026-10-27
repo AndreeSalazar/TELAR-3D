@@ -38,7 +38,25 @@ impl Procedural<'_> {
         constantes: &Constantes,
         interfaz: CapaInterfaz,
     ) -> Result<Vec<u8>, String> {
-        self.interior.capturar_estudio(&self.calculo.contexto, shaders, tamano, fondo, constantes, interfaz)
+        self.capturar_estudio_bloque(shaders, tamano, fondo, &constantes.plana(crate::FORMATO_CAPTURA), interfaz)
+    }
+
+    /// Captura con un bloque de 128 bytes del renderizador, sin conversión implícita.
+    ///
+    /// # Errors
+    /// Si el bloque no es finito, el área no vale o Vulkan falla.
+    pub fn capturar_estudio_bloque(
+        &self,
+        shaders: Sombreadores,
+        tamano: (u32, u32),
+        fondo: [f32; 4],
+        bloque: &[f32; 32],
+        interfaz: CapaInterfaz,
+    ) -> Result<Vec<u8>, String> {
+        if !bloque.iter().all(|v| v.is_finite()) {
+            return Err("constantes de render no finitas".to_owned());
+        }
+        self.interior.capturar_estudio(&self.calculo.contexto, shaders, tamano, fondo, bloque, interfaz)
     }
 }
 

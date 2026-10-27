@@ -1,0 +1,17 @@
+[package]
+name = "telar-render"
+description = "Renderizador original de TELAR: materiales GGX y vista de iluminación"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[package.metadata.telar]
+puede-usar = ["hilo-spirv"]
+
+[dependencies]
+hilo-spirv = { path = "../hilo-spirv" }
+
+[lints]
+workspace = true

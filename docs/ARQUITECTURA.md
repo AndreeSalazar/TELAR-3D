@@ -45,6 +45,13 @@ estudio; las cajas se comparten entre pintura y ratón. La app admite
 `--estilo ruta.css` al arrancar. No es un navegador ni implementa CSS completo;
 ver `crates/telar-estilo/README.md` para el alcance exacto.
 
+`telar-render` es otro componente puro: emite shaders de materiales GGX y consume
+un bloque de cámara/material/luz de 128 bytes; el backend recibe esos bytes sin
+conocer el modelo de material. La aplicación conserva la ruta histórica del visor
+para sus referencias y usa el render original en el estudio procedural.
+El contenedor `.tlar` guarda por ahora arranque y coordinador, no un proyecto completo.
+Cada carpeta declara riesgo y consumo en SEMAFORO.md, verificado por `telar-guard`.
+
 ## La idea en una frase
 
 **Los datos nacen, viven y mueren en la GPU.** La CPU edita el grafo, lo compila y le pasa a la GPU unos pocos bytes de parámetros por fotograma. Todo lo demás (emitir, simular, decidir cuánto trabajo hay y renderizar) lo hace la GPU sin volver a preguntar.

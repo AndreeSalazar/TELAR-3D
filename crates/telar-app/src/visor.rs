@@ -57,15 +57,7 @@ pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
     let titulo = format!("TELAR 3D · {puntos} puntos · {}", gpu.dispositivo());
 
     let fuente = if modo.procedural { Some(crate::tipografia::crear()?) } else { None };
-    if let Some(fuente) = &fuente {
-        let (vertices, fragmentos) = (hilo_spirv::interfaz::vertices(), hilo_spirv::interfaz::fragmentos());
-        gpu.preparar_interfaz(Sombreadores { vertices: &vertices, fragmentos: &fragmentos })?;
-        gpu.fuente_interfaz(telar_gpu::AtlasInterfaz {
-            ancho: fuente.ancho,
-            alto: fuente.alto,
-            cobertura: &fuente.cobertura,
-        })?;
-    }
+    preparar_interfaz(&mut gpu, fuente.as_ref())?;
     let mut controles = Controles::nuevo(modo.procedural);
     let fondo = cargar_estilos(modo, &mut controles)?;
     let mut tamano_ui = (0, 0);
@@ -98,21 +90,28 @@ pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
             controles.sucio = false;
             tamano_ui = (ancho, alto);
         }
-        let constantes = Constantes {
-            matriz: controles.camara.matriz(aspecto),
-            luz,
-            color: if modo.procedural { controles.estudio.color() } else { hex(BRASA) },
-            cielo: hex(CIELO),
-            suelo: hex(SUELO),
-        };
         let dibujado = if modo.procedural {
             // La prueba cambia el tamaño lógico dentro de capacidad sin volver a
             // grabar compute. La GPU calcula los recuentos y todos los argumentos.
             let lado = if modo.prueba && (40..80).contains(&cuadros) { capacidad / 2 } else { capacidad };
             let parametros =
                 ParametrosProcedurales { lado, fase: controles.fase, amplitud: controles.estudio.amplitud };
-            gpu.dibujar_procedural(fondo, &constantes, parametros)?
+            let bloque = crate::render::bloque(
+                &controles.camara,
+                aspecto,
+                controles.estudio.color(),
+                controles.estudio.material,
+                gpu.imagenes().0 != telar_gpu::eleccion::FORMATO_SRGB,
+            )?;
+            gpu.dibujar_procedural_bloque(fondo, &bloque, parametros)?
         } else {
+            let constantes = Constantes {
+                matriz: controles.camara.matriz(aspecto),
+                luz,
+                color: hex(BRASA),
+                cielo: hex(CIELO),
+                suelo: hex(SUELO),
+            };
             gpu.dibujar_escena(fondo, &constantes)?
         };
         if dibujado {
@@ -153,4 +152,17 @@ fn cargar_estilos(modo: &Modo, controles: &mut Controles) -> Result<[f32; 4], St
         controles.estudio.cargar_estilos(&css)?;
     }
     Ok(if modo.procedural { controles.estudio.fondo_visor() } else { hex(FONDO) })
+}
+
+fn preparar_interfaz(gpu: &mut Gpu, fuente: Option<&telar_ui::Fuente>) -> Result<(), String> {
+    if let Some(fuente) = fuente {
+        let (vertices, fragmentos) = (hilo_spirv::interfaz::vertices(), hilo_spirv::interfaz::fragmentos());
+        gpu.preparar_interfaz(Sombreadores { vertices: &vertices, fragmentos: &fragmentos })?;
+        gpu.fuente_interfaz(telar_gpu::AtlasInterfaz {
+            ancho: fuente.ancho,
+            alto: fuente.alto,
+            cobertura: &fuente.cobertura,
+        })?;
+    }
+    Ok(())
 }

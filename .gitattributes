@@ -2,6 +2,7 @@
 * text=auto eol=lf
 
 *.spv binary
+*.tlar binary
 *.png binary
 *.webp binary
 *.exr binary

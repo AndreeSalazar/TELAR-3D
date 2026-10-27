@@ -1,11 +1,13 @@
 //! Captura RGBA8 del estudio con Vulkan, sin abrir una ventana.
 use telar_gpu::{
-    Calculo, CapaInterfaz, Constantes, DominioProcedural, EtapaProcedural, KernelsProcedurales, Opciones,
-    ParametrosProcedurales, PlanProcedural, Sombreadores,
+    Calculo, CapaInterfaz, DominioProcedural, EtapaProcedural, KernelsProcedurales, Opciones, ParametrosProcedurales,
+    PlanProcedural, Sombreadores,
 };
 use telar_ui::Estudio;
 #[path = "../src/arranque.rs"]
 mod arranque;
+#[path = "../src/render.rs"]
+mod render;
 #[path = "../src/tipografia.rs"]
 mod tipografia;
 
@@ -27,19 +29,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let estudio = Estudio::default();
     let diseno = estudio.distribucion(tamano);
     residente.paso(ParametrosProcedurales { lado: 256, fase: 0.6, amplitud: estudio.amplitud })?;
-    let escena = [hilo_spirv::visor::vertices(), hilo_spirv::visor::fragmentos()];
+    let escena = [telar_render::vertices(), telar_render::fragmentos()];
     let ui = [hilo_spirv::interfaz::vertices(), hilo_spirv::interfaz::fragmentos()];
     let fuente = tipografia::crear()?;
     let vertices = estudio.dibujar_con_fuente(diseno, 65_536, &fuente)?;
-    let constantes = Constantes {
-        matriz: nudo::Camara { distancia: 7.0, ..nudo::Camara::default() }
-            .matriz(diseno.visor.ancho / diseno.visor.alto),
-        luz: nudo::mate::normalizar([0.45, 0.8, 0.4]),
-        color: estudio.color(),
-        cielo: telar_gpu::eleccion::hex(0x4a_5a78),
-        suelo: telar_gpu::eleccion::hex(0x20_1812),
-    };
-    let pixeles = residente.capturar_estudio(
+    let camara = nudo::Camara { distancia: 7.0, ..nudo::Camara::default() };
+    let constantes =
+        render::bloque(&camara, diseno.visor.ancho / diseno.visor.alto, estudio.color(), estudio.material, true)?;
+    let pixeles = residente.capturar_estudio_bloque(
         Sombreadores { vertices: &escena[0], fragmentos: &escena[1] },
         tamano,
         estudio.fondo_visor(),

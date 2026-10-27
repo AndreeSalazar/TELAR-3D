@@ -6,7 +6,7 @@ use crate::repo::Repo;
 
 /// Los crates del núcleo: `core` y `alloc`, nada más. Así corren en Windows,
 /// en Linux y algún día en BMO-X sin cambiar una línea.
-pub(crate) const NUCLEO: [&str; 5] = ["nudo", "hilo", "hilo-spirv", "telar-nodos", "telar-kernel"];
+pub(crate) const NUCLEO: [&str; 6] = ["nudo", "hilo", "hilo-spirv", "telar-nodos", "telar-kernel", "telar-render"];
 
 pub(crate) fn revisar(repo: &Repo) -> Vec<Problema> {
     let mut problemas = Vec::new();

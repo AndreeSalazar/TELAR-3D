@@ -6,10 +6,11 @@ Sistema 3D procedural de nodos en **Rust**, con el núcleo `no_std` y la GPU al 
 
 ```
 crates/
-  telar-guard/   ✅ los guardianes (10 reglas)                   std, sin crates
+  telar-guard/   ✅ los guardianes (11 reglas, semáforos obligatorios) std, sin crates
   telar-ventana/ ✅ Win32 a mano (unsafe SOLO en src/ffi/)       std · aislada: no usa nada nuestro
   telar-gpu/     ✅ Vulkan a mano (unsafe SOLO en src/ffi/)      std · aislada: no usa nada nuestro
   telar-kernel/  ✅ coordinador, ABI y servicios GPU; solo usa hilo-spirv            no_std + alloc
+  telar-render/  ✅ render original GGX, materiales y exposición; solo hilo-spirv  no_std + alloc
   telar-estilo/  ✅ hojas CSS nativas, cascada y cajas; sin dependencias              no_std + alloc
   telar-ui/      ✅ estado y triángulos de interfaz; solo usa telar-estilo           no_std + alloc
   telar-app/     ✅ `telar`: une ventana, GPU, shaders y geometría (el visor; en la Fase 8, la interfaz de nodos)
@@ -33,7 +34,7 @@ cargo run -p telar-app --release -- --calculo   # el primer kernel: GPU contra C
 ## Reglas (las hará cumplir `telar-guard`)
 
 1. **Cero dependencias de terceros.** Ni un crate de crates.io. Si hace falta algo, se escribe aquí. Las herramientas de verificación externas (capas de validación de Vulkan, `spirv-val`, Houdini Apprentice como referencia) sí valen: miden, no se enlazan.
-2. **`no_std` en el núcleo:** `nudo`, `hilo`, `hilo-spirv`, `telar-nodos` y `telar-kernel` llevan `#![no_std]` y solo usan `core` y `alloc`.
+2. **`no_std` en el núcleo:** `nudo`, `hilo`, `hilo-spirv`, `telar-nodos`, `telar-kernel` y `telar-render` llevan `#![no_std]` y solo usan `core` y `alloc`.
 3. **`unsafe` solo en `crates/*/src/ffi/`**, siempre con un `// SAFETY:` justo encima. Las declaraciones `extern "system"`, `LoadLibraryW` y `GetProcAddress`, también solo ahí.
 4. **Memoria de la GPU marcada:** cada escritura compartida, cada barrera y cada atómico en un kernel lleva su justificación (`// GPU:`). Ver docs/GUARDIANES.md.
 5. **Determinismo:** la misma entrada da los mismos bytes. Prohibidas las sumas de `float` con atómicos desordenados, salvo marcadas.
@@ -44,6 +45,7 @@ cargo run -p telar-app --release -- --calculo   # el primer kernel: GPU contra C
 10. **Clippy pedantic con `-D warnings`.** Una excepción necesita `#[allow(..., reason = "...")]`.
 11. **Commits convencionales** `tipo(ámbito): descripción`. Nunca `--no-verify` ni `push --force`.
 12. **Honestidad en los resultados:** cada comparación lleva su etiqueta (IGUAL, MÁS RÁPIDO, DISTINTO, ABIERTO) y la máquina en la que se midió.
+13. **Semáforos obligatorios por carpeta:** `SEMAFORO.md` declara ROJO crítico, AMARILLO probable o VERDE seguro en contexto; debe explicar CPU, GPU, VRAM, RAM, E/S, frecuencia, límites y evidencia. FFI siempre ROJO; los padres reflejan el máximo riesgo de sus hijos. No inventar mediciones ni confundir VERDE con coste cero. Ver docs/SEMAFOROS.md.
 
 ## Inspiración, no copia
 

@@ -17,10 +17,12 @@
 //!                                             Fase 2: el primer kernel en la GPU, bit a bit contra la CPU
 //! ```
 
+mod archivo;
 mod arranque;
 mod calculo;
 mod controles;
 mod escena;
+mod render;
 mod tipografia;
 mod visor;
 
@@ -36,6 +38,15 @@ const PUNTOS_DE_PRUEBA: u32 = 40_000;
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
+    if let Some(resultado) = archivo::procesar(&args) {
+        return match resultado {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(error) => {
+                eprintln!("telar: {error}");
+                ExitCode::FAILURE
+            }
+        };
+    }
     let valor = |nombre: &str| args.iter().position(|a| a == nombre).and_then(|i| args.get(i + 1)?.parse::<u32>().ok());
     let prueba = args.iter().any(|a| a == "--prueba");
     let validacion = !args.iter().any(|a| a == "--sin-validacion");

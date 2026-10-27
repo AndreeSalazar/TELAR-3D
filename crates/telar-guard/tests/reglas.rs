@@ -35,6 +35,9 @@ impl Prueba {
             "crates/ejemplo/tests/suma.rs",
             "#[test]\nfn suma() {\n    assert_eq!(ejemplo::suma(1, 2), 3);\n}\n",
         );
+        for carpeta in ["", "crates/", "crates/ejemplo/", "crates/ejemplo/src/", "crates/ejemplo/tests/"] {
+            p.escribir(&format!("{carpeta}SEMAFORO.md"), SEMAFORO);
+        }
         p
     }
 
@@ -73,11 +76,31 @@ impl Drop for Prueba {
 }
 
 const LIB: &str = "crates/ejemplo/src/lib.rs";
+const SEMAFORO: &str = "Estado: VERDE\nMotivo: prueba aislada\nCPU: solo pruebas\nGPU: cero directo\nVRAM: cero directo\nRAM: texto pequeño\nE/S: archivos temporales\nFrecuencia: al verificar\nLimites: carpeta de prueba\nEvidencia: pruebas del guardián\n";
 const FFI: &str = "crates/ejemplo/src/ffi/mod.rs";
 
 #[test]
 fn un_repo_correcto_pasa_todas() {
     assert_eq!(Prueba::nueva("limpio").rotas(), Vec::<&str>::new());
+}
+
+#[test]
+fn semaforo_obligatorio_con_consumo_y_riesgo_coherente() {
+    let p = Prueba::nueva("semaforo");
+    p.borrar("crates/ejemplo/src/SEMAFORO.md");
+    assert!(p.sitios("semaforos").iter().any(|s| s.contains("src/SEMAFORO.md")));
+    p.escribir("crates/ejemplo/src/SEMAFORO.md", &SEMAFORO.replace("CPU: solo pruebas\n", ""));
+    assert!(p.problemas("semaforos").iter().any(|p| p.detalle.contains("CPU")));
+    p.escribir("crates/ejemplo/src/SEMAFORO.md", SEMAFORO);
+    p.escribir(FFI, "//! frontera de prueba\n");
+    p.escribir("crates/ejemplo/src/ffi/SEMAFORO.md", SEMAFORO);
+    assert!(p.problemas("semaforos").iter().any(|p| p.detalle.contains("FFI")));
+    p.escribir("crates/ejemplo/src/ffi/SEMAFORO.md", &SEMAFORO.replace("VERDE", "ROJO"));
+    assert!(!p.problemas("semaforos").is_empty(), "los padres también deben reflejar el riesgo");
+    for carpeta in ["", "crates/", "crates/ejemplo/", "crates/ejemplo/src/"] {
+        p.escribir(&format!("{carpeta}SEMAFORO.md"), &SEMAFORO.replace("VERDE", "ROJO"));
+    }
+    assert_eq!(p.sitios("semaforos"), Vec::<String>::new());
 }
 
 #[test]

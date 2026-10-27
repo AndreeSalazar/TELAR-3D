@@ -180,7 +180,7 @@ fn inspector(estudio: &Estudio, lienzo: &mut Lienzo, diseno: Distribucion) {
     texto(
         lienzo,
         [primera.x, primera.y - 23.0, diseno.ajustes.x + diseno.ajustes.ancho - primera.x - panel.relleno, 20.0],
-        "Color de vista previa",
+        "Material de vista previa",
         &etiqueta,
     );
     for material in 0..3 {

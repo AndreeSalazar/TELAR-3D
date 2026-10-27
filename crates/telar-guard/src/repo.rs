@@ -4,8 +4,8 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
-/// Carpetas que no son del proyecto: salidas de compilación, git y ajustes locales.
-const SALTAR: [&str; 4] = ["target", ".git", ".claude", "node_modules"];
+/// Carpetas generadas o externas: compilación, Git y dependencias de otro entorno.
+const SALTAR: [&str; 3] = ["target", ".git", "node_modules"];
 
 /// Los archivos del repositorio, con rutas relativas y separadas por `/`.
 pub struct Repo {

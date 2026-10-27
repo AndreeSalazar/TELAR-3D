@@ -8,6 +8,7 @@ pub mod arranque;
 mod buzon;
 mod coordinador;
 mod maquina;
+pub mod paquete;
 mod servicios;
 mod verificacion;
 pub use buzon::Buzon;

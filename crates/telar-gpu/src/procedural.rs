@@ -182,13 +182,30 @@ impl Gpu {
         parametros: ParametrosProcedurales,
     ) -> Result<bool, String> {
         let formato = self.presentacion.formato;
+        self.dibujar_procedural_bloque(fondo, &constantes.plana(formato), parametros)
+    }
+
+    /// Dibuja con 128 bytes de constantes definidos por el renderizador externo.
+    /// No interpreta materiales ni convierte los colores del bloque.
+    ///
+    /// # Errors
+    /// Si el bloque no es finito, falta el ejecutor o Vulkan falla.
+    pub fn dibujar_procedural_bloque(
+        &mut self,
+        fondo: [f32; 4],
+        bloque: &[f32; 32],
+        parametros: ParametrosProcedurales,
+    ) -> Result<bool, String> {
+        if !bloque.iter().all(|v| v.is_finite()) {
+            return Err("constantes de render no finitas".to_owned());
+        }
+        let formato = self.presentacion.formato;
         if let Some(interfaz) = &mut self.interfaz {
             interfaz.formato(&self.contexto, formato)?;
         }
-        let plana = constantes.plana(formato);
         let visor = self.visor.as_mut().ok_or("falta el visor")?;
         let escena =
-            visor.escena_procedural(&self.contexto, formato, &plana, self.presentacion.cuadro(), parametros)?;
+            visor.escena_procedural(&self.contexto, formato, bloque, self.presentacion.cuadro(), parametros)?;
         let dibujado = self.presentacion.dibujar(
             &self.contexto,
             crate::eleccion::color_para(formato, fondo),

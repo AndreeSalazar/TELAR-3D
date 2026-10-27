@@ -22,7 +22,7 @@ pub struct Estudio {
     pub velocidad: f32,
     /// Pausa la fase; la cámara continúa siendo interactiva.
     pub pausado: bool,
-    /// Material de vista previa: cobre, porcelana o hielo.
+    /// Perfil de vista previa: cobre, porcelana o esmalte azul.
     pub material: usize,
     arrastre: Option<Arrastre>,
     nodos: [[f32; 2]; 4],
@@ -113,7 +113,7 @@ impl Estudio {
             alto,
         }
     }
-    /// Color de vista previa en sRGB; todavía no es un material PBR.
+    /// Color base sRGB; la app añade rugosidad y metalicidad del perfil de render.
     #[must_use]
     pub fn color(&self) -> [f32; 4] {
         color_material(self.material)

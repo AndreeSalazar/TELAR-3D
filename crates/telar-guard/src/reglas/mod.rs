@@ -10,18 +10,26 @@ mod higiene;
 mod inseguro;
 mod nodos;
 mod nucleo;
+mod semaforos;
 
 use crate::informe::{Regla, Resultado};
 use crate::repo::Repo;
 
 /// Todas las reglas de código, en el orden en que se informan.
-pub static REGLAS: [Regla; 10] = [
+pub static REGLAS: [Regla; 11] = [
     Regla {
         id: "cero-deps",
         titulo: "Sin crates de terceros: solo dependencias por ruta dentro de crates/",
         motivo: "control total: cada línea que corre es nuestra",
         arreglo: "escríbelo como un crate en crates/ y enlázalo con `path = \"../x\"`",
         revisar: deps::revisar,
+    },
+    Regla {
+        id: "semaforos",
+        titulo: "Cada carpeta declara semáforo y consumo; FFI es ROJO y los padres reflejan riesgo",
+        motivo: "hacer visibles riesgos, recursos y costes sin inventar mediciones",
+        arreglo: "añade SEMAFORO.md con Estado, Motivo, CPU, GPU, VRAM, RAM, E/S, Frecuencia, Limites y Evidencia",
+        revisar: semaforos::revisar,
     },
     Regla {
         id: "fronteras",
@@ -32,7 +40,7 @@ pub static REGLAS: [Regla; 10] = [
     },
     Regla {
         id: "nucleo-sin-std",
-        titulo: "nudo, hilo, hilo-spirv, telar-nodos y telar-kernel: #![no_std], solo core y alloc",
+        titulo: "Núcleo y render portable: #![no_std], solo core y alloc",
         motivo: "que el núcleo funcione en cualquier sistema, también en BMO-X",
         arreglo: "usa `core::`/`alloc::`; lo que necesite el sistema va en telar-gpu o telar-app, y los tests en tests/",
         revisar: nucleo::revisar,

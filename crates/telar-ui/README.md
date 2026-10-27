@@ -4,7 +4,7 @@ Interfaz pura en `no_std + alloc`, solo depende de `telar-estilo`, sin crates ex
 Win32, NUDO o HILO. Produce triángulos 2D y consume posiciones de ratón; la app
 conecta eventos, parámetros y renderizado. No se modifica la geometría 3D en CPU.
 
-![Estudio nativo](../../docs/capturas/estudio-css.png)
+![Estudio nativo](../../docs/capturas/estudio-render.png)
 
 ## Qué funciona
 
@@ -26,7 +26,8 @@ conecta eventos, parámetros y renderizado. No se modifica la geometría 3D en C
 
 La red todavía no permite reconectar cables, crear operaciones,
 guardar escenas ni inspeccionar tablas de atributos. Los colores de vista
-previa no son materiales PBR. Faltan escalado DPI completo, composición de texto
+previa seleccionan perfiles GGX opacos del renderizador, todavía sin transmisión
+ni materiales por nodo. Faltan escalado DPI completo, composición de texto
 Unicode más allá del alfabeto latino, accesibilidad y navegación por teclado de
 todos los controles. Espacio pausa/reanuda desde la ventana.
 Mover un nodo cambia la disposición visual; el orden y las conexiones de las

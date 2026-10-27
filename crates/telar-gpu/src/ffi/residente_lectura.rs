@@ -23,7 +23,7 @@ impl Residente {
         shaders: Sombreadores,
         tamano: (u32, u32),
         fondo: [f32; 4],
-        constantes: &Constantes,
+        constantes: &[f32; 32],
         capa: crate::CapaInterfaz,
     ) -> Result<Vec<u8>, String> {
         if self.actividad.pasos == 0 || self.pendiente {
@@ -42,11 +42,10 @@ impl Residente {
         ui.actualizar(capa.vertices, capa.area)?;
         let dibujo = ui.juego(0)?;
         let ranura = &self.ranuras[0];
-        let plana = constantes.plana(FORMATO_CAPTURA);
         let escena = super::dibujo::Escena {
             pipeline: &pipeline,
             malla: &ranura.malla,
-            constantes: &plana,
+            constantes,
             indirecto: Some(ranura.control.objeto),
             calculo: None,
         };

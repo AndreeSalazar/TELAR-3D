@@ -28,6 +28,7 @@ dependencies = [
  "telar-gpu",
  "telar-kernel",
  "telar-nodos",
+ "telar-render",
  "telar-ui",
  "telar-ventana",
 ]
@@ -56,6 +57,13 @@ name = "telar-nodos"
 version = "0.1.0"
 dependencies = [
  "nudo",
+]
+
+[[package]]
+name = "telar-render"
+version = "0.1.0"
+dependencies = [
+ "hilo-spirv",
 ]
 
 [[package]]

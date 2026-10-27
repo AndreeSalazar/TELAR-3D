@@ -7,7 +7,11 @@ use telar_gpu::{DominioProcedural, EtapaProcedural, Gpu, KernelsProcedurales, Pl
 use telar_nodos::Esfera;
 
 pub(crate) fn preparar(gpu: &mut Gpu, modo: &Modo) -> Result<(u32, usize), String> {
-    let (vertices, fragmentos) = (hilo_spirv::visor::vertices(), hilo_spirv::visor::fragmentos());
+    let (vertices, fragmentos) = if modo.procedural {
+        (telar_render::vertices(), telar_render::fragmentos())
+    } else {
+        (hilo_spirv::visor::vertices(), hilo_spirv::visor::fragmentos())
+    };
     gpu.preparar_visor(Sombreadores { vertices: &vertices, fragmentos: &fragmentos })?;
     let capacidad = modo.puntos.isqrt().clamp(2, 1024);
     let puntos = if modo.procedural {
