@@ -14,6 +14,7 @@
 //! # Ok::<(), String>(())
 //! ```
 
+mod calidad;
 pub mod eleccion;
 mod escena;
 mod ffi;
@@ -47,11 +48,13 @@ pub struct Opciones {
     pub validacion: bool,
     /// MSAA hasta 4x según soporte real de color/profundidad; false conserva 1x.
     pub antialias: bool,
+    /// Máximo de muestras solicitado: 1, 2 o 4; antialias=false fuerza 1x.
+    pub muestras: u32,
 }
 
 impl Default for Opciones {
     fn default() -> Self {
-        Self { nombre: "TELAR 3D".to_owned(), validacion: true, antialias: true }
+        Self { nombre: "TELAR 3D".to_owned(), validacion: true, antialias: true, muestras: 4 }
     }
 }
 
@@ -83,12 +86,14 @@ impl Gpu {
     ///
     /// Si no hay Vulkan, ninguna GPU puede presentar en la ventana o Vulkan falla.
     pub fn nueva(opciones: &Opciones, superficie: Superficie, tamano: (u32, u32)) -> Result<Self, String> {
+        calidad::validar_muestras(opciones.muestras)?;
         let mut contexto = ffi::Contexto::nuevo(
             &opciones.nombre,
             opciones.validacion,
             Some((superficie.instancia, superficie.ventana)),
         )?;
         contexto.antialias = opciones.antialias;
+        contexto.muestras_solicitadas = opciones.muestras;
         let presentacion = ffi::Presentacion::nueva(&contexto, tamano)?;
         Ok(Self { interfaz: None, visor: None, presentacion, contexto })
     }
@@ -198,8 +203,10 @@ impl Calculo {
     ///
     /// Si no hay Vulkan o ninguna GPU tiene una cola de gráficos.
     pub fn nuevo(opciones: &Opciones) -> Result<Self, String> {
+        calidad::validar_muestras(opciones.muestras)?;
         let mut contexto = ffi::Contexto::nuevo(&opciones.nombre, opciones.validacion, None)?;
         contexto.antialias = opciones.antialias;
+        contexto.muestras_solicitadas = opciones.muestras;
         Ok(Self { contexto })
     }
 

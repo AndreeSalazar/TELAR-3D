@@ -16,3 +16,9 @@ Clasificación de riesgo, no certificación absoluta ni medición de rendimiento
 Cada nodo conserva sus parámetros y el inspector expone solo los controles propios.
 No calcula geometría 3D; envía valores a la app. Evidencia: tests/parametros.rs
 y docs/NODOS-PARAMETROS.md.
+
+Calidad seleccionable 1x/2x/4x: capacidades guardadas por formato; cambiar
+el modo efectivo espera trabajo GPU y reemplaza adjuntos/pipelines gráficos.
+Compute se conserva. Incremento lógico 2x: 12 B/píxel; 4x: 28 B/píxel
+(RGBA8/D32). El pico durante el reemplazo no se midió.
+Evidencia adicional: docs/CALIDAD-RENDER.md y tests/calidad_visor.rs de telar-app.

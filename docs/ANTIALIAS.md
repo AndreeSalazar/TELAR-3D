@@ -14,13 +14,16 @@ Izquierda: 1x. Derecha: MSAA 4x. Misma escena, cámara, fase, resolución y mate
 Los recortes se ampliaron por vecino más próximo para mostrar la cobertura real;
 no se aplicó desenfoque a la imagen. La corrección sucede en GPU durante el dibujo.
 
+El inspector de Salida permite elegir **1x, 2x o 4x** en vivo.
+[Controles, medición comparativa y contrato actual](CALIDAD-RENDER.md).
+
 ## Implementación
 
 `Opciones::antialias` es true por defecto. El backend consulta
 `vkGetPhysicalDeviceImageFormatProperties` para los usos reales de color y
-profundidad. Elige 4x si ambos formatos lo admiten, en otro caso 2x y finalmente
-1x. No presupone soporte por la marca de GPU. La consulta se hace al preparar
-imágenes/pipelines, fuera del bucle estable.
+profundidad. `Opciones::muestras` fija el máximo solicitado (4 por defecto):
+elige el mayor de 4x/2x/1x admitido que no lo exceda. No presupone soporte por
+la marca de GPU. Las capacidades se consultan y guardan por formato.
 
 El pipeline, profundidad y color multimuestreado usan la misma cantidad de
 muestras. El renderizado dinámico resuelve el color por promedio a una imagen de
@@ -37,6 +40,9 @@ Referencia: [Khronos, rasterización y multisampling](https://docs.vulkan.org/sp
 y [renderizado y resolución de adjuntos](https://docs.vulkan.org/spec/latest/chapters/renderpass.html).
 
 ## Coste medido y memoria
+
+Esta tabla corresponde a la entrega inicial. La comparación posterior incluye
+[selección explícita de 2x y memoria por modo](CALIDAD-RENDER.md).
 
 **DISTINTO: contornos más suaves con mayor coste.** RTX 3060 / Windows, Vulkan con
 validación y sincronización activas. 1280×720, rejilla 256², fase 0,6, amplitud 0,65,

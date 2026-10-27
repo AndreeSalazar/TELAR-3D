@@ -180,20 +180,7 @@ fn inspector(estudio: &Estudio, lienzo: &mut Lienzo, diseno: Distribucion) {
     lienzo.caja(boton, &estilo);
     lienzo.etiqueta(boton.contenido(&estilo), if estudio.pausado { "Continuar" } else { "Pausar" }, &estilo);
     if estudio.seleccionado == 3 {
-        let primera = diseno.muestra(0);
-        if diseno.ajustes.alto >= 270.0 {
-            texto(
-                lienzo,
-                [
-                    primera.x,
-                    primera.y - 23.0,
-                    diseno.ajustes.x + diseno.ajustes.ancho - primera.x - panel.relleno,
-                    20.0,
-                ],
-                "Material de vista previa",
-                &etiqueta,
-            );
-        }
+        estudio.dibujar_calidad(lienzo, diseno);
         for material in 0..3 {
             let mut estilo = estudio.estilo(
                 "muestra",

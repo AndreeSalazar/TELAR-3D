@@ -175,3 +175,7 @@ consultadas por formato y fallback a 2x/1x. Los adjuntos y pipelines coinciden e
 muestras; la resolución de color ocurre en el pase dinámico. La swapchain sigue
 siendo de una muestra. Las capturas exponen `CapturaEstudio::muestras`.
 Coste y comparación: [ANTIALIAS.md](../../docs/ANTIALIAS.md).
+
+Salida expone calidad MSAA 1x/2x/4x. El backend acepta `Opciones::muestras`
+y `Gpu::configurar_muestras`; el inspector muestra la cantidad efectiva.
+[Contrato, pruebas y coste](../../docs/CALIDAD-RENDER.md).

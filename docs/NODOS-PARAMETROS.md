@@ -12,7 +12,10 @@ control global de la animación, también disponible con Espacio.
 | Rejilla | Puntos por lado, 2..capacidad | La GPU decide recuentos, índices y despachos dentro de los buffers existentes |
 | Onda | Amplitud 0..0,8; velocidad 0..2 | Cambia deformación y avance de fase; velocidad cero conserva la fase |
 | Relieve | Factor de altura 0..3 | HILO escala altura y transforma normales; cero aplana y uno conserva Onda |
-| Salida | Exposición 0,25..4; rugosidad 0,08..1; tres perfiles de material | Modifica el sombreado sin cambiar la geometría |
+| Salida | Exposición 0,25..4; rugosidad 0,08..1; tres perfiles de material; MSAA 1x/2x/4x | Modifica sombreado y cobertura sin cambiar la geometría |
+
+El selector de calidad informa muestras solicitadas y efectivas;
+[contrato y coste](CALIDAD-RENDER.md).
 
 Los perfiles de material cargan su rugosidad inicial; después puede editarse.
 La resolución máxima se fija al abrir con `--puntos`; cambiar el deslizador no

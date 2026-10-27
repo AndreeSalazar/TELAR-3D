@@ -4,8 +4,8 @@ use telar_gpu::{
     Calculo, CapaInterfaz, Constantes, KernelsProcedurales, Opciones, ParametrosProcedurales, Sombreadores,
 };
 
-fn capturar(antialias: bool) -> telar_gpu::CapturaEstudio {
-    let gpu = Calculo::nuevo(&Opciones { antialias, ..Opciones::default() }).expect("Vulkan real");
+fn capturar(muestras: u32) -> telar_gpu::CapturaEstudio {
+    let gpu = Calculo::nuevo(&Opciones { muestras, ..Opciones::default() }).expect("Vulkan real");
     let codigo = [telar_kernel::compilar(), hilo_spirv::rejilla::generar(), hilo_spirv::rejilla::deformar()];
     let mut residente = gpu
         .procedural(2, KernelsProcedurales { preparar: &codigo[0], generar: &codigo[1], deformar: &codigo[2] })
@@ -40,14 +40,20 @@ fn capturar(antialias: bool) -> telar_gpu::CapturaEstudio {
 
 #[test]
 fn bordes_con_cobertura_parcial_y_centro_nitido_en_msaa_real() {
-    let sin = capturar(false);
-    let con = capturar(true);
+    let sin = capturar(1);
+    let con = capturar(4);
+    let dos = capturar(2);
     assert_eq!(sin.muestras, 1);
+    assert!(matches!(dos.muestras, 1 | 2), "solicitar 2x nunca debe activar 4x");
     assert!(matches!(con.muestras, 1 | 2 | 4));
     let maximo = sin.pixeles.as_chunks::<4>().0.iter().map(|p| p[0]).max().unwrap();
     assert!(maximo > 200, "la superficie debe estar visible y uniformemente iluminada");
     let intermedios = |pixeles: &[u8]| pixeles.as_chunks::<4>().0.iter().filter(|p| p[0] > 0 && p[0] < maximo).count();
     assert_eq!(intermedios(&sin.pixeles), 0);
+    if dos.muestras == 2 {
+        assert!(intermedios(&dos.pixeles) > 0, "2x debe aportar cobertura parcial en los bordes oblicuos");
+        assert_ne!(sin.pixeles, dos.pixeles);
+    }
     if con.muestras > 1 {
         assert!(intermedios(&con.pixeles) > 30, "el borde necesita cobertura fraccionaria");
         assert_ne!(sin.pixeles, con.pixeles);
@@ -56,6 +62,7 @@ fn bordes_con_cobertura_parcial_y_centro_nitido_en_msaa_real() {
     }
     let centro = (32 * 64 + 32) * 4;
     assert_eq!(&sin.pixeles[centro..centro + 4], &con.pixeles[centro..centro + 4]);
+    assert_eq!(&sin.pixeles[centro..centro + 4], &dos.pixeles[centro..centro + 4]);
     assert_eq!(con.pixeles[0], 0, "el suavizado no debe alcanzar el fondo distante");
     assert_eq!(telar_gpu::avisos_de_validacion(), 0);
 }

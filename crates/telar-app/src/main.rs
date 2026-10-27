@@ -20,6 +20,7 @@
 mod archivo;
 mod arranque;
 mod calculo;
+mod calidad;
 mod controles;
 mod escena;
 mod render;

@@ -3,6 +3,7 @@
 #![no_std]
 extern crate alloc;
 
+mod calidad;
 mod dibujo;
 mod fuente;
 mod lienzo;
@@ -40,6 +41,7 @@ enum Objetivo {
     Control(usize),
     Pausa,
     Material(usize),
+    Calidad(usize),
 }
 
 #[derive(Clone, Copy)]
@@ -55,7 +57,7 @@ impl Default for Estudio {
             rejilla: Rejilla { lado: 256, capacidad: 256 },
             onda: Onda { amplitud: 0.35, velocidad: 1.0 },
             relieve: Relieve { factor: 1.3 },
-            salida: Salida { exposicion: 1.4, rugosidad: 0.3, material: 0 },
+            salida: Salida { exposicion: 1.4, rugosidad: 0.3, material: 0, muestras: 4, muestras_reales: 4 },
             pausado: false,
             arrastre: None,
             nodos: [[0.03, 0.02], [0.97, 0.31], [0.03, 0.62], [0.97, 0.99]],
@@ -106,6 +108,9 @@ impl Estudio {
                 })
                 .or_else(|| diseno.pausa().contiene(x, y).then_some(Objetivo::Pausa))
                 .or_else(|| {
+                    (0..3).find(|i| self.seleccionado == 3 && diseno.calidad(*i).contiene(x, y)).map(Objetivo::Calidad)
+                })
+                .or_else(|| {
                     (0..3).find(|i| self.seleccionado == 3 && diseno.muestra(*i).contiene(x, y)).map(Objetivo::Material)
                 });
         }
@@ -154,6 +159,14 @@ impl Estudio {
         if diseno.pausa().contiene(x, y) {
             self.pausado = !self.pausado;
             return true;
+        }
+        if self.seleccionado == 3 {
+            for (indice, muestras) in [1, 2, 4].into_iter().enumerate() {
+                if diseno.calidad(indice).contiene(x, y) {
+                    self.salida.muestras = muestras;
+                    return true;
+                }
+            }
         }
         for material in 0..3 {
             let rect = diseno.muestra(material);

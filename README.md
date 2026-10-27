@@ -53,7 +53,8 @@ Los ajustes de cada etapa ya modifican cálculo o sombreado.
 [Configuración de los nodos](docs/NODOS-PARAMETROS.md).
 
 **Ruta de producción:** [estado, motivos y próximos hitos](docs/RUTA-PRODUCCION.md).
-El visor ya suaviza los contornos con MSAA hasta 4x según soporte real;
+Salida permite elegir MSAA 1x/2x/4x en vivo y muestra el soporte efectivo;
+[controles y comparación](docs/CALIDAD-RENDER.md). El visor suaviza los contornos;
 [diagnóstico, comparación y coste](docs/ANTIALIAS.md).
 
 **Semáforos obligatorios:** cada carpeta fuente/configuración/documentación declara
@@ -61,7 +62,7 @@ ROJO crítico, AMARILLO probable o VERDE seguro en su contexto y explica su cons
 El guardián bloquea carpetas sin informe. [Política](docs/SEMAFOROS.md),
 [mapa](docs/MAPA-SEMAFOROS.md).
 
-![Estudio nativo de TELAR](docs/capturas/estudio-msaa.png)
+![Estudio nativo de TELAR](docs/capturas/salida-calidad.png)
 
 | Pieza | Nombre | Qué es |
 |---|---|---|

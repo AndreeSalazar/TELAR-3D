@@ -64,7 +64,7 @@ impl InterfazGpu {
     }
 
     pub(crate) fn formato(&mut self, ctx: &Contexto, formato: u32) -> Result<(), String> {
-        if self.pipeline.formato != formato {
+        if self.pipeline.formato != formato || self.pipeline.muestras != ctx.muestras(formato)? {
             // SAFETY: dispositivo propio; se espera antes de reemplazar el pipeline en vuelo.
             ok(unsafe { (self.fd.esperar)(self.dispositivo) }, "esperar interfaz")?;
             self.pipeline =

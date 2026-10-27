@@ -7,7 +7,14 @@ mod arranque;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let antialias = !std::env::args().any(|arg| arg == "--sin-msaa");
-    let gpu = Calculo::nuevo(&Opciones { antialias, ..Opciones::default() })?;
+    let argumentos: Vec<_> = std::env::args().collect();
+    let muestras = argumentos
+        .windows(2)
+        .find(|par| par[0] == "--muestras")
+        .map(|par| par[1].parse::<u32>())
+        .transpose()?
+        .unwrap_or(4);
+    let gpu = Calculo::nuevo(&Opciones { antialias, muestras, ..Opciones::default() })?;
     let codigo = [telar_kernel::compilar_con_cache(), hilo_spirv::rejilla::generar(), hilo_spirv::rejilla::deformar()];
     let etapas = KernelsProcedurales { preparar: &codigo[0], generar: &codigo[1], deformar: &codigo[2] }.etapas();
     let cabecera = arranque::crear(gpu.perfil(), 256, etapas.len())?;
@@ -36,7 +43,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     .bloque()?;
     println!("GPU {} · Vulkan validación {} · 1280x720 · 256x256 puntos", gpu.dispositivo(), gpu.validacion());
-    println!("MSAA solicitado: {antialias} (capacidad real devuelta por las capturas)");
+    println!("MSAA activado: {antialias} · máximo {muestras}x (capacidad real devuelta por las capturas)");
     println!(
         "Timestamps de dibujo+limpieza+barreras, sin overlay visible; excluye creación, compute y descarga. 2 calentamientos y 9 muestras intercaladas."
     );

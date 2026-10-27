@@ -63,7 +63,8 @@ impl Visor {
         formato: u32,
         constantes: &'a [f32; 32],
     ) -> Result<Option<Escena<'a>>, String> {
-        if self.pipeline.as_ref().is_none_or(|p| p.formato != formato) {
+        let muestras = ctx.muestras(formato)?;
+        if self.pipeline.as_ref().is_none_or(|p| p.formato != formato || p.muestras != muestras) {
             esperar(ctx)?;
             self.pipeline = None;
             self.pipeline = Some(if let Some(residente) = &self.procedural {

@@ -25,6 +25,9 @@
 .boton { background-color: var(--elevado); color: var(--texto); border-color: #414959; border-width: 1px; border-radius: 5px; padding: 8px; width: 98px; height: 30px; font-size: 12px; }
 .boton:hover { background-color: #333c49; border-color: var(--acento); }
 .boton:checked { color: var(--acento); }
+.calidad { background-color: var(--elevado); color: var(--texto); border-color: #414959; border-width: 1px; border-radius: 4px; padding: 4px; font-size: 12px; }
+.calidad:hover { background-color: #333c49; border-color: var(--acento); }
+.calidad:checked { color: var(--acento); border-color: var(--acento); }
 .muestra { border-color: #596173; border-width: 1px; border-radius: 5px; gap: 8px; height: 30px; }
 .muestra:checked { border-color: var(--acento); border-width: 2px; }
 .muestra:hover { border-color: #e2e6ef; }

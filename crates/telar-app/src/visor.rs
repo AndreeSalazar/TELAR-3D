@@ -60,6 +60,8 @@ pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
     let fuente = if modo.procedural { Some(crate::tipografia::crear()?) } else { None };
     preparar_interfaz(&mut gpu, fuente.as_ref())?;
     let mut controles = Controles::nuevo(modo.procedural);
+    controles.estudio.salida.muestras_reales = gpu.muestras()?;
+    let mut muestras_aplicadas = 4;
     controles.estudio.configurar_capacidad(capacidad);
     let fondo = cargar_estilos(modo, &mut controles)?;
     let mut tamano_ui = (0, 0);
@@ -76,6 +78,9 @@ pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
             }
         }
         let dt = anterior.elapsed().as_secs_f32();
+        if modo.procedural {
+            crate::calidad::sincronizar(&mut gpu, &mut controles, &mut muestras_aplicadas)?;
+        }
         anterior = Instant::now();
         controles.avanzar(dt);
         let (_, (ancho, alto)) = gpu.imagenes();

@@ -17,9 +17,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ancho = argumentos.next().map(|v| v.parse::<u32>()).transpose()?.unwrap_or(1280);
     let alto = argumentos.next().map(|v| v.parse::<u32>()).transpose()?.unwrap_or(720);
     let seleccionado = argumentos.next().map(|v| v.parse::<usize>()).transpose()?.unwrap_or(1).min(3);
-    let antialias = argumentos.next().as_deref() != Some("sin-msaa");
+    let muestreo = argumentos.next().unwrap_or_else(|| "4".to_owned());
+    let muestras = if muestreo == "sin-msaa" { 1 } else { muestreo.parse::<u32>()? };
     let tamano = (ancho, alto);
-    let gpu = Calculo::nuevo(&Opciones { antialias, ..Opciones::default() })?;
+    let gpu = Calculo::nuevo(&Opciones { muestras, ..Opciones::default() })?;
     let codigo = [telar_kernel::compilar_con_cache(), hilo_spirv::rejilla::generar(), hilo_spirv::rejilla::deformar()];
     let relieve = hilo::ejemplos::relieve_dinamico()?.compilar();
     let mut etapas =
@@ -29,6 +30,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut residente = gpu.procedural_con_plan(256, PlanProcedural::nuevo(&etapas)?.con_arranque(&cabecera)?)?;
     let mut estudio = Estudio::default();
     estudio.seleccionado = seleccionado;
+    estudio.salida.muestras = muestras;
+    estudio.salida.muestras_reales = gpu.muestras_de_captura()?;
     let diseno = estudio.distribucion(tamano);
     residente.paso(ParametrosProcedurales { lado: 256, fase: 0.6, amplitud: estudio.onda.amplitud })?;
     let escena = [telar_render::vertices(), telar_render::fragmentos_rejilla(telar_render::LuzArea::default())?];

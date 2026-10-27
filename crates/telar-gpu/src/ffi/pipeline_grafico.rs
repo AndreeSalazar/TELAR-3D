@@ -37,7 +37,7 @@ pub(crate) struct PipelineGrafico {
     /// El formato de color para el que se creó.
     pub(crate) formato: u32,
     interfaz: bool,
-    muestras: u32,
+    pub(crate) muestras: u32,
 }
 
 impl PipelineGrafico {

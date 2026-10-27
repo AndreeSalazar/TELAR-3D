@@ -23,3 +23,9 @@ Coste lógico adicional 4x: 28 B/píxel (24,61 MiB a 1280x720 para RGBA8/D32),
 sin contar alineación ni pico físico. Dibujo y resolución ocurren en GPU; la escena
 medida pasa de 0,8330 a 1,4495 ms. DISTINTO, mayor coste por contorno más suave.
 El host prepara y envía; no filtra píxeles en CPU durante el visor vivo. Ver docs/ANTIALIAS.md.
+
+Calidad seleccionable 1x/2x/4x: capacidades guardadas por formato; cambiar
+el modo efectivo espera trabajo GPU y reemplaza adjuntos/pipelines gráficos.
+Compute se conserva. Incremento lógico 2x: 12 B/píxel; 4x: 28 B/píxel
+(RGBA8/D32). El pico durante el reemplazo no se midió.
+Evidencia adicional: docs/CALIDAD-RENDER.md y tests/calidad_visor.rs de telar-app.

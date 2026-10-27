@@ -21,9 +21,21 @@ const _: () = assert!(core::mem::offset_of!(PropiedadesImagen, muestras) == 20);
 
 impl Contexto {
     pub(crate) fn muestras(&self, formato: u32) -> Result<u32, String> {
-        if !self.antialias {
+        if !self.antialias || self.muestras_solicitadas == 1 {
             return Ok(1);
         }
+        let existente = self.formatos_muestras.borrow().iter().find(|(f, _)| *f == formato).map(|(_, m)| *m);
+        let disponibles = if let Some(mascara) = existente {
+            mascara
+        } else {
+            let mascara = self.consultar_muestras(formato)?;
+            self.formatos_muestras.borrow_mut().push((formato, mascara));
+            mascara
+        };
+        Ok([4, 2, 1].into_iter().find(|m| *m <= self.muestras_solicitadas && disponibles & m != 0).unwrap_or(1))
+    }
+
+    fn consultar_muestras(&self, formato: u32) -> Result<u32, String> {
         let consultar = |formato, uso| {
             let mut propiedades = PropiedadesImagen {
                 extension: Extension3D { ancho: 0, alto: 0, fondo: 0 },
@@ -39,14 +51,7 @@ impl Contexto {
             ok(resultado, "consultar muestras de imagen")?;
             Ok::<_, String>(propiedades.muestras)
         };
-        let disponibles = consultar(formato, USO_COLOR_ATTACHMENT)? & consultar(FORMATO_PROFUNDIDAD, USO_PROFUNDIDAD)?;
-        Ok(if disponibles & 4 != 0 {
-            4
-        } else if disponibles & 2 != 0 {
-            2
-        } else {
-            1
-        })
+        Ok(consultar(formato, USO_COLOR_ATTACHMENT)? & consultar(FORMATO_PROFUNDIDAD, USO_PROFUNDIDAD)?)
     }
 }
 

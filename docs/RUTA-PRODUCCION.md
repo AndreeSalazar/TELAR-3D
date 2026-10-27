@@ -1,6 +1,6 @@
 # Ruta hacia el estudio VFX y el render de producción
 
-Estado del **27 de octubre de 2026**, después de los parámetros por nodo (`9b4da19`).
+Estado del **27 de octubre de 2026**, con parámetros por nodo y selección MSAA 1x/2x/4x en Salida.
 Objetivo personal: TELAR 3D con un flujo procedural inspirado en Houdini y una
 dirección visual cinematográfica inspirada en RenderMan. Código y contratos propios;
 no se afirma compatibilidad ni equivalencia con esos productos.
@@ -26,7 +26,7 @@ de añadir escenas, efectos y millones de rayos con dependencias complejas.
 | Interfaz | CSS nativo e inspector propio por nodo | No crea instancias ni reconecta cables aún |
 | Render | GGX, luz de área, autosombra de campo de alturas | Sin BVH, GI, trazado de caminos ni acumulación HDR |
 | `.tlar` | Exporta/inspecciona arranque y coordinador | Todavía no conserva escenas ni los ajustes del inspector |
-| Bordes | MSAA nativo incorporado en esta entrega | Reduce aliasing de cobertura; no aumenta detalle geométrico |
+| Bordes | MSAA nativo seleccionable 1x/2x/4x; ver CALIDAD-RENDER.md | Reduce aliasing de cobertura; no aumenta detalle geométrico |
 
 ## Orden propuesto y criterios de aceptación
 

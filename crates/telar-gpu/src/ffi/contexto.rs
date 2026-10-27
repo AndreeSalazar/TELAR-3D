@@ -55,6 +55,8 @@ pub(crate) fn ok(resultado: i32, que: &str) -> Result<(), String> {
 /// Instancia, dispositivo y cola. Se destruye en orden inverso (Drop).
 pub(crate) struct Contexto {
     pub(crate) antialias: bool,
+    pub(crate) muestras_solicitadas: u32,
+    pub(crate) formatos_muestras: std::cell::RefCell<Vec<(u32, u32)>>,
     pub(crate) fi: FnInstancia,
     pub(crate) fd: Option<FnDispositivo>,
     pub(crate) instancia: Instancia,
@@ -100,6 +102,8 @@ impl Contexto {
         // A partir de aquí, cualquier error suelta lo creado en Drop.
         let mut ctx = Self {
             antialias: true,
+            muestras_solicitadas: 4,
+            formatos_muestras: std::cell::RefCell::new(Vec::new()),
             fi,
             fd: None,
             instancia,

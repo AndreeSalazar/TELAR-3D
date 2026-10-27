@@ -57,3 +57,25 @@ fn cambiar_seleccion_durante_arrastre_no_transfiere_el_control() {
     assert!(!estudio.mover(diseno, rect.x + rect.ancho));
     assert_eq!(estudio.relieve.factor, 1.3);
 }
+
+#[test]
+fn calidad_es_propia_de_salida_y_no_solapa_los_deslizadores() {
+    let mut estudio = Estudio::default();
+    for tamano in [(800, 600), (1280, 720), (1920, 1080)] {
+        let diseno = estudio.distribucion(tamano);
+        assert!(diseno.control(1).y + diseno.control(1).alto < diseno.calidad(0).y);
+        assert!(diseno.calidad(0).y + diseno.calidad(0).alto < diseno.pausa().y);
+        estudio.seleccionado = 3;
+        for (indice, muestras) in [1, 2, 4].into_iter().enumerate() {
+            let boton = diseno.calidad(indice);
+            estudio.pulsar(diseno, boton.x + 10.0, boton.y + 10.0);
+            assert_eq!(estudio.salida.muestras, muestras);
+            assert_eq!(estudio.salida.exposicion, 1.4);
+            assert_eq!(estudio.onda.amplitud, 0.35);
+        }
+        estudio.seleccionado = 1;
+        let oculto = diseno.calidad(0);
+        estudio.pulsar(diseno, oculto.x + 10.0, oculto.y + 10.0);
+        assert_eq!(estudio.salida.muestras, 4);
+    }
+}

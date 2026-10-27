@@ -107,6 +107,17 @@ impl Presentacion {
         self.rehacer = true;
     }
 
+    pub(crate) fn actualizar_muestreo(&mut self, ctx: &Contexto) -> Result<(), String> {
+        let Some(sc) = self.swapchain.as_mut() else {
+            return Ok(());
+        };
+        // SAFETY: dispositivo propio; los adjuntos antiguos solo se reemplazan tras completar todos sus usos.
+        ok(unsafe { (self.fd.esperar)(self.dispositivo) }, "esperar cambio de calidad")?;
+        let nuevos = super::multimuestreo::Adjuntos::nuevos(ctx, sc.formato, sc.extension)?;
+        sc.adjuntos = nuevos;
+        Ok(())
+    }
+
     /// (Re)crea la swapchain para el tamaño actual de la ventana. Si está
     /// minimizada se queda la que había y se reintenta en el próximo dibujo.
     fn crear_swapchain(&mut self, ctx: &Contexto) -> Result<(), String> {

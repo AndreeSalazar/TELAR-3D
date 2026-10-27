@@ -70,3 +70,7 @@ esta página sale de `telar-app/examples/capturar_estudio.rs`: Vulkan real, 256�
 puntos, imagen 1280×720, sin capturar otras ventanas ni una maqueta HTML.
 
 Contrato y evidencia de parámetros vivos: [NODOS-PARAMETROS.md](../../docs/NODOS-PARAMETROS.md).
+
+Salida expone calidad MSAA 1x/2x/4x. El backend acepta `Opciones::muestras`
+y `Gpu::configurar_muestras`; el inspector muestra la cantidad efectiva.
+[Contrato, pruebas y coste](../../docs/CALIDAD-RENDER.md).

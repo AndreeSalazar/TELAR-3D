@@ -132,12 +132,26 @@ impl Distribucion {
     #[must_use]
     #[allow(clippy::cast_precision_loss, reason = "índice limitado a dos controles")]
     pub fn control(self, indice: usize) -> Rectangulo {
-        let y = self.ajustes.y + 104.0 + self.control[1] + indice.min(1) as f32 * (self.control[0] + self.control[2]);
+        let (alto, espacio) = if self.ajustes.alto < 280.0 { (16.0, 24.0) } else { (self.control[0], self.control[2]) };
+        let y = self.ajustes.y + 104.0 + self.control[1] + indice.min(1) as f32 * (alto + espacio);
         Rectangulo {
             x: self.ajustes.x + self.relleno,
             y,
             ancho: self.ajustes.ancho - self.relleno * 2.0,
-            alto: self.control[0].min((self.pausa().y - y - 2.0).max(1.0)),
+            alto: alto.min((self.pausa().y - y - 2.0).max(1.0)),
+        }
+    }
+
+    /// Selector discreto de MSAA, visible únicamente en Salida.
+    #[must_use]
+    #[allow(clippy::cast_precision_loss, reason = "tres botones")]
+    pub fn calidad(self, indice: usize) -> Rectangulo {
+        let ancho = (self.ajustes.ancho - self.relleno * 2.0 - 88.0 - 12.0) / 3.0;
+        Rectangulo {
+            x: self.ajustes.x + self.relleno + 88.0 + indice.min(2) as f32 * (ancho + 6.0),
+            y: self.pausa().y - 32.0,
+            ancho,
+            alto: 24.0,
         }
     }
 

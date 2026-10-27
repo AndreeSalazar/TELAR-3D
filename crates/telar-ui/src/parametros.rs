@@ -22,6 +22,10 @@ pub struct Relieve {
 }
 /// Presentación del resultado; no modifica geometría.
 pub struct Salida {
+    /// Máximo MSAA elegido: 1, 2 o 4.
+    pub muestras: u32,
+    /// Cantidad efectiva informada por el backend, que puede ser menor.
+    pub muestras_reales: u32,
     /// Exposición, de 0,25 a cuatro.
     pub exposicion: f32,
     /// Rugosidad GGX, de 0,08 a uno.

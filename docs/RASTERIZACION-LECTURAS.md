@@ -109,7 +109,7 @@ eso no traslada el trabajo del visor vivo al host.
 | Experimento propuesto | Qué comparar | Condición antes de adoptarlo |
 |---|---|---|
 | Referencia matemática de cobertura | Triángulos compartidos, degenerados, recorte y posiciones de muestra | Sin huecos ni dobles coberturas indebidas bajo las reglas elegidas |
-| MSAA 1x/2x/4x | Contorno, estabilidad, memoria y tiempo GPU | Añadir selección explícita de 2x para el benchmark; hoy se solicita hasta 4x o se desactiva |
+| MSAA 1x/2x/4x | Contorno, estabilidad, memoria y tiempo GPU | Selección explícita 1x/2x/4x implementada en Salida y benchmark; ver CALIDAD-RENDER.md |
 | Descartar trabajo invisible | Coste de clasificación frente al dibujo evitado | No descartar objetos visibles; mejorar el tiempo total en la escena medida |
 | Pruebas tempranas/profundidad | Fragmentos evitados y coste de una pasada adicional, si la hubiera | Respetar semántica del shader y demostrar beneficio; no asumirlo |
 | Detalle adaptativo de superficies | Error de silueta en pantalla y triángulos emitidos | Presupuesto acotado y sin grietas ni saltos inaceptables |

@@ -123,3 +123,7 @@ El test `el_primer_kernel_da_lo_mismo_en_la_gpu_que_en_la_cpu` lo exige con 1 04
 
 El inspector ya expone ajustes propios por nodo; Relieve usa HILO dinámico sin
 recompilar al editar. Ver [contrato y pruebas](../../docs/NODOS-PARAMETROS.md).
+
+Salida expone calidad MSAA 1x/2x/4x. El backend acepta `Opciones::muestras`
+y `Gpu::configurar_muestras`; el inspector muestra la cantidad efectiva.
+[Contrato, pruebas y coste](../../docs/CALIDAD-RENDER.md).
