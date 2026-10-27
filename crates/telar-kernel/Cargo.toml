@@ -1,0 +1,17 @@
+[package]
+name = "telar-kernel"
+description = "Coordinador GPU de TELAR: ABI, servicios residentes y emisión SPIR-V"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[package.metadata.telar]
+puede-usar = ["hilo-spirv"]
+
+[dependencies]
+hilo-spirv = { path = "../hilo-spirv" }
+
+[lints]
+workspace = true

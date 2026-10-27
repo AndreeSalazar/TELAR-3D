@@ -14,6 +14,7 @@ use super::{
 };
 use crate::eleccion::{MEMORIA_COHERENTE, MEMORIA_CON_CACHE, MEMORIA_VISIBLE, nanosegundos};
 use crate::{Constantes, DiagnosticoProcedural, FORMATO_CAPTURA, Sombreadores};
+use crate::{PALABRAS_CONTROL_PROCEDURAL, procedural::TAMANO_CONTROL};
 
 impl Residente {
     pub(crate) fn capturar_estudio(
@@ -83,7 +84,7 @@ impl Residente {
         let ranura = &self.ranuras[0];
         let nv = ranura.malla.vertices.tamano;
         let ni = ranura.malla.indices.tamano;
-        let bytes = 64 + nv + ni;
+        let bytes = TAMANO_CONTROL + nv + ni;
         let lectura =
             Buffer::nuevo(ctx, bytes, BUFFER_TRANSFER_DST, (MEMORIA_VISIBLE | MEMORIA_COHERENTE, MEMORIA_CON_CACHE))?;
         una_vez(ctx, |fd, cmd| {
@@ -111,9 +112,9 @@ impl Residente {
                     nulo.cast(),
                 );
                 for (buffer, destino, tamano) in [
-                    (ranura.control.objeto, 0, 64),
-                    (ranura.malla.vertices.objeto, 64, nv),
-                    (ranura.malla.indices.objeto, 64 + nv, ni),
+                    (ranura.control.objeto, 0, TAMANO_CONTROL),
+                    (ranura.malla.vertices.objeto, TAMANO_CONTROL, nv),
+                    (ranura.malla.indices.objeto, TAMANO_CONTROL + nv, ni),
                 ] {
                     let copia = Copia { origen: 0, destino, tamano };
                     (fd.calculo.copiar_buffer)(cmd, buffer, lectura.objeto, 1, &raw const copia);
@@ -130,14 +131,21 @@ impl Residente {
         let datos = lectura.leer(usize::try_from(bytes).map_err(|_| "diagnóstico demasiado grande")?)?;
         self.actividad.descargados += bytes;
         let palabras: Vec<u32> = datos.as_chunks::<4>().0.iter().map(|b| u32::from_ne_bytes(*b)).collect();
-        let control: [u32; 16] = palabras[..16].try_into().map_err(|_| "control incompleto")?;
+        let cabecera = PALABRAS_CONTROL_PROCEDURAL;
+        let control: [u32; PALABRAS_CONTROL_PROCEDURAL] =
+            palabras[..cabecera].try_into().map_err(|_| "control incompleto")?;
         let puntos = control[9] as usize;
         let indices = control[3] as usize;
         if puntos > (nv / 24) as usize || indices > (ni / 4) as usize {
             return Err("los recuentos GPU exceden la capacidad".to_owned());
         }
-        let vertices = palabras[16..16 + puntos * 6].as_chunks::<6>().0.iter().map(|v| v.map(f32::from_bits)).collect();
-        let desde = 16 + (nv / 4) as usize;
+        let vertices = palabras[cabecera..cabecera + puntos * 6]
+            .as_chunks::<6>()
+            .0
+            .iter()
+            .map(|v| v.map(f32::from_bits))
+            .collect();
+        let desde = cabecera + (nv / 4) as usize;
         let indices = palabras[desde..desde + indices].to_vec();
         let etapas = ranura.etapas.iter().map(|etapa| etapa.nombre.clone()).collect();
         Ok(DiagnosticoProcedural { control, vertices, indices, etapas, nanosegundos: self.tiempos(ctx)? })

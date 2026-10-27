@@ -32,7 +32,7 @@ pub static REGLAS: [Regla; 10] = [
     },
     Regla {
         id: "nucleo-sin-std",
-        titulo: "nudo, hilo, hilo-spirv y telar-nodos: #![no_std], solo core y alloc",
+        titulo: "nudo, hilo, hilo-spirv, telar-nodos y telar-kernel: #![no_std], solo core y alloc",
         motivo: "que el núcleo funcione en cualquier sistema, también en BMO-X",
         arreglo: "usa `core::`/`alloc::`; lo que necesite el sistema va en telar-gpu o telar-app, y los tests en tests/",
         revisar: nucleo::revisar,

@@ -12,7 +12,7 @@ pub(crate) fn preparar(gpu: &mut Gpu, modo: &Modo) -> Result<(u32, usize), Strin
     let capacidad = modo.puntos.isqrt().clamp(2, 1024);
     let puntos = if modo.procedural {
         let (preparar, generar, deformar) =
-            (hilo_spirv::rejilla::preparar(), hilo_spirv::rejilla::generar(), hilo_spirv::rejilla::deformar());
+            (telar_kernel::compilar(), hilo_spirv::rejilla::generar(), hilo_spirv::rejilla::deformar());
         let relieve = hilo::ejemplos::relieve(1.3).map_err(|error| error.to_string())?.compilar();
         let mut etapas =
             KernelsProcedurales { preparar: &preparar, generar: &generar, deformar: &deformar }.etapas().to_vec();

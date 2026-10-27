@@ -11,12 +11,15 @@ pub enum DominioProcedural {
     /// Lee parámetros, control y vértices; escribe vértices activos.
     /// Debe conservar x/z para que la caché de esta demostración siga siendo válida.
     Puntos,
+    /// Una invocación escribe solicitudes de servicios en el control residente.
+    /// Puede ejecutarse aun con geometría vacía o trabajo suspendido.
+    Servicio,
 }
 
 impl DominioProcedural {
     pub(crate) const fn argumento(self) -> Option<u64> {
         match self {
-            Self::Preparar => None,
+            Self::Preparar | Self::Servicio => None,
             Self::Generar => Some(48),
             Self::Puntos => Some(0),
         }
@@ -35,7 +38,7 @@ pub struct EtapaProcedural<'a> {
 }
 
 /// Secuencia validada de 2..=32 etapas. Las dependencias se graban una vez:
-/// productor → generador → cero o más operaciones por punto → dibujo.
+/// productor → generador → cero o más operaciones por punto/servicio → dibujo.
 /// Es extensible en operaciones; conserva el ABI de geometría de la rejilla.
 #[derive(Clone, Copy)]
 pub struct PlanProcedural<'a> {
@@ -55,13 +58,15 @@ impl<'a> PlanProcedural<'a> {
             return Err("el plan requiere de 2 a 32 etapas".to_owned());
         }
         for (indice, etapa) in etapas.iter().enumerate() {
-            let esperado = match indice {
-                0 => DominioProcedural::Preparar,
-                1 => DominioProcedural::Generar,
-                _ => DominioProcedural::Puntos,
+            let valido = match indice {
+                0 => etapa.dominio == DominioProcedural::Preparar,
+                1 => etapa.dominio == DominioProcedural::Generar,
+                _ => matches!(etapa.dominio, DominioProcedural::Puntos | DominioProcedural::Servicio),
             };
-            if etapa.dominio != esperado {
-                return Err(format!("etapa {indice}: se esperaba el dominio {esperado:?}"));
+            if !valido {
+                return Err(format!(
+                    "etapa {indice}: dominio incompatible con productor → generador → puntos/servicios"
+                ));
             }
             if etapa.nombre.trim().is_empty() || etapas[..indice].iter().any(|e| e.nombre == etapa.nombre) {
                 return Err(format!("etapa {indice}: el nombre debe ser no vacío y único"));

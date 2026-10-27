@@ -14,7 +14,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let alto = argumentos.next().map(|v| v.parse::<u32>()).transpose()?.unwrap_or(720);
     let tamano = (ancho, alto);
     let gpu = Calculo::nuevo(&Opciones::default())?;
-    let codigo = [hilo_spirv::rejilla::preparar(), hilo_spirv::rejilla::generar(), hilo_spirv::rejilla::deformar()];
+    let codigo = [telar_kernel::compilar(), hilo_spirv::rejilla::generar(), hilo_spirv::rejilla::deformar()];
     let relieve = hilo::ejemplos::relieve(1.3)?.compilar();
     let mut etapas =
         KernelsProcedurales { preparar: &codigo[0], generar: &codigo[1], deformar: &codigo[2] }.etapas().to_vec();

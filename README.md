@@ -14,6 +14,13 @@ en GPU. La esfera histórica se conserva con `--esfera-cpu`.
 El relieve del visor ya se compila desde el IR tipado de **HILO**, con intérprete
 CPU para verificar los resultados. La sintaxis textual del lenguaje sigue pendiente.
 
+**Coordinador GPU propio:** `telar-kernel` reúne el ABI y servicios internos para
+rehacer topología, suspender y reanudar trabajo mediante un buzón residente.
+El visor usa ese coordinador; trabajadores GPU pueden emitir solicitudes sin
+descargarlas a CPU. Es el primer contrato de servicios para esta ruta, todavía
+sin cola general, asignador GPU de memoria ni administración completa del grafo.
+Ver [su contrato y alcance](crates/telar-kernel/README.md).
+
 **Primer estudio visual:** visor amplio y grafo con nodos seleccionables y arrastrables, inspector con amplitud y
 velocidad, pausa y tres colores de vista previa. La interfaz se dibuja en Vulkan
 y deja el cálculo procedural en GPU. Todavía no es un editor de grafos libre.

@@ -16,7 +16,7 @@ cargo verify          guardián + rustfmt + clippy pedantic + tests (y activa lo
 |---|---|
 | `cero-deps` | en los `Cargo.toml`, solo dependencias por ruta dentro de `crates/` (tablas en línea, `[dependencies.x]` y `[target.….dependencies]` incluidas) |
 | `fronteras` | cada crate usa solo los crates que declara en `[package.metadata.telar] puede-usar`; `telar-ventana` y `telar-gpu`, aisladas por completo (ni entre ellas); el núcleo solo usa el núcleo |
-| `nucleo-sin-std` | `nudo`, `hilo`, `hilo-spirv` y `telar-nodos`: `#![no_std]`, sin `std::` ni `extern crate std` |
+| `nucleo-sin-std` | `nudo`, `hilo`, `hilo-spirv`, `telar-nodos` y `telar-kernel`: `#![no_std]`, sin `std::` ni `extern crate std` |
 | `unsafe-acotado` | `unsafe` (y `allow(unsafe_code)`) solo en `crates/*/src/ffi/`, con `// SAFETY:` en el bloque de comentarios justo encima, o `/// # Safety` en una `unsafe fn`; los tipos de puntero a función no lo necesitan |
 | `ffi-aislada` | `extern "…"`, `#[link]`, `LoadLibraryW`, `GetProcAddress`, `dlopen` y `dlsym`, solo en `src/ffi/` |
 | `tamano` | ningún archivo de código pasa de 400 líneas |

@@ -16,6 +16,16 @@ Los grafos con recursos arbitrarios siguen pendientes. El relieve del visor se
 compila desde el IR HILO al preparar la escena. `hilo` usa `hilo-spirv` y la
 matemática pura de `nudo`; `telar-app` pasa los bytes al backend GPU aislado.
 
+El coordinador del visor ya pertenece a `telar-kernel`, una pieza `no_std` que
+emite SPIR-V y no conoce Vulkan. El control creció a 128 bytes: conserva los
+primeros 16 u32 e incorpora un buzón de servicios residente, versión y contadores.
+Trabajadores GPU pueden pedir rehacer topología, suspender y reanudar trabajo.
+La próxima pasada del coordinador consume la petición y publica argumentos sin
+descargarla al host. Las pasadas de dominio `Servicio` ejecutan una invocación
+incluso suspendidas, por lo que pueden solicitar reanudación. El buzón admite una
+entrada y productores serializados; no es todavía una cola general concurrente.
+El contrato y las limitaciones están en `crates/telar-kernel/README.md`.
+
 Ya existe una primera interfaz: `telar-ui` produce estado y
 triángulos; la app conecta sus controles con los parámetros GPU. El backend
 dibuja el overlay en un pipeline 2D y mantiene sus propios buffers por juego.

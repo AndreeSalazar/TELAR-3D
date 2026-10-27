@@ -2,6 +2,10 @@
 
 use crate::{Calculo, Constantes, DominioProcedural, EtapaProcedural, Gpu, PlanProcedural, Sombreadores, ffi};
 
+/// Palabras del control procedural: 16 de geometría y 16 de servicios GPU.
+pub const PALABRAS_CONTROL_PROCEDURAL: usize = 32;
+pub(crate) const TAMANO_CONTROL: u64 = (PALABRAS_CONTROL_PROCEDURAL * 4) as u64;
+
 /// Tres programas con el ABI documentado en hilo-spirv: productor, generador y deformador.
 #[derive(Clone, Copy)]
 pub struct KernelsProcedurales<'a> {
@@ -73,7 +77,7 @@ pub struct ActividadProcedural {
 /// Copia diagnóstica del estado GPU; nunca interviene en las decisiones del paso.
 pub struct DiagnosticoProcedural {
     /// Dispatch, draw y estado, según el ABI del buffer de control.
-    pub control: [u32; 16],
+    pub control: [u32; PALABRAS_CONTROL_PROCEDURAL],
     /// Vértices activos, posición y normal.
     pub vertices: Vec<[f32; 6]>,
     /// Índices activos.

@@ -39,7 +39,7 @@ Su ABI actual es el de la demostración
 de rejilla; todavía no es un ejecutor de grafos arbitrarios.
 
 `PlanProcedural` permite de 2 a 32 operaciones: preparar, generar y cero o más
-pasadas por punto. Cada `EtapaProcedural` declara nombre, código SPIR-V y dominio;
+pasadas por punto o de servicio. Cada `EtapaProcedural` declara nombre, código SPIR-V y dominio;
 el dominio especifica el argumento indirecto y el contrato de buffers. El orden
 expresa dependencias, con barreras conservadoras entre pasadas. Nombres, dominios
 y cabeceras se validan antes de crear recursos. Esto no demuestra seguridad del
@@ -49,6 +49,9 @@ Usar `Gpu::preparar_plan_procedural` o `Calculo::procedural_con_plan` para plane
 nuevos. Cada operación tiene su nombre y tiempo GPU en `DiagnosticoProcedural`.
 No se recorre el plan desde CPU por fotograma. El visor predeterminado encadena
 preparar → generar → deformar → relieve, con 8 pipelines para dos juegos.
+Las pasadas `Servicio` se despachan con una invocación aunque los argumentos
+indirectos por punto sean cero. El backend no interpreta sus solicitudes: el
+coordinador SPIR-V suministrado por `telar-kernel` las atiende en GPU.
 
 | Módulo residente | Responsabilidad |
 |---|---|
@@ -61,12 +64,17 @@ preparar → generar → deformar → relieve, con 8 pipelines para dos juegos.
 La presentación espera su valla antes de escribir parámetros y envía el lote
 de compute pregrabado seguido del dibujo. El dibujo usa argumentos GPU desde
 el byte 12 del buffer de control. No se consulta un contador desde CPU.
-El buffer de control tiene 64 bytes: el despacho de generación empieza en el
+El buffer de control tiene 128 bytes: el despacho de generación empieza en el
 byte 48 y el de deformación en el byte 0. El productor mantiene la caché de
 dimensiones y escribe cero grupos de generación cuando la geometría sigue
 vigente. Se inicializa el control una sola vez con `vkCmdFillBuffer`, con una
 barrera transfer → compute antes de leerlo. La inicialización está fuera del
 bucle y del contador de grabaciones de compute reutilizables.
+
+Las primeras 16 palabras conservan la geometría; las siguientes 16 quedan para
+servicios residentes. `DiagnosticoProcedural::control` devuelve ahora 32 u32;
+`PALABRAS_CONTROL_PROCEDURAL` publica esa dimensión sin depender del compilador.
+La prueba de integración comprueba que coincide con el ABI del kernel aislado.
 
 Los parámetros quedan mapeados durante toda la vida del ejecutor: `BufferMapeado`
 se desmapea al destruirse, después de completar las vallas y antes de liberar

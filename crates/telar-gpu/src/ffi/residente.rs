@@ -11,6 +11,7 @@ use super::{
     tipos_grafico::{BUFFER_INDICES, BUFFER_VERTICES},
 };
 use crate::eleccion::{MEMORIA_COHERENTE, MEMORIA_GPU, MEMORIA_VISIBLE};
+use crate::procedural::TAMANO_CONTROL;
 use crate::{ActividadProcedural, DominioProcedural, ParametrosProcedurales, PlanProcedural};
 
 pub(super) struct EtapaResidente {
@@ -121,15 +122,18 @@ impl Ranura {
             BUFFER_ALMACEN | BUFFER_INDICES | BUFFER_TRANSFER_SRC,
             (MEMORIA_GPU, 0),
         )?;
-        let control =
-            crear(64, BUFFER_ALMACEN | BUFFER_INDIRECTO | BUFFER_TRANSFER_SRC | BUFFER_TRANSFER_DST, (MEMORIA_GPU, 0))?;
+        let control = crear(
+            TAMANO_CONTROL,
+            BUFFER_ALMACEN | BUFFER_INDIRECTO | BUFFER_TRANSFER_SRC | BUFFER_TRANSFER_DST,
+            (MEMORIA_GPU, 0),
+        )?;
         actividad.mapeos += 1;
         // GPU: inicializa la caché una sola vez; el lote publica transfer → compute.
         una_vez(ctx, |fd, comando| {
-            // SAFETY: buffer de 64 bytes, uso TRANSFER_DST; vive hasta completar
+            // SAFETY: buffer completo, uso TRANSFER_DST; vive hasta completar
             // la valla de inicialización y durante todas las ejecuciones siguientes.
             unsafe {
-                (fd.calculo.llenar_buffer)(comando, control.objeto, 0, 64, 0);
+                (fd.calculo.llenar_buffer)(comando, control.objeto, 0, TAMANO_CONTROL, 0);
             }
         })?;
         let mut etapas = Vec::with_capacity(plan.etapas().len());
