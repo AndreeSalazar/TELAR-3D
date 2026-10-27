@@ -20,6 +20,8 @@ El visor usa ese coordinador; trabajadores GPU pueden emitir solicitudes sin
 descargarlas a CPU. Es el primer contrato de servicios para esta ruta, todavía
 sin cola general, asignador GPU de memoria ni administración completa del grafo.
 Ver [su contrato y alcance](crates/telar-kernel/README.md).
+Los próximos pasos y la elección de SPIR-V están anotados en
+[el rumbo del kernel](docs/RUMBO-KERNEL.md).
 
 **Primer estudio visual:** visor amplio y grafo con nodos seleccionables y arrastrables, inspector con amplitud y
 velocidad, pausa y tres colores de vista previa. La interfaz se dibuja en Vulkan

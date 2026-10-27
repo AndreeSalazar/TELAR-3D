@@ -1,5 +1,12 @@
 # El plan, por fases
 
+**Prioridad actual del kernel (27 de octubre de 2026):** el coordinador y el
+buzón residentes ya existen. El siguiente hito es validar un contrato de arranque
+antes de ampliar colas, memoria y nodos. La comparación SPIR-V/DXIL/PTX/Metal,
+las ideas propuestas y sus criterios de aceptación están en
+[RUMBO-KERNEL.md](RUMBO-KERNEL.md). Las fases siguientes conservan el contexto
+histórico; ese documento concreta el orden de los próximos pasos del kernel.
+
 Cada fase termina con algo que **funciona y se puede enseñar** (una ventana, un kernel, un vídeo) y con su «hecho cuando», comprobable. No hay fechas: cada fase dura lo que tarde en estar bien. El orden pone primero los guardianes, después ver la GPU pronto (motiva) y, desde ahí, el camino más corto hacia la esfera de fuego.
 
 ## Fase 0 · El taller

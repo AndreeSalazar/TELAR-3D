@@ -25,6 +25,9 @@ descargarla al host. Las pasadas de dominio `Servicio` ejecutan una invocación
 incluso suspendidas, por lo que pueden solicitar reanudación. El buzón admite una
 entrada y productores serializados; no es todavía una cola general concurrente.
 El contrato y las limitaciones están en `crates/telar-kernel/README.md`.
+El diseño del contrato de arranque, la cola general y la memoria por regiones
+se planifica en [RUMBO-KERNEL.md](RUMBO-KERNEL.md), con propuestas pendientes
+separadas de los servicios que ya ejecutan las pruebas.
 
 Ya existe una primera interfaz: `telar-ui` produce estado y
 triángulos; la app conecta sus controles con los parámetros GPU. El backend

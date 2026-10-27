@@ -1,5 +1,10 @@
 # TELAR kernel · coordinador GPU
 
+El siguiente diseño y sus criterios de aceptación están en
+[RUMBO-KERNEL.md](../../docs/RUMBO-KERNEL.md): contrato de arranque, cola,
+regiones de memoria, nodos y primer efecto VFX. Son propuestas; el estado
+implementado se describe a continuación.
+
 Pieza propia en `no_std + alloc`, sin objetos Vulkan ni dependencias de terceros.
 Rust prepara módulos SPIR-V; el coordinador y sus productores ejecutan en GPU.
 El visor ya usa `telar_kernel::compilar()` como primera pasada residente.
