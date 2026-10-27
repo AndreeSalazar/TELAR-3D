@@ -1,0 +1,38 @@
+/* TELAR / grafito. Subconjunto nativo, cajas border-box, medidas en px. */
+:root {
+    --fondo: #13151b;
+    --panel: #1b1e26;
+    --elevado: #242833;
+    --borde: #343947;
+    --texto: #e2e6ef;
+    --tenue: #959eaf;
+    --acento: #80cfbe;
+    --cobre: #ed986f;
+}
+.estudio { background-color: var(--fondo); color: var(--texto); font-size: 13px; line-height: 20px; padding: 12px; gap: 12px; }
+.cabecera { background-color: #1b1e26; border-color: var(--borde); border-width: 1px; height: 52px; padding: 16px; }
+.pie { background-color: #1b1e26; color: var(--tenue); height: 32px; padding: 12px; font-size: 12px; }
+.panel { background-color: var(--panel); border-color: var(--borde); border-width: 1px; border-radius: 8px; padding: 16px; gap: 16px; }
+.inspector { width: 360px; min-width: 300px; max-width: 400px; height: 286px; }
+.visor { background-color: #101218; border-color: var(--borde); border-width: 1px; }
+.barra { background-color: #20232c; color: var(--tenue); height: 36px; padding: 12px; font-size: 12px; }
+.titulo { color: var(--texto); font-size: 21px; line-height: 28px; }
+.etiqueta { color: var(--tenue); font-size: 12px; line-height: 18px; }
+.acento { color: var(--acento); }
+.control { background-color: #363c49; color: var(--acento); height: 24px; margin: 20px; gap: 24px; border-radius: 2px; }
+.control:hover { color: #a4e8da; }
+.valor { background-color: #14171d; border-color: var(--borde); border-width: 1px; border-radius: 5px; width: 64px; height: 26px; font-size: 13px; }
+.boton { background-color: var(--elevado); color: var(--texto); border-color: #414959; border-width: 1px; border-radius: 5px; padding: 8px; width: 98px; height: 30px; font-size: 12px; }
+.boton:hover { background-color: #333c49; border-color: var(--acento); }
+.boton:checked { color: var(--acento); }
+.muestra { border-color: #596173; border-width: 1px; border-radius: 5px; gap: 8px; height: 30px; }
+.muestra:checked { border-color: var(--acento); border-width: 2px; }
+.muestra:hover { border-color: #e2e6ef; }
+.nodo { background-color: #272c37; color: var(--texto); border-color: #495163; border-width: 1px; border-radius: 6px; padding: 12px; gap: 4px; width: 152px; min-width: 116px; height: 56px; font-size: 14px; line-height: 20px; box-shadow: 0px 3px 0px #101218; }
+.nodo:hover { background-color: #303846; border-color: #929eb2; }
+.nodo:checked { background-color: #263c3c; border-color: var(--acento); }
+.nodo:checked:hover { background-color: #2e4847; }
+.puerto { background-color: var(--acento); width: 7px; height: 7px; border-radius: 3px; }
+.salida { background-color: var(--cobre); }
+.hilo { color: #678a88; border-width: 2px; }
+.puntos { color: #343946; gap: 20px; }

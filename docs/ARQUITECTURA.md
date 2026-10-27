@@ -16,11 +16,19 @@ Los grafos con recursos arbitrarios siguen pendientes. El relieve del visor se
 compila desde el IR HILO al preparar la escena. `hilo` usa `hilo-spirv` y la
 matemática pura de `nudo`; `telar-app` pasa los bytes al backend GPU aislado.
 
-Ya existe una primera interfaz: `telar-ui` es independiente y produce estado y
+Ya existe una primera interfaz: `telar-ui` produce estado y
 triángulos; la app conecta sus controles con los parámetros GPU. El backend
 dibuja el overlay en un pipeline 2D y mantiene sus propios buffers por juego.
 La red tiene nodos seleccionables y arrastrables en un lienzo bajo el inspector;
 las conexiones de ejecución siguen fijas, todavía sin edición de topología ni atributos.
+
+`telar-estilo` separa la apariencia del contenido con una hoja CSS nativa:
+variables, clases, estados, cascada, herencia tipográfica y cajas `border-box`.
+`telar-ui` solo depende de esa pieza pura (`no_std + alloc`); `telar-gpu` y
+`telar-ventana` continúan aisladas. La hoja se analiza al crear/personalizar el
+estudio; las cajas se comparten entre pintura y ratón. La app admite
+`--estilo ruta.css` al arrancar. No es un navegador ni implementa CSS completo;
+ver `crates/telar-estilo/README.md` para el alcance exacto.
 
 ## La idea en una frase
 

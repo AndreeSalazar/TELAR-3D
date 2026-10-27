@@ -12,6 +12,7 @@
 //! cargo run -p telar-app -- --segundos 5      visible, y se cierra sola a los 5 s (para medir los fps)
 //! cargo run -p telar-app -- --puntos N        rejilla de unos N puntos (máximo 1024²)
 //! cargo run -p telar-app -- --esfera-cpu      esfera de referencia, cocinada en CPU
+//! cargo run -p telar-app -- --estilo tema.css personaliza la interfaz nativa
 //! cargo run -p telar-app --release -- --calculo [--elementos N]
 //!                                             Fase 2: el primer kernel en la GPU, bit a bit contra la CPU
 //! ```
@@ -50,12 +51,22 @@ fn main() -> ExitCode {
             }
         };
     }
+    let estilo = if let Some(indice) = args.iter().position(|a| a == "--estilo") {
+        let Some(ruta) = args.get(indice + 1).filter(|ruta| !ruta.starts_with("--")) else {
+            eprintln!("telar: --estilo requiere la ruta de una hoja CSS");
+            return ExitCode::FAILURE;
+        };
+        Some(ruta.clone())
+    } else {
+        None
+    };
     let modo = visor::Modo {
         prueba,
         validacion,
         limite: valor("--segundos").map(|s| Duration::from_secs(u64::from(s))),
         puntos: valor("--puntos").unwrap_or(if prueba { PUNTOS_DE_PRUEBA } else { PUNTOS }),
         procedural: !args.iter().any(|a| a == "--esfera-cpu"),
+        estilo,
     };
     match visor::ejecutar(&modo) {
         Ok(r) => {

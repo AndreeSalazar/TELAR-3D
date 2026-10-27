@@ -2,7 +2,7 @@
 # Las reglas (y su porqué) están en CLAUDE.md y docs/GUARDIANES.md.
 [workspace]
 resolver = "3"
-members = ["crates/telar-guard", "crates/telar-ventana", "crates/telar-gpu", "crates/telar-ui", "crates/telar-app", "crates/hilo-spirv", "crates/hilo", "crates/nudo", "crates/telar-nodos"]
+members = ["crates/telar-guard", "crates/telar-ventana", "crates/telar-gpu", "crates/telar-estilo", "crates/telar-ui", "crates/telar-app", "crates/hilo-spirv", "crates/hilo", "crates/nudo", "crates/telar-nodos"]
 
 [workspace.package]
 version = "0.1.0"

@@ -1,27 +1,24 @@
-//! Estudio dividido: visor a la izquierda, ajustes arriba y grafo abajo.
-//! Nudos y cables conservan identidad TELAR con una red de ejecución fija.
-use crate::lienzo::Lienzo;
-use crate::{Distribucion, Estudio, Objetivo, Rectangulo};
+//! Composición semántica; colores, cajas y tipografía salen de la hoja CSS.
+use crate::{Distribucion, Estudio, Objetivo, Rectangulo, lienzo::Lienzo};
 use alloc::{format, vec::Vec};
-
-const PANEL: [f32; 3] = [0.063, 0.078, 0.098];
-const BORDE: [f32; 3] = [0.14, 0.18, 0.22];
-const TEXTO: [f32; 3] = [0.86, 0.90, 0.92];
-const TENUE: [f32; 3] = [0.49, 0.59, 0.65];
-const CIAN: [f32; 3] = [0.23, 0.81, 0.85];
-const COBRE: [f32; 3] = [0.94, 0.49, 0.26];
+use telar_estilo::{Estado, Estilo};
 
 impl Estudio {
-    /// Compone la interfaz al cambiar estado o tamaño, sin modificar la malla 3D.
+    pub(crate) fn estilo(&self, clase: &str, hover: bool, seleccionado: bool) -> Estilo {
+        let raiz = self.hoja.resolver("estudio", Estado::default(), None);
+        self.hoja.resolver(clase, Estado::nuevo(hover, seleccionado), Some(&raiz))
+    }
+
+    /// Compone triángulos al cambiar estado o tamaño; no modifica la malla 3D.
     #[must_use]
     pub fn dibujar(&self, diseno: Distribucion, puntos: u32) -> Vec<[f32; 8]> {
         self.componer(diseno, puntos, None)
     }
 
-    /// Compone con tipografía proporcional y cobertura antialias del atlas.
+    /// Compone con tipografía proporcional y cobertura del atlas.
     ///
     /// # Errors
-    /// Si el atlas no contiene dimensiones y métricas válidas.
+    /// Si el atlas contiene dimensiones o métricas inválidas.
     pub fn dibujar_con_fuente(
         &self,
         diseno: Distribucion,
@@ -34,113 +31,232 @@ impl Estudio {
         Ok(self.componer(diseno, puntos, Some(fuente)))
     }
 
-    #[allow(clippy::cast_precision_loss, reason = "dimensiones de la ventana")]
+    #[allow(clippy::cast_precision_loss, reason = "dimensiones de ventana")]
     fn componer(&self, diseno: Distribucion, puntos: u32, fuente: Option<&crate::Fuente>) -> Vec<[f32; 8]> {
         let mut lienzo = Lienzo::nuevo(diseno.tamano, fuente);
         if !diseno.completa {
             return lienzo.vertices;
         }
+        let base = self.estilo("estudio", false, false);
+        let cabecera = self.estilo("cabecera", false, false);
+        let pie = self.estilo("pie", false, false);
         let (ancho, alto) = (diseno.tamano.0 as f32, diseno.tamano.1 as f32);
-        lienzo.rect(0.0, 0.0, ancho, 52.0, PANEL);
-        lienzo.rect(0.0, 51.0, ancho, 1.0, BORDE);
-        nudo(&mut lienzo, 22.0, 17.0, CIAN);
-        lienzo.texto(48.0, 19.0, "TELAR", 2.0, TEXTO);
-        lienzo.texto(140.0, 24.0, "ESTUDIO / 01", 1.0, TENUE);
-        lienzo.texto(ancho - 128.0, 24.0, "GPU / EN VIVO", 1.0, CIAN);
-        lienzo.texto(24.0, 65.0, "ESCENA / SUPERFICIE", 1.0, TENUE);
-        lienzo.rect(diseno.inspector, 52.0, 1.0, alto - 52.0, BORDE);
-        lienzo.rect(diseno.inspector + 1.0, 52.0, ancho - diseno.inspector - 1.0, alto - 52.0, PANEL);
+        // Los fondos rodean el viewport: nunca cubren la escena ya dibujada en GPU.
+        lienzo.rect(0.0, 0.0, ancho, diseno.cabecera + diseno.margen, base.fondo);
+        lienzo.rect(0.0, diseno.cabecera, diseno.margen, alto - diseno.cabecera, base.fondo);
+        lienzo.rect(
+            diseno.escena.x + diseno.escena.ancho,
+            diseno.cabecera,
+            diseno.espacio,
+            alto - diseno.cabecera,
+            base.fondo,
+        );
+        lienzo.rect(ancho - diseno.margen, diseno.cabecera, diseno.margen, alto - diseno.cabecera, base.fondo);
+        lienzo.rect(0.0, alto - diseno.pie - diseno.margen, ancho, diseno.pie + diseno.margen, base.fondo);
+        lienzo.rect(diseno.red.x, diseno.ajustes.y + diseno.ajustes.alto, diseno.red.ancho, diseno.espacio, base.fondo);
+        lienzo.caja(
+            Rectangulo { x: 0.0, y: -cabecera.grosor, ancho, alto: diseno.cabecera + cabecera.grosor },
+            &cabecera,
+        );
+        let acento = self.estilo("acento", false, false);
+        nudo(&mut lienzo, 22.0, 20.0, acento.color);
+        texto(&mut lienzo, [48.0, 13.0, 100.0, 28.0], "TELAR", &self.estilo("titulo", false, false));
+        texto(&mut lienzo, [152.0, 17.0, 80.0, 22.0], "Estudio", &base);
+        lienzo.rect(152.0, diseno.cabecera - 3.0, 46.0, 2.0, acento.color);
+        texto(
+            &mut lienzo,
+            [252.0, 17.0, ancho - 440.0, 22.0],
+            "Superficie sin título",
+            &self.estilo("etiqueta", false, false),
+        );
+        texto(&mut lienzo, [ancho - 142.0, 17.0, 126.0, 22.0], "GPU conectada", &acento);
+        marco(self, &mut lienzo, diseno.escena, "Escena", Some("Perspectiva · Sombreado"));
         inspector(self, &mut lienzo, diseno);
         grafo(self, &mut lienzo, diseno);
-        lienzo.rect(0.0, alto - 44.0, diseno.inspector, 44.0, PANEL);
-        lienzo.rect(0.0, alto - 44.0, diseno.inspector, 1.0, BORDE);
-        lienzo.texto(24.0, alto - 26.0, if self.pausado { "PAUSADO" } else { "EN VIVO" }, 1.0, CIAN);
-        lienzo.texto(108.0, alto - 26.0, "ARRASTRA: ORBITA   RUEDA: ZOOM", 1.0, TENUE);
-        lienzo.texto(diseno.inspector + 24.0, alto - 25.0, &format!("CAP. {puntos} PUNTOS"), 1.0, TENUE);
+        lienzo.rect(0.0, alto - diseno.pie, ancho, diseno.pie, pie.fondo);
+        texto(
+            &mut lienzo,
+            [20.0, alto - diseno.pie, 100.0, diseno.pie],
+            if self.pausado { "Pausado" } else { "En vivo" },
+            &acento,
+        );
+        texto(
+            &mut lienzo,
+            [120.0, alto - diseno.pie, diseno.escena.ancho - 120.0, diseno.pie],
+            "Arrastrar: órbita    Rueda: zoom",
+            &pie,
+        );
+        texto(
+            &mut lienzo,
+            [diseno.red.x, alto - diseno.pie, diseno.red.ancho, diseno.pie],
+            &format!("{puntos} puntos · 4 etapas"),
+            &pie,
+        );
         lienzo.vertices
     }
 }
 
+fn texto(lienzo: &mut Lienzo, rect: [f32; 4], texto: &str, estilo: &Estilo) {
+    lienzo.etiqueta(Rectangulo { x: rect[0], y: rect[1], ancho: rect[2], alto: rect[3] }, texto, estilo);
+}
+
+fn marco(estudio: &Estudio, lienzo: &mut Lienzo, rect: Rectangulo, titulo: &str, detalle: Option<&str>) {
+    let mut panel = estudio.estilo(if detalle.is_some() { "visor" } else { "panel" }, false, false);
+    if detalle.is_some() {
+        panel.grosor = panel.grosor.clamp(0.0, 4.0);
+    }
+    let barra = estudio.estilo("barra", false, false);
+    let alto = barra.alto.unwrap_or(36.0).clamp(24.0, 40.0);
+    // Borde sin relleno: el panel de escena contiene píxeles de Vulkan.
+    let interior = rect.interior(panel.grosor);
+    lienzo.redondo(Rectangulo { alto: alto - panel.grosor, ..interior }, panel.radio, barra.fondo);
+    lienzo.rect(
+        interior.x,
+        rect.y + panel.radio + panel.grosor,
+        interior.ancho,
+        (alto - panel.radio - panel.grosor).max(0.0),
+        barra.fondo,
+    );
+    if detalle.is_some() {
+        lienzo.rect(rect.x, rect.y, rect.ancho, panel.grosor, panel.borde);
+        lienzo.rect(rect.x, rect.y + rect.alto - panel.grosor, rect.ancho, panel.grosor, panel.borde);
+        lienzo.rect(rect.x, rect.y, panel.grosor, rect.alto, panel.borde);
+        lienzo.rect(rect.x + rect.ancho - panel.grosor, rect.y, panel.grosor, rect.alto, panel.borde);
+    }
+    lienzo.rect(rect.x, rect.y + alto - 1.0, rect.ancho, 1.0, panel.borde);
+    texto(lienzo, [rect.x + barra.relleno, rect.y, rect.ancho - barra.relleno * 2.0, alto], titulo, &barra);
+    if let Some(detalle) = detalle {
+        texto(lienzo, [rect.x + rect.ancho - 190.0, rect.y, 178.0, alto], detalle, &barra);
+    }
+}
+
 fn inspector(estudio: &Estudio, lienzo: &mut Lienzo, diseno: Distribucion) {
-    let x = diseno.inspector + 24.0;
-    lienzo.texto(x, 70.0, "AJUSTES / ESCENA", 1.25, TENUE);
+    let panel = estudio.estilo("panel", false, false);
+    let etiqueta = estudio.estilo("etiqueta", false, false);
+    lienzo.caja(diseno.ajustes, &panel);
+    marco(estudio, lienzo, diseno.ajustes, "Propiedades", None);
+    let contenido = diseno.ajustes.contenido(&panel);
     let titulo = ["Rejilla", "Onda", "Relieve", "Salida"][estudio.seleccionado.min(3)];
-    lienzo.texto(x, 96.0, titulo, 2.0, TEXTO);
-    lienzo.texto(x, 124.0, "PARAMETROS EN VIVO", 1.0, TENUE);
+    texto(
+        lienzo,
+        [contenido.x, diseno.ajustes.y + 44.0, contenido.ancho, 28.0],
+        titulo,
+        &estudio.estilo("titulo", false, false),
+    );
+    texto(
+        lienzo,
+        [contenido.x, diseno.ajustes.y + 74.0, contenido.ancho, 18.0],
+        "Parámetros globales de superficie",
+        &etiqueta,
+    );
     for (indice, (nombre, valor, maximo)) in
-        [("AMPLITUD", estudio.amplitud, 0.8), ("VELOCIDAD", estudio.velocidad, 2.0)].into_iter().enumerate()
+        [("Amplitud", estudio.amplitud, 0.8), ("Velocidad", estudio.velocidad, 2.0)].into_iter().enumerate()
     {
-        let control = diseno.control(indice);
-        let y = control.y + 12.0;
-        let encima = estudio.encima == Some(Objetivo::Control(indice));
-        lienzo.texto(x, y - 28.0, nombre, 1.25, if encima { CIAN } else { TENUE });
-        lienzo.texto(x + control.ancho - 36.0, y - 28.0, &format!("{valor:.2}"), 1.25, TEXTO);
-        lienzo.rect(x, y, control.ancho, 2.0, BORDE);
-        lienzo.rect(x, y, control.ancho * valor / maximo, 2.0, CIAN);
+        let rect = diseno.control(indice);
+        let control = estudio.estilo("control", estudio.encima == Some(Objetivo::Control(indice)), false);
+        let campo = estudio.estilo("valor", false, false);
+        let ancho_valor = campo.ancho.unwrap_or(64.0).min(rect.ancho * 0.3);
+        let alto_valor = campo.alto.unwrap_or(26.0).min(28.0);
+        let valor_rect =
+            Rectangulo { x: rect.x + rect.ancho - ancho_valor, y: rect.y - 28.0, ancho: ancho_valor, alto: alto_valor };
+        texto(lienzo, [rect.x, rect.y - 26.0, rect.ancho - ancho_valor - 8.0, 22.0], nombre, &etiqueta);
+        lienzo.caja(valor_rect, &campo);
+        lienzo.etiqueta(valor_rect.interior(8.0), &format!("{valor:.2}"), &campo);
+        let y = rect.y + rect.alto * 0.5;
+        let barra = Rectangulo { x: rect.x, y, ancho: rect.ancho, alto: 3.0 };
+        lienzo.redondo(barra, control.radio, control.fondo);
+        lienzo.redondo(Rectangulo { ancho: rect.ancho * valor / maximo, ..barra }, control.radio, control.color);
         lienzo.redondo(
-            Rectangulo { x: x + control.ancho * valor / maximo - 4.0, y: y - 3.0, ancho: 8.0, alto: 8.0 },
-            4.0,
-            if encima { CIAN } else { TEXTO },
+            Rectangulo { x: rect.x + rect.ancho * valor / maximo - 4.0, y: y - 3.0, ancho: 9.0, alto: 9.0 },
+            4.5,
+            control.color,
         );
     }
     let boton = diseno.pausa();
-    let encima = estudio.encima == Some(Objetivo::Pausa);
-    lienzo.redondo(boton, 5.0, if encima { [0.15, 0.27, 0.29] } else { [0.11, 0.18, 0.20] });
-    lienzo.texto(boton.x + 12.0, boton.y + 10.0, if estudio.pausado { "CONTINUAR" } else { "PAUSAR" }, 1.0, CIAN);
-    lienzo.texto(x + 116.0, 266.0, "COLOR / PREVIA", 1.0, TENUE);
+    let estilo = estudio.estilo("boton", estudio.encima == Some(Objetivo::Pausa), estudio.pausado);
+    lienzo.caja(boton, &estilo);
+    lienzo.etiqueta(boton.contenido(&estilo), if estudio.pausado { "Continuar" } else { "Pausar" }, &estilo);
+    let primera = diseno.muestra(0);
+    texto(
+        lienzo,
+        [primera.x, primera.y - 23.0, diseno.ajustes.x + diseno.ajustes.ancho - primera.x - panel.relleno, 20.0],
+        "Color de vista previa",
+        &etiqueta,
+    );
     for material in 0..3 {
-        let estado = Estudio { material, ..Estudio::default() };
-        let color = estado.color();
-        let rect = diseno.muestra(material);
-        lienzo.redondo(rect, 5.0, [color[0], color[1], color[2]]);
-        if estudio.material == material || estudio.encima == Some(Objetivo::Material(material)) {
-            lienzo.rect(rect.x + 4.0, rect.y + rect.alto + 5.0, rect.ancho - 8.0, 2.0, CIAN);
-        }
+        let mut estilo = estudio.estilo(
+            "muestra",
+            estudio.encima == Some(Objetivo::Material(material)),
+            estudio.material == material,
+        );
+        let color = crate::color_material(material);
+        estilo.fondo = [color[0], color[1], color[2]];
+        lienzo.caja(diseno.muestra(material), &estilo);
     }
 }
 
 fn grafo(estudio: &Estudio, lienzo: &mut Lienzo, diseno: Distribucion) {
+    let panel = estudio.estilo("panel", false, false);
+    let puntos = estudio.estilo("puntos", false, false);
+    lienzo.caja(diseno.red, &panel);
+    marco(estudio, lienzo, diseno.red, "Red procedural", None);
     let area = diseno.grafo;
-    lienzo.rect(diseno.inspector, area.y - 38.0, area.ancho + 32.0, 1.0, BORDE);
-    lienzo.texto(area.x + 8.0, area.y - 23.0, "GRAFO / SUPERFICIE", 1.25, TENUE);
-    let mut y = area.y + 8.0;
+    let mut y = area.y;
     while y < area.y + area.alto {
-        let mut x = area.x + 8.0;
+        let mut x = area.x;
         while x < area.x + area.ancho {
-            lienzo.rect(x, y, 1.0, 1.0, [0.12, 0.15, 0.18]);
-            x += 24.0;
+            lienzo.rect(x, y, 1.0, 1.0, puntos.color);
+            x += puntos.espacio.max(8.0);
         }
-        y += 24.0;
+        y += puntos.espacio.max(8.0);
     }
+    let hilo = estudio.estilo("hilo", false, false);
     for indice in 0..3 {
         let desde = estudio.nodo(diseno, indice);
         let hasta = estudio.nodo(diseno, indice + 1);
         lienzo.hilo(
             [desde.x + desde.ancho * 0.5, desde.y + desde.alto],
             [hasta.x + hasta.ancho * 0.5, hasta.y],
-            [0.22, 0.40, 0.43],
+            hilo.color,
+            hilo.grosor,
         );
     }
     let seleccionado = estudio.seleccionado.min(3);
     for indice in (0..4).filter(|i| *i != seleccionado).chain(core::iter::once(seleccionado)) {
-        let (titulo, detalle) =
-            [("Rejilla", "Origen"), ("Onda", "Movimiento"), ("Relieve", "HILO / IR"), ("Salida", "Vista")][indice];
-        let rect = estudio.nodo(diseno, indice);
-        let activo = indice == estudio.seleccionado;
-        let encima = estudio.encima == Some(Objetivo::Nodo(indice));
-        lienzo.redondo(rect, 9.0, if activo || encima { CIAN } else { BORDE });
-        let interior = Rectangulo { x: rect.x + 1.0, y: rect.y + 1.0, ancho: rect.ancho - 2.0, alto: rect.alto - 2.0 };
-        lienzo.redondo(interior, 8.0, if activo || encima { [0.09, 0.17, 0.19] } else { [0.085, 0.10, 0.125] });
-        nudo(lienzo, rect.x + 12.0, rect.y + 16.0, if activo { CIAN } else { TENUE });
-        lienzo.texto(rect.x + 34.0, rect.y + 10.0, titulo, 1.5, TEXTO);
-        lienzo.texto(rect.x + 34.0, rect.y + 29.0, detalle, 1.0, TENUE);
-        for puerto_y in [rect.y - 3.0, rect.y + rect.alto - 3.0] {
-            lienzo.redondo(
-                Rectangulo { x: rect.x + rect.ancho * 0.5 - 3.0, y: puerto_y, ancho: 6.0, alto: 6.0 },
-                3.0,
-                if indice == 3 { COBRE } else { CIAN },
-            );
+        nodo(estudio, lienzo, diseno, indice);
+    }
+}
+
+fn nodo(estudio: &Estudio, lienzo: &mut Lienzo, diseno: Distribucion, indice: usize) {
+    let (titulo, detalle) =
+        [("Rejilla", "Geometría"), ("Onda", "Deformación"), ("Relieve", "HILO / IR"), ("Salida", "Superficie")][indice];
+    let rect = estudio.nodo(diseno, indice);
+    let estilo = estudio.estilo("nodo", estudio.encima == Some(Objetivo::Nodo(indice)), estudio.seleccionado == indice);
+    lienzo.caja(rect, &estilo);
+    let contenido = rect.contenido(&estilo);
+    let acento = estudio.estilo("acento", false, false);
+    nudo(lienzo, contenido.x, contenido.y + 2.0, acento.color);
+    texto(lienzo, [contenido.x + 23.0, rect.y + 7.0, contenido.ancho - 23.0, estilo.linea], titulo, &estilo);
+    texto(
+        lienzo,
+        [contenido.x + 23.0, rect.y + 7.0 + estilo.linea + estilo.espacio, contenido.ancho - 23.0, 16.0],
+        detalle,
+        &estudio.estilo("etiqueta", false, false),
+    );
+    let mut puerto = estudio.estilo("puerto", false, false);
+    if indice == 3 {
+        puerto.fondo = estudio.estilo("salida", false, false).fondo;
+    }
+    let lado = puerto.ancho.unwrap_or(7.0).clamp(4.0, 10.0);
+    for (entrada, altura) in [(true, rect.y), (false, rect.y + rect.alto)] {
+        // Rejilla solo produce y salida solo consume.
+        if (indice == 0 && entrada) || (indice == 3 && !entrada) {
+            continue;
         }
+        lienzo.caja(
+            Rectangulo { x: rect.x + rect.ancho * 0.5 - lado * 0.5, y: altura - lado * 0.5, ancho: lado, alto: lado },
+            &puerto,
+        );
     }
 }
 

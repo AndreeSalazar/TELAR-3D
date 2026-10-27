@@ -8,13 +8,16 @@ use telar_ui::Distribucion;
 use telar_ventana::{Boton, Evento, Tecla};
 
 #[test]
+#[allow(clippy::cast_possible_truncation, reason = "coordenadas de controles dentro de una ventana de 1280×720")]
 fn inspector_camara_y_pausa_tienen_eventos_separados() {
     let diseno = Distribucion::nueva((1280, 720));
     let mut control = Controles::nuevo(true);
     let inicial = control.camara.clone();
-    control.evento(Evento::Raton { x: 1000, y: 182 }, diseno);
+    let pista = diseno.control(0);
+    let (x, y) = ((pista.x + pista.ancho * 0.5) as i32, (pista.y + pista.alto * 0.5) as i32);
+    control.evento(Evento::Raton { x, y }, diseno);
     control.evento(Evento::Boton { boton: Boton::Izquierdo, pulsado: true }, diseno);
-    control.evento(Evento::Raton { x: 1300, y: 182 }, diseno);
+    control.evento(Evento::Raton { x: 1300, y }, diseno);
     assert_eq!(control.estudio.amplitud, 0.8);
     assert_eq!(control.camara, inicial);
     control.evento(Evento::Boton { boton: Boton::Izquierdo, pulsado: false }, diseno);

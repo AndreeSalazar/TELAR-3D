@@ -32,6 +32,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "telar-estilo"
+version = "0.1.0"
+
+[[package]]
 name = "telar-gpu"
 version = "0.1.0"
 
@@ -49,6 +53,9 @@ dependencies = [
 [[package]]
 name = "telar-ui"
 version = "0.1.0"
+dependencies = [
+ "telar-estilo",
+]
 
 [[package]]
 name = "telar-ventana"

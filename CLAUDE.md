@@ -9,7 +9,8 @@ crates/
   telar-guard/   ✅ los guardianes (10 reglas)                   std, sin crates
   telar-ventana/ ✅ Win32 a mano (unsafe SOLO en src/ffi/)       std · aislada: no usa nada nuestro
   telar-gpu/     ✅ Vulkan a mano (unsafe SOLO en src/ffi/)      std · aislada: no usa nada nuestro
-  telar-ui/      ✅ estado y triángulos de interfaz; sin GPU/Win32 ni dependencias    no_std + alloc
+  telar-estilo/  ✅ hojas CSS nativas, cascada y cajas; sin dependencias              no_std + alloc
+  telar-ui/      ✅ estado y triángulos de interfaz; solo usa telar-estilo           no_std + alloc
   telar-app/     ✅ `telar`: une ventana, GPU, shaders y geometría (el visor; en la Fase 8, la interfaz de nodos)
   nudo/          ✅ geometría, atributos y grafo que cocina      no_std + alloc
   hilo/          ✅ IR tipado, intérprete CPU y compilación SPIR-V; texto pendiente   no_std + alloc

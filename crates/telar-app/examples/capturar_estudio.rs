@@ -3,7 +3,7 @@ use telar_gpu::{
     Calculo, CapaInterfaz, Constantes, DominioProcedural, EtapaProcedural, KernelsProcedurales, Opciones,
     ParametrosProcedurales, PlanProcedural, Sombreadores,
 };
-use telar_ui::{Distribucion, Estudio};
+use telar_ui::Estudio;
 #[path = "../src/tipografia.rs"]
 mod tipografia;
 
@@ -21,7 +21,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     etapas.push(EtapaProcedural { nombre: "relieve", codigo: &relieve, dominio: DominioProcedural::Puntos });
     let mut residente = gpu.procedural_con_plan(256, PlanProcedural::nuevo(&etapas)?)?;
     let estudio = Estudio::default();
-    let diseno = Distribucion::nueva(tamano);
+    let diseno = estudio.distribucion(tamano);
     residente.paso(ParametrosProcedurales { lado: 256, fase: 0.6, amplitud: estudio.amplitud })?;
     let escena = [hilo_spirv::visor::vertices(), hilo_spirv::visor::fragmentos()];
     let ui = [hilo_spirv::interfaz::vertices(), hilo_spirv::interfaz::fragmentos()];
@@ -38,7 +38,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let pixeles = residente.capturar_estudio(
         Sombreadores { vertices: &escena[0], fragmentos: &escena[1] },
         tamano,
-        telar_gpu::eleccion::hex(0x0b_1118),
+        estudio.fondo_visor(),
         &constantes,
         CapaInterfaz {
             shaders: Sombreadores { vertices: &ui[0], fragmentos: &ui[1] },

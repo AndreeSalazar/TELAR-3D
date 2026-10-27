@@ -1,10 +1,10 @@
 # TELAR UI · primer estudio nativo
 
-Interfaz pura en `no_std + alloc`, sin crates externos ni conocimiento de Vulkan,
+Interfaz pura en `no_std + alloc`, solo depende de `telar-estilo`, sin crates externos ni conocimiento de Vulkan,
 Win32, NUDO o HILO. Produce triángulos 2D y consume posiciones de ratón; la app
 conecta eventos, parámetros y renderizado. No se modifica la geometría 3D en CPU.
 
-![Estudio nativo](../../docs/capturas/estudio-tipografia.png)
+![Estudio nativo](../../docs/capturas/estudio-css.png)
 
 ## Qué funciona
 
@@ -34,9 +34,17 @@ cuatro etapas de ejecución siguen fijos. No se presenta como edición de topolo
 
 ## Responsabilidades
 
+El contenido se compone en Rust; la apariencia sale de la hoja de `telar-estilo`.
+`Estudio::cargar_estilos` aplica personalizaciones atómicamente sobre el tema
+incorporado, y `Estudio::distribucion` reutiliza la hoja sin analizar CSS por
+fotograma. Paneles y nodos consumen el modelo de cajas; las etiquetas se miden
+con los avances de la fuente y se abrevian cuando no caben. La distribución
+se usa tanto para dibujar como para recibir eventos. La escena continúa en GPU.
+
 | Archivo | Función |
 |---|---|
-| `src/lib.rs` | distribución, estado y consumo de eventos de controles |
+| `src/lib.rs` | estado, personalización CSS y consumo de eventos |
+| `src/distribucion.rs` | cajas adaptables calculadas con estilos compartidos |
 | `src/dibujo.rs` | composición de paneles, red e inspector |
 | `src/lienzo.rs` | triángulos, glifos de atlas y fuente 5×7 de respaldo |
 | `src/fuente.rs` | validación de métricas y cobertura sin conocer Windows |

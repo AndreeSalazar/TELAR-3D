@@ -21,7 +21,12 @@ y deja el cálculo procedural en GPU. Todavía no es un editor de grafos libre.
 Tipografía proporcional con antialias, realce de controles al pasar el cursor y
 selección de nodos con Tab. El atlas se prepara una vez y permanece en GPU.
 
-![Estudio nativo de TELAR](docs/capturas/estudio-tipografia.png)
+**Estilo nativo inspirado en CSS:** `telar-estilo` centraliza colores, cajas,
+tipografía y estados en `crates/telar-estilo/temas/telar.css`. Paneles, campos y
+nodos comparten reglas de estilo; `--estilo mi-tema.css` carga personalizaciones
+al arrancar, sin recompilar. Sigue usando el renderizador Vulkan.
+
+![Estudio nativo de TELAR](docs/capturas/estudio-css.png)
 
 | Pieza | Nombre | Qué es |
 |---|---|---|

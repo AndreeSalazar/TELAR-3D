@@ -1,0 +1,11 @@
+[package]
+name = "telar-estilo"
+description = "Hojas de estilo y modelo de cajas para la interfaz nativa de TELAR"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true

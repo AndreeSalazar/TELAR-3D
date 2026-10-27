@@ -7,5 +7,11 @@ rust-version.workspace = true
 license.workspace = true
 publish.workspace = true
 
+[package.metadata.telar]
+puede-usar = ["telar-estilo"]
+
+[dependencies]
+telar-estilo = { path = "../telar-estilo" }
+
 [lints]
 workspace = true

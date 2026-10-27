@@ -8,6 +8,56 @@ pub(super) struct Lienzo<'a> {
 }
 
 impl<'a> Lienzo<'a> {
+    pub(super) fn caja(&mut self, rect: crate::Rectangulo, estilo: &telar_estilo::Estilo) {
+        if let Some(sombra) = estilo.sombra {
+            self.redondo(
+                crate::Rectangulo { x: rect.x + sombra.x, y: rect.y + sombra.y, ..rect },
+                estilo.radio,
+                sombra.color,
+            );
+        }
+        self.redondo(rect, estilo.radio, estilo.borde);
+        self.redondo(rect.interior(estilo.grosor), (estilo.radio - estilo.grosor).max(0.0), estilo.fondo);
+    }
+
+    #[allow(clippy::cast_precision_loss, reason = "longitudes y métricas acotadas de etiquetas")]
+    fn medir(&self, texto: &str, tamano: f32) -> f32 {
+        if let Some(fuente) = self.fuente {
+            texto
+                .chars()
+                .map(|letra| {
+                    let indice = u32::from(letra)
+                        .checked_sub(fuente.primero)
+                        .filter(|i| (*i as usize) < fuente.avances.len())
+                        .unwrap_or(u32::from('?') - fuente.primero);
+                    fuente.avances[indice as usize] * tamano / fuente.altura
+                })
+                .sum()
+        } else {
+            texto.chars().count() as f32 * tamano * 0.5
+        }
+    }
+
+    pub(super) fn etiqueta(&mut self, rect: crate::Rectangulo, texto: &str, estilo: &telar_estilo::Estilo) {
+        let mut visible = alloc::string::String::new();
+        if self.medir(texto, estilo.fuente) <= rect.ancho {
+            visible.push_str(texto);
+        } else {
+            for letra in texto.chars() {
+                visible.push(letra);
+                if self.medir(&visible, estilo.fuente) + self.medir("...", estilo.fuente) > rect.ancho {
+                    visible.pop();
+                    break;
+                }
+            }
+            if self.medir("...", estilo.fuente) <= rect.ancho {
+                visible.push_str("...");
+            }
+        }
+        let y = rect.y + (rect.alto - estilo.fuente).max(0.0) * 0.5 - estilo.fuente * 0.12;
+        self.texto(rect.x, y, &visible, estilo.fuente / 12.0, estilo.color);
+    }
+
     fn triangulo(&mut self, puntos: [[f32; 2]; 3], color: [f32; 3]) {
         for punto in puntos {
             self.vertices.push([
@@ -39,7 +89,7 @@ impl<'a> Lienzo<'a> {
         self.triangulo([puntos[0], puntos[2], puntos[3]], color);
     }
 
-    pub(super) fn hilo(&mut self, a: [f32; 2], b: [f32; 2], color: [f32; 3]) {
+    pub(super) fn hilo(&mut self, a: [f32; 2], b: [f32; 2], color: [f32; 3], grosor: f32) {
         let medio = f32::midpoint(a[1], b[1]);
         let mut previo = a;
         for paso in 1..=24u16 {
@@ -49,7 +99,7 @@ impl<'a> Lienzo<'a> {
                 u * u * u * a[0] + 3.0 * u * u * t * a[0] + 3.0 * u * t * t * b[0] + t * t * t * b[0],
                 u * u * u * a[1] + 3.0 * u * u * t * medio + 3.0 * u * t * t * medio + t * t * t * b[1],
             ];
-            self.linea(previo, punto, 1.5, color);
+            self.linea(previo, punto, grosor.clamp(0.5, 4.0), color);
             previo = punto;
         }
     }

@@ -10,7 +10,6 @@ use crate::controles::Controles;
 use nudo::mate::normalizar;
 use telar_gpu::eleccion::hex;
 use telar_gpu::{Constantes, Gpu, Opciones, ParametrosProcedurales, Sombreadores, Superficie};
-use telar_ui::Distribucion;
 use telar_ventana::{Config, Evento, Tecla, Ventana};
 
 /// El negro del cosmos, la brasa (lo que un día será fuego) y la luz ambiente.
@@ -31,6 +30,8 @@ pub(crate) struct Modo {
     pub(crate) limite: Option<Duration>,
     /// Puntos aproximados de la superficie; la rejilla admite hasta 1024².
     pub(crate) puntos: u32,
+    /// Personalizaciones CSS cargadas una vez al abrir el estudio.
+    pub(crate) estilo: Option<String>,
 }
 
 /// Lo que pasó.
@@ -66,12 +67,13 @@ pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
         })?;
     }
     let mut controles = Controles::nuevo(modo.procedural);
+    let fondo = cargar_estilos(modo, &mut controles)?;
     let mut tamano_ui = (0, 0);
     let luz = normalizar([0.45, 0.8, 0.4]);
     let (inicio, mut anterior, mut segundo) = (Instant::now(), Instant::now(), Instant::now());
     let (mut cuadros, mut en_este_segundo) = (0u32, 0u32);
     'principal: loop {
-        let diseno = Distribucion::nueva(gpu.imagenes().1);
+        let diseno = controles.estudio.distribucion(gpu.imagenes().1);
         for evento in ventana.eventos() {
             match evento {
                 Evento::Cerrar | Evento::Tecla(Tecla::Escape) => break 'principal,
@@ -109,9 +111,9 @@ pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
             let lado = if modo.prueba && (40..80).contains(&cuadros) { capacidad / 2 } else { capacidad };
             let parametros =
                 ParametrosProcedurales { lado, fase: controles.fase, amplitud: controles.estudio.amplitud };
-            gpu.dibujar_procedural(hex(FONDO), &constantes, parametros)?
+            gpu.dibujar_procedural(fondo, &constantes, parametros)?
         } else {
-            gpu.dibujar_escena(hex(FONDO), &constantes)?
+            gpu.dibujar_escena(fondo, &constantes)?
         };
         if dibujado {
             cuadros += 1;
@@ -143,4 +145,12 @@ pub(crate) fn ejecutar(modo: &Modo) -> Result<Resumen, String> {
     drop(gpu);
     drop(ventana);
     Ok(Resumen { cuadros, segundos })
+}
+
+fn cargar_estilos(modo: &Modo, controles: &mut Controles) -> Result<[f32; 4], String> {
+    if let Some(ruta) = &modo.estilo {
+        let css = std::fs::read_to_string(ruta).map_err(|e| format!("leer estilos {ruta}: {e}"))?;
+        controles.estudio.cargar_estilos(&css)?;
+    }
+    Ok(if modo.procedural { controles.estudio.fondo_visor() } else { hex(FONDO) })
 }

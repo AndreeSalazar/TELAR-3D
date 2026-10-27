@@ -41,8 +41,8 @@ fn estudio_capturado_dibuja_paneles_y_reacciona_al_inspector() {
     let fondo = [0.04, 0.06, 0.09, 1.0];
     let primera = residente.capturar_estudio(shaders, (1280, 720), fondo, &constantes, captura(&triangulos)).unwrap();
     let pixel = |datos: &[u8], x: usize, y: usize| datos[(y * 1280 + x) * 4..(y * 1280 + x) * 4 + 4].to_vec();
-    assert_eq!(pixel(&primera, 4, 20), vec![16, 20, 25, 255], "fondo del encabezado");
-    assert!(pixel(&primera, 26, 25)[1] > 180, "acento cian del logo");
+    assert_eq!(pixel(&primera, 4, 20), vec![27, 30, 38, 255], "fondo CSS del encabezado");
+    assert!((20..34).any(|y| (22..36).any(|x| pixel(&primera, x, y)[1] > 180)), "acento del logo");
     let control = diseno.control(0);
     estudio.pulsar(diseno, control.x + 10.0, control.y + 12.0);
     estudio.mover(diseno, 5000.0);
@@ -55,6 +55,29 @@ fn estudio_capturado_dibuja_paneles_y_reacciona_al_inspector() {
         .filter(|&(x, y)| pixel(&primera, x, y) != pixel(&segunda, x, y))
         .count();
     assert!(diferencias > 1000, "el deslizador cambia la superficie, no solo el rótulo");
+    estudio.cargar_estilos(".cabecera { background-color: #552244; } .inspector { width: 310px; }").unwrap();
+    let personalizado = estudio.distribucion((1280, 720));
+    let vertices = estudio.dibujar_con_fuente(personalizado, 4096, &fuente).unwrap();
+    let tercera = residente
+        .capturar_estudio(
+            shaders,
+            (1280, 720),
+            fondo,
+            &constantes,
+            CapaInterfaz {
+                shaders: Sombreadores { vertices: &ui[0], fragmentos: &ui[1] },
+                vertices: &vertices,
+                area: personalizado.area(),
+                atlas: Some(telar_gpu::AtlasInterfaz {
+                    ancho: fuente.ancho,
+                    alto: fuente.alto,
+                    cobertura: &fuente.cobertura,
+                }),
+            },
+        )
+        .unwrap();
+    assert_eq!(pixel(&tercera, 4, 20), vec![85, 34, 68, 255], "la hoja cambia píxeles Vulkan reales");
+    assert!(personalizado.visor.ancho > diseno.visor.ancho);
     assert_eq!(residente.actividad().geometria_subida, 0);
     drop(residente);
     drop(gpu);
