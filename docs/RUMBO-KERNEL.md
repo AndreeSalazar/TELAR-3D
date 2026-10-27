@@ -3,6 +3,9 @@
 Plan actualizado el **27 de octubre de 2026**. Describe decisiones y propuestas;
 los hitos pendientes de esta página todavía no están implementados.
 
+**Actualización:** H1 ya tiene implementación y pruebas: [ARRANQUE-GPU.md](ARRANQUE-GPU.md).
+El siguiente hito es H2. El desarrollo de H1 se conserva debajo como registro del diseño.
+
 ## Decisión: continuar con Vulkan y SPIR-V
 
 Vulkan es la API para recursos, sincronización, cálculo y dibujo. SPIR-V es la
@@ -82,7 +85,7 @@ el backend de la aplicación actual requiere Vulkan 1.3 y renderizado dinámico.
 Las herramientas actuales bastan para empezar H1. Una herramienta nueva se
 incorporará por una necesidad concreta; se mantienen las reglas de dependencias.
 
-### H1: siguiente paso concreto
+### H1: diseño aplicado; ver ARRANQUE-GPU.md
 
 Diseñar un bloque de arranque TELAR separado del estado mutable y de la cabecera
 estándar del módulo SPIR-V. No modificar los cinco u32 iniciales que exige SPIR-V.
@@ -170,7 +173,8 @@ solos seguridad de todos los accesos, corrección matemática ni mayor velocidad
 ## Registro de decisiones
 
 - **Adoptado:** SPIR-V/Vulkan como ruta principal y `telar-kernel` como coordinador.
-- **Próximo:** H1, contrato de arranque y rechazo seguro, antes de ampliar servicios.
+- **Implementado:** H1, contrato TLAR de arranque y rechazo de trabajo en GPU; ver ARRANQUE-GPU.md.
+- **Próximo:** H2, cola acotada y dependencias antes de concurrencia general.
 - **Después:** H2 y H3 con límites claros; H4 conecta el editor con operaciones reales.
 - **Opcional:** estudiar otros backends solo ante una necesidad de plataforma o
   una medición concreta que justifique el coste. No se cambia de formato por fama.

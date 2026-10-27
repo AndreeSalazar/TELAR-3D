@@ -24,7 +24,7 @@ el shader de fragmentos limita coordenadas, interpola cobertura y mezcla alfa.
 El atlas se sube al preparar/cambiar la fuente y tiene su descriptor propio.
 Sin atlas se conserva un píxel blanco para formas sólidas y pruebas de respaldo.
 
-Son dos buffers y dos mapeos **adicionales**, separados de los 8 buffers y dos
+Son dos buffers y dos mapeos **adicionales**, separados de los 10 buffers y dos
 mapeos de la superficie. La interfaz añade su pipeline gráfico; los contadores
 de `ActividadProcedural` no incluyen recursos o triángulos UI. Al editar controles
 sí se escriben triángulos UI desde CPU; no se suben vértices procedurales.
@@ -52,6 +52,10 @@ preparar → generar → deformar → relieve, con 8 pipelines para dos juegos.
 Las pasadas `Servicio` se despachan con una invocación aunque los argumentos
 indirectos por punto sean cero. El backend no interpreta sus solicitudes: el
 coordinador SPIR-V suministrado por `telar-kernel` las atiende en GPU.
+Con `.con_arranque()` se añade el enlace 4 de solo lectura y los servicios usan
+despacho indirecto en byte 108. Sin cabecera conservan el despacho directo anterior.
+`PerfilGpu` publica identidad, límites y heaps consultados; el backend sigue sin
+depender de `telar-kernel`. Ver [ARRANQUE-GPU.md](../../docs/ARRANQUE-GPU.md).
 
 | Módulo residente | Responsabilidad |
 |---|---|

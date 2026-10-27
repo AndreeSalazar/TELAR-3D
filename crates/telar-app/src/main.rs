@@ -17,6 +17,7 @@
 //!                                             Fase 2: el primer kernel en la GPU, bit a bit contra la CPU
 //! ```
 
+mod arranque;
 mod calculo;
 mod controles;
 mod escena;

@@ -46,6 +46,7 @@ pub(crate) const ETAPA_BOTTOM_OF_PIPE: u32 = 0x0000_2000;
 pub(crate) const ACCESO_TRANSFER_WRITE: u32 = 0x0000_1000;
 pub(crate) const ASPECTO_COLOR: u32 = 0x0000_0001;
 pub(crate) const COLA_GRAFICOS: u32 = 0x0000_0001;
+pub(crate) const COLA_CALCULO: u32 = 0x0000_0002;
 pub(crate) const ALFA_OPACO: u32 = 0x0000_0001;
 pub(crate) const COMPARTIR_EXCLUSIVO: u32 = 0;
 pub(crate) const NIVEL_PRIMARIO: u32 = 0;
@@ -172,6 +173,25 @@ pub(crate) const DESPLAZAMIENTO_PERIODO_TIEMPO: usize = 720; // limits.timestamp
 const INICIO_RESTO: usize = 20 + 256;
 
 impl PropiedadesFisico {
+    /// Offsets contrastados con offsetof del header Vulkan: limits empieza en 296.
+    pub(crate) fn perfil(&self) -> crate::PerfilGpu {
+        let leer = |offset| u32::from_le_bytes(self.cuatro_bytes(offset));
+        crate::PerfilGpu {
+            fabricante: self.fabricante,
+            dispositivo: self.id,
+            tipo: self.tipo,
+            controlador: self.version_driver,
+            vulkan: self.version_api,
+            grupos_x: self.grupos_max_x(),
+            invocaciones: leer(528),
+            hilos_x: leer(532),
+            compartida: leer(512),
+            rango_almacen: leer(324),
+            almacenes: leer(372).min(leer(404)),
+            memoria_local: 0,
+        }
+    }
+
     /// Los 4 bytes que hay en `desplazamiento` (contado desde el principio de la estructura).
     fn cuatro_bytes(&self, desplazamiento: usize) -> [u8; 4] {
         let i = desplazamiento - INICIO_RESTO;

@@ -11,7 +11,19 @@ use hilo_spirv::{Funcion, Id, op};
 /// Lee parámetros en enlace 0 y control de 32 u32 en enlace 3. No escribe malla.
 #[must_use]
 pub fn compilar() -> Vec<u32> {
+    emitir(false)
+}
+
+/// Coordinador con guardián de arranque. Requiere cabecera en enlace 4 y servicios
+/// indirectos en control[27..30], configurados con `PlanProcedural::con_arranque`.
+#[must_use]
+pub fn compilar_con_arranque() -> Vec<u32> {
+    emitir(true)
+}
+
+fn emitir(arranque: bool) -> Vec<u32> {
     let mut maquina = Maquina::nueva();
+    let guardia = arranque.then(|| crate::verificacion::Guardia::nueva(&mut maquina));
     let memoria = Memoria::de(&maquina);
     let [cero, uno, seis, sesenta_y_tres, sesenta_y_cuatro] =
         [0, 1, 6, 63, 64].map(|n| maquina.modulo.constante_u32(n));
@@ -19,6 +31,9 @@ pub fn compilar() -> Vec<u32> {
     let mut funcion = maquina.modulo.funcion(maquina.vacio, maquina.firma);
     let entrada = funcion.etiqueta();
     funcion.bloque(entrada);
+    if let Some(guardia) = guardia {
+        guardia.prologo(&mut funcion);
+    }
     atender(&mut funcion, memoria, maquina.booleano);
     memoria.guardar(&mut funcion, abi::VERSION_CONTROL, version);
     memoria.incrementar(&mut funcion, abi::VUELTA, uno);

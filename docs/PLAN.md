@@ -1,8 +1,9 @@
 # El plan, por fases
 
 **Prioridad actual del kernel (27 de octubre de 2026):** el coordinador y el
-buzón residentes ya existen. El siguiente hito es validar un contrato de arranque
-antes de ampliar colas, memoria y nodos. La comparación SPIR-V/DXIL/PTX/Metal,
+buzón residentes ya existen. El contrato de arranque y su guardián GPU ya están
+implementados en [ARRANQUE-GPU.md](ARRANQUE-GPU.md). El siguiente hito es la cola
+acotada, antes de ampliar memoria y nodos. La comparación SPIR-V/DXIL/PTX/Metal,
 las ideas propuestas y sus criterios de aceptación están en
 [RUMBO-KERNEL.md](RUMBO-KERNEL.md). Las fases siguientes conservan el contexto
 histórico; ese documento concreta el orden de los próximos pasos del kernel.

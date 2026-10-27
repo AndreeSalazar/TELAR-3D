@@ -43,6 +43,7 @@ pub struct EtapaProcedural<'a> {
 #[derive(Clone, Copy)]
 pub struct PlanProcedural<'a> {
     etapas: &'a [EtapaProcedural<'a>],
+    arranque: Option<&'a [u32]>,
 }
 
 impl<'a> PlanProcedural<'a> {
@@ -81,7 +82,24 @@ impl<'a> PlanProcedural<'a> {
                 return Err(format!("{}: cabecera SPIR-V 1.3 inválida", etapa.nombre));
             }
         }
-        Ok(Self { etapas })
+        Ok(Self { etapas, arranque: None })
+    }
+
+    /// Añade un bloque inmutable en enlace 4. Su contenido lo valida el coordinador GPU.
+    /// Las pasadas Servicio usan entonces argumentos indirectos en control[27..30].
+    ///
+    /// # Errors
+    /// Si el bloque está vacío o excede 256 palabras. Requiere un coordinador compatible.
+    pub fn con_arranque(mut self, palabras: &'a [u32]) -> Result<Self, String> {
+        if palabras.is_empty() || palabras.len() > 256 {
+            return Err("el arranque debe contener de 1 a 256 palabras".to_owned());
+        }
+        self.arranque = Some(palabras);
+        Ok(self)
+    }
+
+    pub(crate) const fn arranque(self) -> Option<&'a [u32]> {
+        self.arranque
     }
 
     /// Operaciones en orden de dependencia; nunca se recorren desde CPU por fotograma.

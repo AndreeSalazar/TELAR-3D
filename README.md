@@ -23,6 +23,11 @@ Ver [su contrato y alcance](crates/telar-kernel/README.md).
 Los próximos pasos y la elección de SPIR-V están anotados en
 [el rumbo del kernel](docs/RUMBO-KERNEL.md).
 
+**Arranque TLAR v1:** el visor ya sube un encabezado con identidad, límites y
+memoria local anunciada de la GPU. Un guardián GPU comprueba contrato y regiones
+antes de habilitar geometría y servicios. El bloque es independiente de Windows;
+la aplicación mantiene su backend Win32/Vulkan. [Formato y pruebas](docs/ARRANQUE-GPU.md).
+
 **Primer estudio visual:** visor amplio y grafo con nodos seleccionables y arrastrables, inspector con amplitud y
 velocidad, pausa y tres colores de vista previa. La interfaz se dibuja en Vulkan
 y deja el cálculo procedural en GPU. Todavía no es un editor de grafos libre.

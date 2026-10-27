@@ -22,6 +22,16 @@ pub const VUELTA: u32 = 22;
 pub const OCUPADAS: u32 = 23;
 /// Solicitudes con código desconocido consumidas y rechazadas.
 pub const DESCONOCIDAS: u32 = 24;
+/// Código de rechazo de arranque, cero si el contrato fue admitido.
+pub const ERROR_ARRANQUE: u32 = 25;
+/// Uno si el coordinador verificó la cabecera y las regiones reales.
+pub const LISTO: u32 = 26;
+/// Tres u32 de despacho indirecto de servicios, habilitados aun en suspensión.
+pub const DESPACHO_SERVICIO: u32 = 27;
+/// Generación de plan leída de la cabecera admitida.
+pub const GENERACION_PLAN: u32 = 30;
+/// Fabricante leído de la cabecera, solo para diagnóstico; no escoge algoritmos.
+pub const FABRICANTE: u32 = 31;
 
 /// Servicios internos. No invocan llamadas al sistema del host.
 #[repr(u32)]

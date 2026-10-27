@@ -25,9 +25,11 @@ descargarla al host. Las pasadas de dominio `Servicio` ejecutan una invocación
 incluso suspendidas, por lo que pueden solicitar reanudación. El buzón admite una
 entrada y productores serializados; no es todavía una cola general concurrente.
 El contrato y las limitaciones están en `crates/telar-kernel/README.md`.
-El diseño del contrato de arranque, la cola general y la memoria por regiones
-se planifica en [RUMBO-KERNEL.md](RUMBO-KERNEL.md), con propuestas pendientes
-separadas de los servicios que ya ejecutan las pruebas.
+El contrato de arranque ya está implementado en [ARRANQUE-GPU.md](ARRANQUE-GPU.md):
+cabecera inmutable en enlace 4, perfil físico consultado y guardián GPU que anula
+trabajo y servicios si rechaza el contrato. El visor tiene ahora 10 buffers
+residentes, con las mismas 2 grabaciones, 8 pipelines y 2 mapeos. La cola general
+y la memoria por regiones siguen propuestas en [RUMBO-KERNEL.md](RUMBO-KERNEL.md).
 
 Ya existe una primera interfaz: `telar-ui` produce estado y
 triángulos; la app conecta sus controles con los parámetros GPU. El backend

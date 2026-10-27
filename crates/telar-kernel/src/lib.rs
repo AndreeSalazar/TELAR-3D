@@ -4,10 +4,12 @@
 extern crate alloc;
 
 pub mod abi;
+pub mod arranque;
 mod buzon;
 mod coordinador;
 mod maquina;
 mod servicios;
+mod verificacion;
 pub use buzon::Buzon;
-pub use coordinador::compilar;
+pub use coordinador::{compilar, compilar_con_arranque};
 pub use servicios::solicitar_en;

@@ -8,10 +8,14 @@ fn coordinador_y_productores_validan_en_vulkan_11_y_13() {
         .map(|sdk| PathBuf::from(sdk).join("Bin/spirv-val.exe"))
         .filter(|p| p.exists())
         .unwrap_or_else(|| PathBuf::from("spirv-val"));
-    for (indice, codigo) in
-        [telar_kernel::compilar(), telar_kernel::solicitar_en(1, 2), telar_kernel::solicitar_en(999, 4)]
-            .into_iter()
-            .enumerate()
+    for (indice, codigo) in [
+        telar_kernel::compilar(),
+        telar_kernel::compilar_con_arranque(),
+        telar_kernel::solicitar_en(1, 2),
+        telar_kernel::solicitar_en(999, 4),
+    ]
+    .into_iter()
+    .enumerate()
     {
         let ruta = std::env::temp_dir().join(format!("telar-kernel-{indice}-{}.spv", std::process::id()));
         let bytes: Vec<u8> = codigo.iter().flat_map(|p| p.to_le_bytes()).collect();

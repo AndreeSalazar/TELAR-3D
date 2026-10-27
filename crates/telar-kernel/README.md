@@ -1,13 +1,14 @@
 # TELAR kernel · coordinador GPU
 
-El siguiente diseño y sus criterios de aceptación están en
+El rumbo y sus criterios de aceptación están en
 [RUMBO-KERNEL.md](../../docs/RUMBO-KERNEL.md): contrato de arranque, cola,
-regiones de memoria, nodos y primer efecto VFX. Son propuestas; el estado
-implementado se describe a continuación.
+regiones de memoria, nodos y primer efecto VFX. El contrato de arranque ya está
+implementado: [ARRANQUE-GPU.md](../../docs/ARRANQUE-GPU.md). Cola y arena siguen pendientes.
 
 Pieza propia en `no_std + alloc`, sin objetos Vulkan ni dependencias de terceros.
 Rust prepara módulos SPIR-V; el coordinador y sus productores ejecutan en GPU.
-El visor ya usa `telar_kernel::compilar()` como primera pasada residente.
+El visor usa `telar_kernel::compilar_con_arranque()` como primera pasada residente.
+`compilar()` conserva la variante anterior sin encabezado para compatibilidad.
 
 ## Organización
 
@@ -18,6 +19,8 @@ El visor ya usa `telar_kernel::compilar()` como primera pasada residente.
 | `src/servicios.rs` | productores GPU y atención de solicitudes |
 | `src/buzon.rs` | interfaz para que otros kernels emitan solicitudes y reciban aceptación GPU |
 | `src/maquina.rs` | emisión de acceso a los buffers SPIR-V |
+| `src/arranque.rs` | constructor del encabezado TLAR y límites consultados |
+| `src/verificacion.rs` | guardián GPU de cabecera, regiones y admisión de trabajo |
 | `tests/spirv.rs` | validación oficial del código emitido |
 
 ## Primeros servicios internos
@@ -61,7 +64,11 @@ reservado e inicializado una sola vez por el backend.
 - `[0..16)`: ABI de geometría anterior, compatible con sus trabajadores.
 - `[16..25)`: solicitud, suspensión, resultado, atendidas, versión, último código,
   vuelta, rechazos por ocupación y códigos desconocidos; ver constantes en `abi`.
-- `[25..32)`: reservado, inicializado a cero; no se usa todavía.
+- `[25..32)`: estado de arranque, despacho indirecto de servicios y metadatos.
+
+La ruta con arranque añade una cabecera inmutable de 32 u32 en enlace 4, construida
+con el perfil físico por el host y verificada por GPU antes del trabajo. La ruta
+sin cabecera conserva cuatro enlaces. El contrato exacto está en ARRANQUE-GPU.md.
 
 Los contadores u32 son modulares. El número de versión describe el contrato;
 no es una negociación dinámica entre versiones. Los productores deben cumplirlo.

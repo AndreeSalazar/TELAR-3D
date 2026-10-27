@@ -26,6 +26,7 @@ pub(crate) struct Ranura {
     pub(crate) parametros: BufferMapeado,
     pub(crate) malla: MallaGpu,
     pub(crate) control: Buffer,
+    pub(super) arranque: Option<Buffer>,
     pub(crate) comando: Comandos,
     pub(crate) capacidad: u32,
 }
@@ -43,6 +44,16 @@ impl Residente {
         }
         if (capacidad * capacidad).div_ceil(64) > ctx.grupos_max_x {
             return Err("la capacidad excede los grupos de cálculo del dispositivo".to_owned());
+        }
+        if plan.arranque().is_some() && ctx.perfil.almacenes < 5 {
+            return Err("el arranque requiere cinco buffers de almacenamiento por etapa".to_owned());
+        }
+        let mayor = u64::from((capacidad - 1).pow(2) * 6 * 4)
+            .max(u64::from(capacidad * capacidad) * 24)
+            .max(TAMANO_CONTROL)
+            .max(plan.arranque().map_or(0, |a| core::mem::size_of_val(a) as u64));
+        if mayor > u64::from(ctx.perfil.rango_almacen) || ctx.perfil.invocaciones < 64 || ctx.perfil.hilos_x < 64 {
+            return Err("los límites físicos no admiten los buffers o grupos de la ruta".to_owned());
         }
         let mut residente = Self { ranuras: Vec::new(), actividad: ActividadProcedural::default(), pendiente: false };
         for _ in 0..cantidad {
@@ -136,11 +147,34 @@ impl Ranura {
                 (fd.calculo.llenar_buffer)(comando, control.objeto, 0, TAMANO_CONTROL, 0);
             }
         })?;
+        let arranque = if let Some(palabras) = plan.arranque() {
+            let bytes = como_bytes(palabras);
+            let buffer =
+                Buffer::nuevo(ctx, bytes.len() as u64, BUFFER_ALMACEN | BUFFER_TRANSFER_DST, (MEMORIA_GPU, 0))?;
+            let subida =
+                Buffer::nuevo(ctx, bytes.len() as u64, BUFFER_TRANSFER_SRC, (MEMORIA_VISIBLE | MEMORIA_COHERENTE, 0))?;
+            subida.escribir(0, bytes)?;
+            una_vez(ctx, |fd, cmd| {
+                let copia = super::tipos_calculo::Copia { origen: 0, destino: 0, tamano: buffer.tamano };
+                // GPU: la primera barrera del lote publica transfer → compute para el arranque.
+                // SAFETY: ambos buffers miden bytes.len(); una_vez espera antes de liberar subida.
+                unsafe {
+                    (fd.calculo.copiar_buffer)(cmd, subida.objeto, buffer.objeto, 1, &raw const copia);
+                }
+            })?;
+            actividad.buffers += 1;
+            Some(buffer)
+        } else {
+            None
+        };
         let mut etapas = Vec::with_capacity(plan.etapas().len());
-        let buffers = [&parametros.buffer, &vertices, &indices, &control].map(|b| (b.objeto, b.tamano));
+        let mut buffers = [&parametros.buffer, &vertices, &indices, &control].map(|b| (b.objeto, b.tamano)).to_vec();
+        if let Some(buffer) = &arranque {
+            buffers.push((buffer.objeto, buffer.tamano));
+        }
         for etapa in plan.etapas() {
             let mut recurso = Recursos::nuevo(&fd, ctx.dispositivo);
-            recurso.pipeline_enlaces(etapa.codigo, 4)?;
+            recurso.pipeline_enlaces(etapa.codigo, u32::try_from(buffers.len()).map_err(|_| "demasiados buffers")?)?;
             actividad.pipelines += 1;
             recurso.descriptores_buffers(&buffers)?;
             etapas.push(EtapaResidente { recursos: recurso, nombre: etapa.nombre.to_owned(), dominio: etapa.dominio });
@@ -152,6 +186,7 @@ impl Ranura {
             parametros,
             malla: MallaGpu { vertices, indices, n_indices: 0 },
             control,
+            arranque,
             comando,
             capacidad,
         };

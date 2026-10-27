@@ -74,7 +74,12 @@ impl Ranura {
                     0,
                     nulo.cast(),
                 );
-                match etapa.dominio.argumento() {
+                let argumento = if etapa.dominio == crate::DominioProcedural::Servicio && self.arranque.is_some() {
+                    Some(108) // ABI control[27..30]: el coordinador admite o anula servicios.
+                } else {
+                    etapa.dominio.argumento()
+                };
+                match argumento {
                     None => (fc.despachar)(cmd, 1, 1, 1),
                     Some(desplazamiento) => (fc.despachar_indirecto)(cmd, self.control.objeto, desplazamiento),
                 }

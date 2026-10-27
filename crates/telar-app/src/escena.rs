@@ -12,12 +12,21 @@ pub(crate) fn preparar(gpu: &mut Gpu, modo: &Modo) -> Result<(u32, usize), Strin
     let capacidad = modo.puntos.isqrt().clamp(2, 1024);
     let puntos = if modo.procedural {
         let (preparar, generar, deformar) =
-            (telar_kernel::compilar(), hilo_spirv::rejilla::generar(), hilo_spirv::rejilla::deformar());
+            (telar_kernel::compilar_con_arranque(), hilo_spirv::rejilla::generar(), hilo_spirv::rejilla::deformar());
         let relieve = hilo::ejemplos::relieve(1.3).map_err(|error| error.to_string())?.compilar();
         let mut etapas =
             KernelsProcedurales { preparar: &preparar, generar: &generar, deformar: &deformar }.etapas().to_vec();
         etapas.push(EtapaProcedural { nombre: "relieve", codigo: &relieve, dominio: DominioProcedural::Puntos });
-        gpu.preparar_plan_procedural(capacidad, PlanProcedural::nuevo(&etapas)?)?;
+        let perfil = gpu.perfil();
+        let cabecera = crate::arranque::crear(perfil, capacidad, etapas.len())?;
+        gpu.preparar_plan_procedural(capacidad, PlanProcedural::nuevo(&etapas)?.con_arranque(&cabecera)?)?;
+        println!(
+            "telar: arranque TLAR v1 · GPU {:04x}:{:04x} · heaps locales {} MiB · grupo 64 · límite X {}",
+            perfil.fabricante,
+            perfil.dispositivo,
+            perfil.memoria_local / (1024 * 1024),
+            perfil.grupos_x
+        );
         println!("telar: rejilla residente · capacidad {capacidad}×{capacidad} · generación y deformación GPU");
         (capacidad * capacidad) as usize
     } else {
@@ -50,7 +59,7 @@ pub(crate) fn comprobar(gpu: &Gpu, cuadros: u32) -> Result<(), String> {
         actividad.descargados
     );
     println!("telar: {} mapeos persistentes de parámetros", actividad.mapeos);
-    if actividad.buffers != 8
+    if actividad.buffers != 10
         || actividad.pipelines != 8
         || actividad.grabaciones != 2
         || actividad.mapeos != 2
