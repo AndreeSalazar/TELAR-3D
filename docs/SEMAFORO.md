@@ -13,6 +13,10 @@ Evidencia: docs/FORMATO-TLAR.md, docs/ARRANQUE-GPU.md y docs/SEMAFOROS.md.
 
 Clasificación de riesgo, no certificación absoluta ni medición de rendimiento.
 
+El mapa Houdini y el plan de explosión enlazan el registro de Partio/BGEO en
+referencias/. La anotación no instala herramientas, no cambia dependencias y no
+certifica comparación externa; lectura de los documentos solo por consulta.
+
 Escena v2: registro de 128 B; la UI serializa solo valores/posiciones y solicita
 E/S a la app. Cámara/fase y CRC se validan antes de aplicar. Guardar/abrir es
 síncrono y solo explícito; sin E/S de disco en cuadros estables. Reemplazo por

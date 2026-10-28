@@ -1,5 +1,10 @@
 # Houdini Apprentice → TELAR
 
+Referencias públicas de datos e interoperabilidad:
+[Partio, LAIKA y formatos/APIs oficiales](../referencias/partio-houdini-intercambio.md).
+La investigación está anotada; no demuestra reconstrucción del núcleo ni
+compatibilidad de TELAR con archivos de Houdini.
+
 Houdini se organiza en **contextos**: redes de nodos especializadas. Aquí está cada uno, qué enseña y qué será en TELAR. La prioridad sigue a la estrella del norte (la esfera de fuego): primero lo que hace falta para llegar a ella.
 
 | Prioridad | Significado |

@@ -1,5 +1,10 @@
 # Referencias contra Houdini
 
+Bibliografía de interoperabilidad y antecedentes:
+[Partio, BGEO y documentación pública de Houdini](partio-houdini-intercambio.md).
+Separa fuentes verificadas de compatibilidad todavía ABIERTO; no es un resultado
+de comparación de nodos ni una dependencia de TELAR.
+
 Una por nodo (lo exige la regla `nodo-completo`). Cada una dice:
 - qué mide TELAR (comprobado por sus tests);
 - qué debería dar Houdini (según su documentación);

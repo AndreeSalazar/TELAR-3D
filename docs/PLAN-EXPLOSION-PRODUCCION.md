@@ -56,3 +56,9 @@ No se anuncia equivalencia Pyro ni compatibilidad VEX/.hip. La comparación de
 calidad y rendimiento contra Houdini permanece **ABIERTO** hasta medirla.
 
 La primera pieza de P3 queda documentada y probada en [PULSO-EXPANSIVO-3D.md](PULSO-EXPANSIVO-3D.md). Las capturas del pulso no equivalen al plano cinematográfico objetivo.
+
+## Referencias para secundarios e intercambio
+
+Para preparar P5/P6 se conservan [Partio, LAIKA BGEO y documentación oficial](../referencias/partio-houdini-intercambio.md).
+El registro distingue partículas de cachés de campos y BGEO clásico de variantes
+modernas. Su integración sigue ABIERTO; no añade dependencias ni completa esos hitos.

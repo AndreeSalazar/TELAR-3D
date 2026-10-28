@@ -12,3 +12,8 @@ Limites: Los .tlar son datos de arranque; su CRC no autentica código. Referenci
 Evidencia: docs/FORMATO-TLAR.md, docs/ARRANQUE-GPU.md y docs/SEMAFOROS.md.
 
 Clasificación de riesgo, no certificación absoluta ni medición de rendimiento.
+
+partio-houdini-intercambio.md conserva enlaces y conclusiones verificadas el
+28/10/2026; las propuestas de importación/caché están ABIERTAS. No incorpora
+código externo, no ejecuta Partio/HDK ni reserva recursos de producto. Incluye
+límites de variantes BGEO y procedencia/licencias como referencias documentales.
