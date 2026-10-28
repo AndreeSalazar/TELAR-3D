@@ -26,6 +26,7 @@ mod archivo;
 mod arranque;
 mod calculo;
 mod calidad;
+mod centro_estudio;
 mod controles;
 mod entrada_objetos;
 mod escena;
@@ -62,7 +63,8 @@ const PUNTOS_DE_PRUEBA: u32 = 40_000;
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    if let Some(resultado) = estudio_humo::procesar(&args)
+    if let Some(resultado) = centro_estudio::procesar(&args)
+        .or_else(|| estudio_humo::procesar(&args))
         .or_else(|| estudio_fuego::procesar(&args))
         .or_else(|| estudio_objetos::procesar(&args))
     {

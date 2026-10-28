@@ -4,6 +4,11 @@
 extern crate alloc;
 
 mod calidad;
+mod catalogo;
+mod catalogo_datos;
+mod dibujo_catalogo;
+pub use catalogo::{Catalogo, DisenoCatalogo};
+pub use catalogo_datos::{CATEGORIAS, Categoria, Espacio, Herramienta};
 mod dibujo_fuego;
 mod dibujo_humo;
 mod fuego;

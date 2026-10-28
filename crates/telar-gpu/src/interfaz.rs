@@ -2,6 +2,21 @@
 use crate::{Constantes, Gpu, Procedural, Sombreadores, ffi};
 
 impl crate::Calculo {
+    /// Captura solo interfaz, sin malla ni visor 3D; diagnóstico con descarga explícita.
+    /// # Errors
+    /// Rechaza tamaño, fondo, atlas o geometría de interfaz inválidos.
+    pub fn capturar_interfaz(
+        &self,
+        tamano: (u32, u32),
+        fondo: [f32; 4],
+        capa: CapaInterfaz,
+    ) -> Result<CapturaEstudio, String> {
+        if !fondo.iter().all(|v| v.is_finite()) || tamano.0 == 0 || tamano.1 == 0 || tamano.0 > 4096 || tamano.1 > 4096
+        {
+            return Err("captura de interfaz fuera de contrato".into());
+        }
+        ffi::capturar_solo_interfaz(&self.contexto, tamano, fondo, capa)
+    }
     /// Captura diagnóstica de malla y overlay, sin ventana. Espera y descarga.
     /// No se usa en el bucle vivo del editor de objetos.
     /// # Errors
@@ -111,6 +126,18 @@ impl Procedural<'_> {
 }
 
 impl Gpu {
+    /// Presenta interfaz nativa sin ejecutar un visor ni un solver 3D.
+    /// # Errors
+    /// Rechaza interfaz ausente, fondo no finito o fallos Vulkan.
+    pub fn dibujar_interfaz(&mut self, fondo: [f32; 4]) -> Result<bool, String> {
+        if !fondo.iter().all(|v| v.is_finite()) {
+            return Err("fondo no finito".into());
+        }
+        let formato = self.presentacion.formato;
+        let ui = self.interfaz.as_mut().ok_or("falta interfaz")?;
+        ui.formato(&self.contexto, formato)?;
+        self.presentacion.dibujar(&self.contexto, crate::eleccion::color_para(formato, fondo), None, Some(ui))
+    }
     /// Sube la máscara de cobertura una vez al preparar/cambiar la fuente.
     ///
     /// # Errors

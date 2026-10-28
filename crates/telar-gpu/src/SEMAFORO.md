@@ -61,3 +61,5 @@ sí esperan y descargan. Pruebas y límites: docs/VISOR-PROGRESIVO.md.
 Campos persistentes: plan de hasta 16 programas/256 pasadas, estado lógico <=64 MiB; a 128²/12 planos son 786436 B con dummy. CPU registra el orden, GPU calcula celdas. Cargas, reinicio y descarga son explícitos. Ver docs/HUMO-MAC-2D.md.
 
 Plan de campos ampliado hasta 512 huecos; descarga explícita de rangos permite resumen de 64 B. El estado adaptativo 128² ocupa 983044 B lógicos con dummy. No evita enviar los huecos sobrantes ni promete mayor velocidad.
+
+API de dibujo/captura solo UI permite el centro sin visor ni buffers de simulación. Conserva coste de destinos, profundidad, atlas y buffers UI; captura explícita descarga RGBA8.

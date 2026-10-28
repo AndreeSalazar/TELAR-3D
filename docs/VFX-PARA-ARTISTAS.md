@@ -79,3 +79,7 @@ trabajo despachado y tiempos, sin atribuir pensamiento autónomo al hardware.
 Las primeras piezas de los puntos 1/2 ya existen en [HUMO-MAC-2D.md](HUMO-MAC-2D.md): doce planos persistentes, emisión, advección, flotación y presión, con vistas e inspección explícita. El editor funciona a 128² con paredes cerradas y presión de iteraciones fijas. Faltan cortes 3D, reducciones estadísticas GPU, solución por tolerancia y combustión; los otros sistemas de la tabla conservan su estado pendiente.
 
 El criterio de presión por tolerancia ya está disponible en [PRESION-ADAPTATIVA.md](PRESION-ADAPTATIVA.md), con controles y diagnóstico residente. Sigue pendiente un solver más eficiente, humo 3D, subpasos, combustión y los restantes sistemas de la tabla.
+
+## Organización visual
+
+Ya existe un [centro nativo por categorías](ESTUDIO-CATEGORIAS.md), con acceso a editores disponibles y descripción de capacidades pendientes. La sesión compartida, los paneles acoplables y los grafos de contexto siguen pendientes.

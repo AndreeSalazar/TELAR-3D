@@ -1,0 +1,9 @@
+/* Organización nativa de espacios TELAR; extiende telar.css. */
+.categoria { background-color: #1b1e26; color: #a9b2c2; border-radius: 5px; font-size: 14px; }
+.categoria:checked { background-color: #293b3d; color: #9ce4d2; }
+.herramienta { background-color: #20242d; color: #e2e6ef; border-color: #343d4b; border-width: 1px; border-radius: 8px; }
+.herramienta:checked { background-color: #253438; border-color: #80cfbe; }
+.disponible { color: #80cfbe; font-size: 12px; }
+.pendiente { color: #d7ae73; font-size: 12px; }
+.abrir { background-color: #80cfbe; color: #122321; border-radius: 5px; font-size: 13px; }
+.desactivado { background-color: #272c36; color: #8b94a5; border-radius: 5px; font-size: 13px; }

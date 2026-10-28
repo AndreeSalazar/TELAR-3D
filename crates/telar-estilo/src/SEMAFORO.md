@@ -12,3 +12,5 @@ Limites: No es CSS web completo; fuentes latinas, UI hasta 120000 vértices y at
 Evidencia: crates/telar-ui/tests, crates/telar-estilo/tests y docs/SEMAFOROS.md.
 
 Clasificación de riesgo, no certificación absoluta ni medición de rendimiento.
+
+TEMA_ESTUDIO expone reglas del centro, analizadas junto al tema base. No modifica los estilos del resto de editores salvo que los seleccionen explícitamente.

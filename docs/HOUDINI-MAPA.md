@@ -70,3 +70,7 @@ El alcance inicial acotado de esta página es histórico. La petición de herram
 ## Estado del solver de humo
 
 Existe un laboratorio MAC 2D con campos residentes y controles: [HUMO-MAC-2D.md](HUMO-MAC-2D.md). Es una base numérica propia, sin equivalencia Pyro demostrada y sin integración todavía en el grafo general.
+
+## Categorías visibles en TELAR
+
+[ESTUDIO-CATEGORIAS.md](ESTUDIO-CATEGORIAS.md) organiza el centro nativo en ocho áreas. Es navegación a herramientas independientes y un mapa de alcance; no implica compatibilidad con contextos/proyectos Houdini ni que todas las tarjetas estén implementadas.

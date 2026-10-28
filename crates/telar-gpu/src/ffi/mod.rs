@@ -62,7 +62,7 @@ mod tipos_grafico;
 mod visor;
 
 pub(crate) use calculo::ejecutar;
-pub(crate) use captura_interfaz::capturar_malla;
+pub(crate) use captura_interfaz::{capturar_malla, capturar_solo_interfaz};
 pub(crate) use contexto::{AVISOS, Contexto};
 pub(crate) use interfaz::InterfazGpu;
 pub(crate) use pipeline_grafico::TAMANO_CONSTANTES;

@@ -66,3 +66,5 @@ sí esperan y descargan. Pruebas y límites: docs/VISOR-PROGRESIVO.md.
 campos.rs conserva un SSBO, seis pipelines en humo y barreras entre pasadas/cuadros. Constantes compute de 128 B. Riesgo crítico FFI de vida útil y sincronización; validación de humo_gpu.rs y docs/HUMO-MAC-2D.md.
 
 Transferencias por rango validan offsets, tamaño y barreras; humo_adaptativo_gpu.rs prueba el resumen de 64 B y rechazo de rangos vacíos/fuera del buffer. FFI sigue ROJO por sincronización y vida útil.
+
+Captura permite escena opcional; el camino UI-only reutiliza los destinos/barreras de captura existentes. FFI sigue ROJO: vida de atlas, descriptores, destinos y descarga se valida en pruebas Vulkan.

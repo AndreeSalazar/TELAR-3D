@@ -233,7 +233,7 @@ impl Visor {
         }
         ui.actualizar(capa.vertices, capa.area)?;
         let dibujo = ui.juego(0)?;
-        super::captura_interfaz::capturar(ctx, &escena, &dibujo, tamano, fondo)
+        super::captura_interfaz::capturar(ctx, Some(&escena), &dibujo, tamano, fondo)
     }
     pub(crate) fn preparar_campos(
         &mut self,

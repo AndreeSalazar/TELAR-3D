@@ -44,3 +44,5 @@ fuego.rs comprueba dominios de parámetros y confirmación numérica 32 + Enter;
 humo.rs verifica dominios físicos del inspector y confirmación Enter con dt decimal e iteraciones pares.
 
 humo.rs añade dominios de tolerancias y confirmación decimal con Enter.
+
+catalogo.rs verifica hit testing, capacidades pendientes, acciones de una sola lectura, CSS transaccional y geometría dentro de ventana en cuatro resoluciones.

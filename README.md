@@ -137,3 +137,7 @@ Abre `TELAR Fuego.cmd` después de compilar, o ejecuta `.\target\release\telar.e
 `TELAR Humo.cmd` o `.\target\release\telar.exe --humo`: estado MAC residente con advección, flotación y presión Jacobi. Pausa, paso, reinicio, vistas de campos y diagnóstico solicitado por el artista. Es un laboratorio 2D, todavía separado del fuego procedural y del render de objetos. [Controles, matemática y límites](docs/HUMO-MAC-2D.md).
 
 El humo ya incorpora [presión con tolerancia decidida en GPU](docs/PRESION-ADAPTATIVA.md): presupuesto, tolerancias, franja de estado y resumen de 64 B bajo petición. Guarda .tlar v8 y lee v7. No se ha medido una ventaja de velocidad frente al modo fijo.
+
+## Centro de herramientas por categorías
+
+Abre `TELAR Estudio.cmd` o `.\target\release\telar.exe --estudio`: Escena, Geometría, Simulación, Materiales, Animación, Render, Composición y Datos/HILO. Las herramientas existentes se abren en ventanas independientes; las pendientes muestran su alcance sin fingir funciones. [Organización y controles](docs/ESTUDIO-CATEGORIAS.md).

@@ -54,7 +54,7 @@ impl Residente {
             campos: None,
             calculo: None,
         };
-        super::captura_interfaz::capturar(ctx, &escena, &dibujo, tamano, fondo)
+        super::captura_interfaz::capturar(ctx, Some(&escena), &dibujo, tamano, fondo)
     }
 
     pub(crate) fn capturar(

@@ -47,12 +47,26 @@ pub(crate) fn capturar_malla(
         campos: None,
         calculo: None,
     };
-    capturar(ctx, &escena, &dibujo, tamano, fondo)
+    capturar(ctx, Some(&escena), &dibujo, tamano, fondo)
 }
 
+pub(crate) fn capturar_solo_interfaz(
+    ctx: &Contexto,
+    tamano: (u32, u32),
+    fondo: [f32; 4],
+    capa: crate::CapaInterfaz,
+) -> Result<crate::CapturaEstudio, String> {
+    let mut ui = super::interfaz::InterfazGpu::nueva(ctx, capa.shaders, FORMATO_RGBA8)?;
+    if let Some(atlas) = capa.atlas {
+        ui.fuente(ctx, atlas.ancho, atlas.alto, atlas.cobertura)?;
+    }
+    ui.actualizar(capa.vertices, [0, 0, tamano.0, tamano.1])?;
+    let dibujo = ui.juego(0)?;
+    capturar(ctx, None, &dibujo, tamano, fondo)
+}
 pub(super) fn capturar(
     ctx: &Contexto,
-    escena: &Escena,
+    escena: Option<&Escena>,
     interfaz: &DibujoInterfaz,
     tamano: (u32, u32),
     fondo: [f32; 4],
@@ -102,7 +116,7 @@ pub(super) fn capturar(
                 (fd.calculo.reiniciar_consultas)(cmd, medicion.consultas, 0, 2);
                 (fd.calculo.marcar_tiempo)(cmd, super::tipos_calculo::ETAPA_TOP_OF_PIPE, medicion.consultas, 0);
             }
-            grabar(fd, cmd, &destino, fondo, Some(escena), Some(interfaz));
+            grabar(fd, cmd, &destino, fondo, escena, Some(interfaz));
             if medir {
                 (fd.calculo.marcar_tiempo)(cmd, super::tipos::ETAPA_BOTTOM_OF_PIPE, medicion.consultas, 1);
             }

@@ -57,6 +57,32 @@ impl<'a> Lienzo<'a> {
         let y = rect.y + (rect.alto - estilo.fuente).max(0.0) * 0.5 - estilo.fuente * 0.12;
         self.texto(rect.x, y, &visible, estilo.fuente / 12.0, estilo.color);
     }
+    /// Texto de ayuda ajustado por palabras y recortado por altura de caja.
+    pub(super) fn parrafo(&mut self, rect: crate::Rectangulo, texto: &str, estilo: &telar_estilo::Estilo) {
+        let mut linea = alloc::string::String::new();
+        let mut y = rect.y;
+        let alto = estilo.linea.max(estilo.fuente * 1.4);
+        for palabra in texto.split_whitespace() {
+            let candidato = if linea.is_empty() {
+                alloc::string::String::from(palabra)
+            } else {
+                alloc::format!("{linea} {palabra}")
+            };
+            if self.medir(&candidato, estilo.fuente) > rect.ancho && !linea.is_empty() {
+                if y + alto > rect.y + rect.alto {
+                    return;
+                }
+                self.etiqueta(crate::Rectangulo { y, alto, ..rect }, &linea, estilo);
+                y += alto;
+                linea = palabra.into();
+            } else {
+                linea = candidato;
+            }
+        }
+        if !linea.is_empty() && y + alto <= rect.y + rect.alto {
+            self.etiqueta(crate::Rectangulo { y, alto, ..rect }, &linea, estilo);
+        }
+    }
 
     fn triangulo(&mut self, puntos: [[f32; 2]; 3], color: [f32; 3]) {
         for punto in puntos {

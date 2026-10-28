@@ -11,6 +11,8 @@ pub use tipos::{Caja, Color, Estado, Estilo, Sombra};
 
 /// Hoja distribuida con TELAR; editable sin tocar el compositor de triángulos.
 pub const TEMA_TELAR: &str = include_str!("../temas/telar.css");
+/// Reglas del centro de herramientas por categorías; se aplican sobre el tema base.
+pub const TEMA_ESTUDIO: &str = include_str!("../temas/estudio.css");
 
 #[derive(Default)]
 struct Regla {

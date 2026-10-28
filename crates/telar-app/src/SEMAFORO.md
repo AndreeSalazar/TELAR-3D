@@ -75,3 +75,5 @@ Fuego procedural: --fuego envía constantes y tiempo; GPU integra 16..128 pasos 
 --humo compone parámetros y envíos; ocho controles .tlar v7, pausa/paso/reinicio y D para descarga explícita (786432 B a 128²). No hay lectura de campos en el bucle vivo ni solver CPU. La captura PPM es diagnóstica.
 
 --humo usa presión adaptativa en GPU; D solicita solo 64 B de control. .tlar v8 de 56 B carga v7 con tolerancias por defecto. La CPU sigue registrando un plan completo acotado; no se atribuye autonomía total al backend.
+
+--estudio organiza categorías y abre editores conocidos en ventanas independientes mediante Command, sin shell. No mata procesos ni transfiere escenas. Un registro local evita duplicar cada tipo de editor desde esa sesión.

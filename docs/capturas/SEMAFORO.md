@@ -16,3 +16,5 @@ Clasificación de riesgo, no certificación absoluta ni medición de rendimiento
 humo-mac-2d.png procede de la captura real de densidad GPU a 128², no de una simulación 3D ni de Houdini.
 
 presion-adaptativa.png captura controles y franja del estado GPU después de 240 pasos a 128² en RTX 3060; no es una prueba de rendimiento.
+
+estudio-categorias.png procede de la captura Vulkan de la UI nativa; las tarjetas Pendiente describen planes, no funciones ya implementadas.
