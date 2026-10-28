@@ -151,3 +151,7 @@ rebotes; no se presenta como render de producción terminado.
 ## Primera base visual de fuego
 
 [Esfera procedural GPU](FUEGO-PROCEDURAL.md): integra un volumen analítico y expone sus controles. Sigue separada del render de objetos y no completa el solver físico ni el render de producción. [VFX-PARA-ARTISTAS.md](VFX-PARA-ARTISTAS.md) concreta los próximos criterios para campos, HILO y restricciones.
+
+## Humo 2D: primera simulación persistente
+
+El laboratorio [HUMO-MAC-2D.md](HUMO-MAC-2D.md) completa una primera advección/flotación/proyección en GPU y pruebas contra referencia. No completa humo 3D, fuego físico ni el render de producción. Próximos pasos: presión con control de error, paso temporal/subpasos, campos 3D y su integración con el visor volumétrico; HILO editable, atributos generales, GI y restricciones siguen abiertos.

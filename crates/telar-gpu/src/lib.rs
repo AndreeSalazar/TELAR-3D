@@ -15,10 +15,12 @@
 //! ```
 
 mod calidad;
+mod campos;
 pub mod eleccion;
 mod escena;
 mod ffi;
 mod historial;
+pub use campos::PlanCampos;
 mod interfaz;
 mod lotes;
 pub use lotes::{PlanLotes, ProgresoLotes};

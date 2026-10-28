@@ -35,6 +35,7 @@ mod buffer;
 mod calculo;
 mod calculo_lotes;
 pub(crate) use calculo_lotes::ejecutar_lotes;
+mod campos;
 mod captura_interfaz;
 mod carga;
 mod contexto;

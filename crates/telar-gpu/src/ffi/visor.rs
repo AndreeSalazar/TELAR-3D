@@ -32,6 +32,7 @@ pub(crate) struct Visor {
     malla: Option<MallaGpu>,
     procedural: Option<Residente>,
     historial: Option<super::historial::Historial>,
+    campos: Option<super::campos::Campos>,
 }
 
 impl Visor {
@@ -47,6 +48,7 @@ impl Visor {
             malla: None,
             procedural: None,
             historial: None,
+            campos: None,
         })
     }
 
@@ -54,6 +56,7 @@ impl Visor {
     pub(crate) fn cambiar(&mut self, ctx: &Contexto, (vertices, fragmentos): Sombreadores) -> Result<(), String> {
         esperar(ctx)?;
         self.historial = None;
+        self.campos = None;
         self.pipeline = None;
         (self.vertices, self.fragmentos) = (vertices.to_vec(), fragmentos.to_vec());
         Ok(())
@@ -89,6 +92,14 @@ impl Visor {
                     formato,
                     historial.recursos.disposicion,
                 )?
+            } else if let Some(campos) = &self.campos {
+                PipelineGrafico::residente(
+                    ctx,
+                    &self.vertices,
+                    &self.fragmentos,
+                    formato,
+                    campos.programas[0].disposicion,
+                )?
             } else if let Some(residente) = &self.procedural {
                 let disposicion = residente.ranuras[0].etapas[0].recursos.disposicion;
                 PipelineGrafico::residente(ctx, &self.vertices, &self.fragmentos, formato, disposicion)?
@@ -102,8 +113,13 @@ impl Visor {
                 malla,
                 constantes,
                 indirecto: None,
-                conjunto: self.historial.as_ref().map(|h| h.recursos.conjunto),
+                conjunto: self
+                    .historial
+                    .as_ref()
+                    .map(|h| h.recursos.conjunto)
+                    .or_else(|| self.campos.as_ref().map(|c| c.programas[0].conjunto)),
                 historial: self.historial.as_ref(),
+                campos: self.campos.as_ref(),
                 calculo: None,
             }),
             _ => None,
@@ -119,6 +135,7 @@ impl Visor {
         esperar(ctx)?;
         self.pipeline = None;
         self.historial = None;
+        self.campos = None;
         self.procedural = Some(Residente::nuevo(ctx, capacidad, plan, 2)?);
         self.malla = None;
         Ok(())
@@ -145,6 +162,7 @@ impl Visor {
             indirecto: Some(ranura.control.objeto),
             conjunto: Some(ranura.etapas[0].recursos.conjunto),
             historial: None,
+            campos: None,
             calculo: Some((ranura, parametros)),
         })
     }
@@ -163,6 +181,7 @@ impl Visor {
         self.vertices = shaders.0.to_vec();
         self.fragmentos = shaders.1.to_vec();
         self.historial = Some(nuevo);
+        self.campos = None;
         Ok(())
     }
     pub(crate) fn inspeccionar_historial(&self, ctx: &Contexto) -> Result<Vec<[u32; 4]>, String> {
@@ -179,6 +198,29 @@ impl Visor {
         if self.historial.is_none() {
             return Err("falta historial".into());
         }
+        self.capturar_residente(ctx, tamano, fondo, bloque, capa)
+    }
+    pub(crate) fn capturar_campos(
+        &mut self,
+        ctx: &Contexto,
+        tamano: (u32, u32),
+        fondo: [f32; 4],
+        bloque: &[f32; 32],
+        capa: crate::CapaInterfaz,
+    ) -> Result<crate::CapturaEstudio, String> {
+        if self.campos.is_none() {
+            return Err("faltan campos".into());
+        }
+        self.capturar_residente(ctx, tamano, fondo, bloque, capa)
+    }
+    fn capturar_residente(
+        &mut self,
+        ctx: &Contexto,
+        tamano: (u32, u32),
+        fondo: [f32; 4],
+        bloque: &[f32; 32],
+        capa: crate::CapaInterfaz,
+    ) -> Result<crate::CapturaEstudio, String> {
         if capa.area[0].checked_add(capa.area[2]).is_none_or(|v| v > tamano.0)
             || capa.area[1].checked_add(capa.area[3]).is_none_or(|v| v > tamano.1)
         {
@@ -192,6 +234,35 @@ impl Visor {
         ui.actualizar(capa.vertices, capa.area)?;
         let dibujo = ui.juego(0)?;
         super::captura_interfaz::capturar(ctx, &escena, &dibujo, tamano, fondo)
+    }
+    pub(crate) fn preparar_campos(
+        &mut self,
+        ctx: &Contexto,
+        shaders: Sombreadores,
+        plan: crate::PlanCampos,
+    ) -> Result<(), String> {
+        let nuevo = super::campos::Campos::nuevo(ctx, plan)?;
+        esperar(ctx)?;
+        self.pipeline = None;
+        self.procedural = None;
+        self.historial = None;
+        self.vertices = shaders.0.to_vec();
+        self.fragmentos = shaders.1.to_vec();
+        self.campos = Some(nuevo);
+        Ok(())
+    }
+    pub(crate) fn secuencia_campos(&mut self, nueva: &[usize]) -> Result<(), String> {
+        self.campos.as_mut().ok_or("faltan campos")?.secuencia(nueva)
+    }
+    pub(crate) fn limpiar_campos(&self, ctx: &Contexto) -> Result<(), String> {
+        self.campos.as_ref().ok_or("faltan campos")?.limpiar(ctx)
+    }
+    pub(crate) fn activar_campos(&mut self, activo: bool) -> Result<(), String> {
+        self.campos.as_mut().ok_or("faltan campos")?.activo = activo;
+        Ok(())
+    }
+    pub(crate) fn transferir_campos(&self, ctx: &Contexto, datos: Option<&[u32]>) -> Result<Vec<u32>, String> {
+        self.campos.as_ref().ok_or("faltan campos")?.transferir(ctx, datos)
     }
     pub(crate) fn contar_paso(&mut self) {
         if let Some(procedural) = &mut self.procedural {
@@ -263,7 +334,8 @@ pub(super) fn capturar_buffers(
         extension: (ancho, alto),
         despues: (LAYOUT_TRANSFER_SRC, ETAPA_TRANSFER, ACCESO_TRANSFER_READ),
     };
-    let escena = Escena { pipeline, malla, constantes, indirecto, conjunto: None, historial: None, calculo: None };
+    let escena =
+        Escena { pipeline, malla, constantes, indirecto, conjunto: None, historial: None, campos: None, calculo: None };
     let copia = CopiaImagen {
         desplazamiento: 0,
         largo_fila: 0, // filas seguidas, sin relleno

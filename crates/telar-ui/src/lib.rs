@@ -5,8 +5,11 @@ extern crate alloc;
 
 mod calidad;
 mod dibujo_fuego;
+mod dibujo_humo;
 mod fuego;
+mod humo;
 pub use fuego::{EditorFuego, Fuego};
+pub use humo::{EditorHumo, Humo};
 mod escena_objetos;
 pub use escena_objetos::{EscenaObjetos, PALABRAS_OBJETOS};
 mod dibujo_objetos;

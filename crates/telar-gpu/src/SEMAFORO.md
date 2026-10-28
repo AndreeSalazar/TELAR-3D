@@ -57,3 +57,5 @@ editar y envía constantes; no descarga historial en vivo. Exposición conserva 
 las demás entradas de escena y tamaño reinician. Hay alineación, pipeline y
 adjuntos adicionales; pico físico sin medir. Capturas/inspecciones diagnósticas
 sí esperan y descargan. Pruebas y límites: docs/VISOR-PROGRESIVO.md.
+
+Campos persistentes: plan de hasta 16 programas/256 pasadas, estado lógico <=64 MiB; a 128²/12 planos son 786436 B con dummy. CPU registra el orden, GPU calcula celdas. Cargas, reinicio y descarga son explícitos. Ver docs/HUMO-MAC-2D.md.

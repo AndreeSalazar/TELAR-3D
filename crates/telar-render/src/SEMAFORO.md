@@ -48,3 +48,5 @@ adjuntos adicionales; pico físico sin medir. Capturas/inspecciones diagnóstica
 sí esperan y descargan. Pruebas y límites: docs/VISOR-PROGRESIVO.md.
 
 fuego.rs emite marcha volumétrica procedural 16..128 pasos/píxel, sin buffers de campos ni atomics; coste proporcional a píxeles×pasos. No simula fluidos. Ver docs/FUEGO-PROCEDURAL.md.
+
+humo.rs lee campos MAC residentes y los interpola para el visor; no descarga estado ni integra volumen 3D. Coste de fragmentos y cargas bilineales distinto al fuego procedural. Ver docs/HUMO-MAC-2D.md.

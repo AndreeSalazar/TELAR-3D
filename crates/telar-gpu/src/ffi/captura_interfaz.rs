@@ -44,6 +44,7 @@ pub(crate) fn capturar_malla(
         indirecto: None,
         conjunto: None,
         historial: None,
+        campos: None,
         calculo: None,
     };
     capturar(ctx, &escena, &dibujo, tamano, fondo)

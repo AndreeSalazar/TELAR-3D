@@ -72,3 +72,5 @@ adjuntos adicionales; pico físico sin medir. Capturas/inspecciones diagnóstica
 sí esperan y descargan. Pruebas y límites: docs/VISOR-PROGRESIVO.md.
 
 fuego_gpu.rs valida SPIR-V y capturas reales 96×96, repetibilidad, campos y cambio de calidad. Solo las pruebas descargan imágenes; no es benchmark contra Pyro.
+
+humo_gpu.rs contrasta doce planos con referencia a 17², proyección, pausa, cambio de secuencia y reinicio; descargas explícitas de prueba. No es comparación de rendimiento contra Houdini.

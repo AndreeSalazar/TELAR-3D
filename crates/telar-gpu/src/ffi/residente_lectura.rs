@@ -51,6 +51,7 @@ impl Residente {
             indirecto: Some(ranura.control.objeto),
             conjunto: Some(ranura.etapas[0].recursos.conjunto),
             historial: None,
+            campos: None,
             calculo: None,
         };
         super::captura_interfaz::capturar(ctx, &escena, &dibujo, tamano, fondo)

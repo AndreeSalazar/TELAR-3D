@@ -31,10 +31,13 @@ mod entrada_objetos;
 mod escena;
 mod escena_final;
 mod estudio_fuego;
+mod estudio_humo;
 mod estudio_objetos;
 mod fuego_archivo;
 mod grafo;
 mod grafo_compilar;
+mod humo_archivo;
+mod humo_vista;
 mod objetos;
 mod produccion;
 mod proyecto;
@@ -59,7 +62,10 @@ const PUNTOS_DE_PRUEBA: u32 = 40_000;
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    if let Some(resultado) = estudio_fuego::procesar(&args).or_else(|| estudio_objetos::procesar(&args)) {
+    if let Some(resultado) = estudio_humo::procesar(&args)
+        .or_else(|| estudio_fuego::procesar(&args))
+        .or_else(|| estudio_objetos::procesar(&args))
+    {
         return match resultado {
             Ok(()) => ExitCode::SUCCESS,
             Err(error) => {

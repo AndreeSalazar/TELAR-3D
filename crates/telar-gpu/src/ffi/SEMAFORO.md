@@ -62,3 +62,5 @@ editar y envía constantes; no descarga historial en vivo. Exposición conserva 
 las demás entradas de escena y tamaño reinician. Hay alineación, pipeline y
 adjuntos adicionales; pico físico sin medir. Capturas/inspecciones diagnósticas
 sí esperan y descargan. Pruebas y límites: docs/VISOR-PROGRESIVO.md.
+
+campos.rs conserva un SSBO, seis pipelines en humo y barreras entre pasadas/cuadros. Constantes compute de 128 B. Riesgo crítico FFI de vida útil y sincronización; validación de humo_gpu.rs y docs/HUMO-MAC-2D.md.

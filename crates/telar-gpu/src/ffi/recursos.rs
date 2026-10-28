@@ -111,13 +111,16 @@ impl Recursos {
 
     /// Pipeline de cálculo con `cantidad` buffers de almacenamiento consecutivos.
     pub(super) fn pipeline_enlaces(&mut self, spirv: &[u32], cantidad: u32) -> Result<(), String> {
-        self.pipeline_opciones(spirv, cantidad, 0)
+        self.pipeline_opciones(spirv, cantidad, 0, false)
     }
 
     pub(super) fn pipeline_base(&mut self, spirv: &[u32]) -> Result<(), String> {
-        self.pipeline_opciones(spirv, 1, 0x10) // VK_PIPELINE_CREATE_DISPATCH_BASE_BIT.
+        self.pipeline_opciones(spirv, 1, 0x10, false) // VK_PIPELINE_CREATE_DISPATCH_BASE_BIT.
     }
-    fn pipeline_opciones(&mut self, spirv: &[u32], cantidad: u32, flags: u32) -> Result<(), String> {
+    pub(super) fn pipeline_campos(&mut self, spirv: &[u32]) -> Result<(), String> {
+        self.pipeline_opciones(spirv, 2, 0, true)
+    }
+    fn pipeline_opciones(&mut self, spirv: &[u32], cantidad: u32, flags: u32, parametros: bool) -> Result<(), String> {
         let fc = self.fd.calculo;
         let modulo = InfoModulo {
             s_type: ST_SHADER_MODULE_CREATE_INFO,
@@ -153,14 +156,16 @@ impl Recursos {
                 "crear la disposición",
             )?;
         }
+        let rango =
+            super::tipos_grafico::RangoConstantes { etapas: ETAPA_SHADER_CALCULO, desplazamiento: 0, tamano: 128 };
         let pipeline_disp = InfoDisposicionPipeline {
             s_type: ST_PIPELINE_LAYOUT_CREATE_INFO,
             p_next: nulo,
             flags: 0,
             n_conjuntos: 1,
             conjuntos: &raw const self.disposicion,
-            n_constantes: 0,
-            constantes: nulo,
+            n_constantes: u32::from(parametros),
+            constantes: if parametros { (&raw const rango).cast() } else { nulo },
         };
         // SAFETY: la disposición del conjunto existe; `pipeline_disp` vive durante la llamada.
         let r = unsafe {

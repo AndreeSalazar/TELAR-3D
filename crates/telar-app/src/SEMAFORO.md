@@ -71,3 +71,5 @@ adjuntos adicionales; pico físico sin medir. Capturas/inspecciones diagnóstica
 sí esperan y descargan. Pruebas y límites: docs/VISOR-PROGRESIVO.md.
 
 Fuego procedural: --fuego envía constantes y tiempo; GPU integra 16..128 pasos por píxel. .tlar v6 de 48 B, captura PPM explícita. No solver físico. Ver docs/FUEGO-PROCEDURAL.md.
+
+--humo compone parámetros y envíos; ocho controles .tlar v7, pausa/paso/reinicio y D para descarga explícita (786432 B a 128²). No hay lectura de campos en el bucle vivo ni solver CPU. La captura PPM es diagnóstica.

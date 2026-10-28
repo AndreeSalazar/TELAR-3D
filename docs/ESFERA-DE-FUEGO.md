@@ -95,3 +95,7 @@ Las cifras reales se medirán con temporizadores de la GPU y se publicarán con 
 ## Estado real: 28 de octubre de 2026
 
 Ya existe una primera [esfera procedural](FUEGO-PROCEDURAL.md) con marcha de rayos GPU, campos analíticos y controles guardables. No completa los hitos físicos de esta página: no tiene advección, presión ni combustión. Las cifras anteriores son objetivos/estimaciones sin benchmark actual; la CPU aún prepara y envía el trabajo Vulkan. El plan para artistas está en [VFX-PARA-ARTISTAS.md](VFX-PARA-ARTISTAS.md).
+
+## Hito inicial de humo 2D implementado
+
+[HUMO-MAC-2D.md](HUMO-MAC-2D.md) añade campos persistentes, advección, fuerzas y proyección de presión. El editor usa 128²; el emisor admite hasta 256². Fronteras cerradas, Jacobi amortiguado y residual visible bajo petición. Sigue pendiente la versión 3D, presión convergida por tolerancia, combustión e integración con el fuego procedural. La advección actual es difusiva y no conservativa: la conservación estricta de masa del plan anterior continúa como objetivo, no como propiedad demostrada.

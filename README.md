@@ -131,3 +131,7 @@ y mantiene historial al cambiar exposición. [Uso y evidencia](docs/VISOR-PROGRE
 ## Esfera de fuego procedural
 
 Abre `TELAR Fuego.cmd` después de compilar, o ejecuta `.\target\release\telar.exe --fuego`. Volumen animado en GPU con inspector, vistas de campos y .tlar v6. Es una base visual; el solver físico de Pyro y las restricciones tipo Vellum siguen pendientes. Ver [FUEGO-PROCEDURAL](docs/FUEGO-PROCEDURAL.md) y [plan para artistas](docs/VFX-PARA-ARTISTAS.md).
+
+## Humo físico 2D en GPU
+
+`TELAR Humo.cmd` o `.\target\release\telar.exe --humo`: estado MAC residente con advección, flotación y presión Jacobi. Pausa, paso, reinicio, vistas de campos y diagnóstico solicitado por el artista. Es un laboratorio 2D, todavía separado del fuego procedural y del render de objetos. [Controles, matemática y límites](docs/HUMO-MAC-2D.md).

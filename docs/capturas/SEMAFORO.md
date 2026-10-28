@@ -12,3 +12,5 @@ Limites: Los .tlar son datos de arranque; su CRC no autentica código. Referenci
 Evidencia: docs/FORMATO-TLAR.md, docs/ARRANQUE-GPU.md y docs/SEMAFOROS.md.
 
 Clasificación de riesgo, no certificación absoluta ni medición de rendimiento.
+
+humo-mac-2d.png procede de la captura real de densidad GPU a 128², no de una simulación 3D ni de Houdini.

@@ -66,3 +66,7 @@ Cada nodo guarda su comparación en `referencias/<nodo>.md`.
 ## Ampliación solicitada en octubre de 2026
 
 El alcance inicial acotado de esta página es histórico. La petición de herramientas VFX más amplias se desarrolla en [VFX-PARA-ARTISTAS.md](VFX-PARA-ARTISTAS.md), con datos, HILO, volúmenes y restricciones. Las funciones antes marcadas Fuera pasan a investigación futura; no están implementadas por ese cambio de alcance.
+
+## Estado del solver de humo
+
+Existe un laboratorio MAC 2D con campos residentes y controles: [HUMO-MAC-2D.md](HUMO-MAC-2D.md). Es una base numérica propia, sin equivalencia Pyro demostrada y sin integración todavía en el grafo general.

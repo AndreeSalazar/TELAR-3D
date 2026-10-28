@@ -46,6 +46,7 @@ pub(crate) struct Escena<'a> {
     pub(crate) indirecto: Option<Objeto>,
     pub(crate) conjunto: Option<Objeto>,
     pub(crate) historial: Option<&'a super::historial::Historial>,
+    pub(crate) campos: Option<&'a super::campos::Campos>,
     pub(crate) calculo: Option<(&'a Ranura, ParametrosNodos)>,
 }
 
@@ -69,6 +70,14 @@ pub(crate) unsafe fn grabar(
         // SAFETY: contrato de grabar; escena e historial viven hasta la valla del envío.
         unsafe {
             historial.grabar(fd, cmd);
+        }
+    }
+    if let Some(escena) = escena
+        && let Some(campos) = escena.campos
+    {
+        // SAFETY: contrato de grabar; campos y constantes viven hasta su valla.
+        unsafe {
+            campos.grabar(fd, cmd, escena.constantes);
         }
     }
     let color = Rango { aspecto: ASPECTO_COLOR, mip_base: 0, n_mips: 1, capa_base: 0, n_capas: 1 };

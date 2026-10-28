@@ -16,3 +16,5 @@ Clasificación de riesgo, no certificación absoluta ni medición de rendimiento
 Extensión de caché optativa: 64 bytes adicionales de control por ranura; omite
 la cadena de puntos con clave idéntica. Solo planes fijos/puramente funcionales.
 Evidencia y medición: docs/RENDER-AREA.md.
+
+Humo MAC 2D: emite seis kernels SPIR-V, propiedad de celda por plano y sin atómicos. CPU no simula en vivo; humo_referencia.rs es referencia escalar para pruebas. Presión aproximada, advección difusiva. Ver docs/HUMO-MAC-2D.md.
