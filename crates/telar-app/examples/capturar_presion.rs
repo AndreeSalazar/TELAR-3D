@@ -1,9 +1,15 @@
 //! Captura reproducible del humo con tolerancias y estado GPU visibles.
+#[allow(dead_code, reason = "cámara compartida, sin objetos en este ejemplo")]
+#[path = "../src/escena_final.rs"]
+mod escena_final;
 #[allow(dead_code, reason = "el ejemplo captura un presupuesto fijo, sin edición de secuencia")]
 #[path = "../src/humo_vista.rs"]
 mod humo_vista;
 #[path = "../src/tipografia.rs"]
 mod tipografia;
+#[allow(dead_code, reason = "adaptador 3D compartido por la vista de humo")]
+#[path = "../src/volumen_vista.rs"]
+mod volumen_vista;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ruta = std::env::args().nth(1).unwrap_or_else(|| "target/presion-adaptativa.ppm".into());
     let mut editor = telar_ui::EditorHumo::default();
@@ -22,7 +28,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     editor.mensaje = humo_vista::datos(&gpu)?;
     println!("{} · {pasos} pasos · {}", editor.mensaje, gpu.dispositivo());
-    humo_vista::capturar(&mut gpu, &editor, &fuente, std::path::Path::new(&ruta))?;
+    humo_vista::capturar_bloque(
+        &mut gpu,
+        &editor,
+        &fuente,
+        std::path::Path::new(&ruta),
+        &humo_vista::bloque(&editor, true),
+    )?;
     drop(gpu);
     drop(ventana);
     if telar_gpu::avisos_de_validacion() != 0 {

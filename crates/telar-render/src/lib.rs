@@ -17,6 +17,8 @@ mod superficie;
 mod tipos;
 mod trazado;
 pub mod visor_rayos;
+pub mod volumen;
+mod volumen_muestreo;
 pub use programa::vertices;
 pub use superficie::fragmentos;
 

@@ -81,6 +81,12 @@ impl Funcion<'_> {
     pub fn elegir(&mut self, tipo: Id, condicion: Id, si: Id, no: Id) -> Id {
         self.con_resultado(op::SELECT, tipo, &[condicion.0, si.0, no.0])
     }
+    /// `OpPhi`: valores y etiquetas predecesoras. Debe ser la primera instrucción
+    /// de un bloque de fusión, antes de operaciones que no sean otros Phi.
+    pub fn phi(&mut self, tipo: Id, entradas: &[(Id, Id)]) -> Id {
+        let operandos: Vec<_> = entradas.iter().flat_map(|(valor, bloque)| [valor.0, bloque.0]).collect();
+        self.con_resultado(245, tipo, &operandos)
+    }
 
     /// `OpSelectionMerge`: dónde se juntan las dos ramas del `if` que sigue.
     pub fn fusion(&mut self, fusion: Id) {

@@ -76,3 +76,5 @@ fuego_gpu.rs valida SPIR-V y capturas reales 96×96, repetibilidad, campos y cam
 humo_gpu.rs contrasta doce planos con referencia a 17², proyección, pausa, cambio de secuencia y reinicio; descargas explícitas de prueba. No es comparación de rendimiento contra Houdini.
 
 humo_adaptativo_gpu.rs verifica convergencia, límite, datos no finitos, resumen, franjas GPU y equivalencia con referencia a la cuenta efectiva; no es benchmark de velocidad.
+
+volumen_gpu.rs valida catorce kernels SPIR-V y visor, compara 14 planos contra referencia a 9³, comprueba presupuesto, fuente, repetibilidad, cámara/pausa y reinicio con descargas explícitas. No es benchmark. Configuración v9 verifica corrupción y rechazo cruzado 2D/3D.

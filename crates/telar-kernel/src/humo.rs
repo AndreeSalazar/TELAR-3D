@@ -30,7 +30,7 @@ impl Configuracion {
         if !(8..=256).contains(&self.lado) || !(1..=128).contains(&self.iteraciones) {
             return Err("humo fuera de presupuesto");
         }
-        let codigos = (0..6).map(|etapa| programa(self, etapa, false)).collect();
+        let codigos = (0..6).map(|etapa| programa(self, etapa, false, false)).collect();
         let mut orden = alloc::vec![0, 1];
         orden.extend((0..self.iteraciones).map(|i| if i % 2 == 0 { 2 } else { 3 }));
         orden.extend([4, 5]);
@@ -50,7 +50,7 @@ impl Configuracion {
             return Err("lado adaptativo inválido");
         }
         let orden = orden_adaptativo(self.iteraciones)?;
-        let codigos = (0..14).map(|etapa| programa(self, etapa, true)).collect();
+        let codigos = (0..14).map(|etapa| programa(self, etapa, true, false)).collect();
         Ok(Programas { codigos, orden })
     }
 }
@@ -68,9 +68,9 @@ pub fn orden_adaptativo(maximo: u32) -> Result<Vec<usize>, &'static str> {
     orden.extend([4, 5]);
     Ok(orden)
 }
-fn programa(config: Configuracion, etapa: u32, adaptativo: bool) -> Vec<u32> {
+pub(super) fn programa(config: Configuracion, etapa: u32, adaptativo: bool, volumen: bool) -> Vec<u32> {
     let mut modulo = Modulo::nuevo();
-    let memoria = Memoria::nueva(&mut modulo, config.lado);
+    let memoria = Memoria::nueva(&mut modulo, config.lado, volumen);
     let v3 = modulo.tipo_vector(memoria.entero, 3);
     let ptr = modulo.tipo_puntero(Clase::Entrada, v3);
     let global = modulo.variable(ptr, Clase::Entrada);
@@ -83,13 +83,19 @@ fn programa(config: Configuracion, etapa: u32, adaptativo: bool) -> Vec<u32> {
     let cargado = f.cargar(v3, global);
     let pixel = f.extraer(memoria.entero, cargado, 0);
     let invocaciones = match etapa {
-        7 | 12 => (config.lado * config.lado).div_ceil(64),
+        7 | 12 => memoria.celdas().div_ceil(64),
         8 | 13 => 1,
-        _ => config.lado * config.lado,
+        _ => memoria.celdas(),
     };
     let cantidad = Memoria::u(&mut f, invocaciones);
-    let tamano =
-        Memoria::u(&mut f, (if adaptativo { CANALES_ADAPTATIVOS } else { CANALES }) * config.lado * config.lado);
+    let canales = if volumen {
+        crate::humo3d::CANALES
+    } else if adaptativo {
+        CANALES_ADAPTATIVOS
+    } else {
+        CANALES
+    };
+    let tamano = Memoria::u(&mut f, canales * memoria.celdas());
     let capacidad = f.longitud(memoria.entero, memoria.buffer, 0);
     let cabe = f.binaria(op::U_LESS_THAN_EQUAL, memoria.booleano, tamano, capacidad);
     let activo = f.binaria(op::U_LESS_THAN, memoria.booleano, pixel, cantidad);
@@ -99,6 +105,8 @@ fn programa(config: Configuracion, etapa: u32, adaptativo: bool) -> Vec<u32> {
     f.bloque(cuerpo);
     if adaptativo && etapa == 4 {
         crate::humo_control::emitir(&mut f, &memoria, pixel, 14);
+    } else if etapa < 6 && volumen {
+        crate::humo3d_pasos::emitir(&mut f, &memoria, pixel, etapa, config.iteraciones);
     } else if etapa < 6 {
         crate::humo_pasos::emitir(&mut f, &memoria, pixel, etapa, config.iteraciones);
     } else {

@@ -159,3 +159,10 @@ El laboratorio [HUMO-MAC-2D.md](HUMO-MAC-2D.md) completa una primera advección/
 ## Control de error de presión integrado
 
 [PRESION-ADAPTATIVA.md](PRESION-ADAPTATIVA.md) añade reducción de residual, tolerancias y parada de actualizaciones decidida en GPU. Los despachos siguen acotados desde CPU; eliminación de huecos, solver más eficaz, subpasos y humo 3D permanecen abiertos.
+
+## Rama de explosión volumétrica
+
+El recorrido completo queda registrado en [PLAN-EXPLOSION-PRODUCCION.md](PLAN-EXPLOSION-PRODUCCION.md).
+La primera base [HUMO-3D.md](HUMO-3D.md) ya transporta y proyecta campos MAC a 32³
+en GPU. No cierra P7 de esta ruta: faltan estabilidad temporal, colisiones,
+combustión, iluminación de volumen, secundarios, cachés y secuencias finales.

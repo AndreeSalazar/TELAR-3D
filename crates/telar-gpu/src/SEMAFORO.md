@@ -63,3 +63,5 @@ Campos persistentes: plan de hasta 16 programas/256 pasadas, estado lógico <=64
 Plan de campos ampliado hasta 512 huecos; descarga explícita de rangos permite resumen de 64 B. El estado adaptativo 128² ocupa 983044 B lógicos con dummy. No evita enviar los huecos sobrantes ni promete mayor velocidad.
 
 API de dibujo/captura solo UI permite el centro sin visor ni buffers de simulación. Conserva coste de destinos, profundidad, atlas y buffers UI; captura explícita descarga RGBA8.
+
+PlanCampos admite 1..20 palabras por elemento con límite explícito de 64 MiB. El humo 3D usa 17, a 32³ reserva lógica de estado 2228224 B más palabra auxiliar y recursos gráficos. El backend sigue opaco a física/UI; no añade dependencia ni FFI. Ver docs/HUMO-3D.md y tests/volumen_gpu.rs de la app.

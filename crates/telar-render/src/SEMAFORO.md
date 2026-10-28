@@ -52,3 +52,5 @@ fuego.rs emite marcha volumétrica procedural 16..128 pasos/píxel, sin buffers 
 humo.rs lee campos MAC residentes y los interpola para el visor; no descarga estado ni integra volumen 3D. Coste de fragmentos y cargas bilineales distinto al fuego procedural. Ver docs/HUMO-MAC-2D.md.
 
 fragmentos_adaptativo lee control residente del plano 14 para franja de estado, sin readback de UI. La ruta fija de doce planos conserva su shader separado. Capturas de tres estados verificadas en Vulkan.
+
+Visor de campos 3D: marcha de rayos de 16..128 muestras con trilineal, emisión/absorción diagnóstica; la app usa 64 y visor máximo 512². Lee los 17 planos del solver; no añade historial ni descargas en vivo. No incluye sombras/dispersión de producción. La velocidad requiere tres muestras por paso; coste GPU no medido. Prueba real: telar-app/tests/volumen_gpu.rs.

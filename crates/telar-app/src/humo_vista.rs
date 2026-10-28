@@ -11,6 +11,9 @@ pub(crate) fn preparar(
     visible: bool,
     validacion: bool,
 ) -> Result<(Ventana, Gpu), String> {
+    if editor.volumen {
+        return crate::volumen_vista::preparar(editor, fuente, visible, validacion);
+    }
     let ventana = Ventana::nueva(&Config {
         titulo: "TELAR · Humo MAC 2D · campos persistentes GPU".into(),
         ancho: 1280,
@@ -68,7 +71,16 @@ pub(crate) fn bloque(editor: &EditorHumo, srgb: bool) -> [f32; 32] {
     bloque
 }
 pub(crate) fn datos(gpu: &Gpu) -> Result<String, String> {
-    let inicio = telar_kernel::humo::CONTROL_ADAPTATIVO * LADO * LADO;
+    resumen(gpu, telar_kernel::humo::CONTROL_ADAPTATIVO * LADO * LADO)
+}
+pub(crate) fn datos_editor(gpu: &Gpu, editor: &EditorHumo) -> Result<String, String> {
+    if editor.volumen {
+        resumen(gpu, telar_kernel::humo3d::CONTROL * crate::volumen_vista::LADO.pow(3))
+    } else {
+        datos(gpu)
+    }
+}
+fn resumen(gpu: &Gpu, inicio: u32) -> Result<String, String> {
     let palabras = gpu.inspeccionar_rango_campos(inicio, 16)?;
     let valores: Vec<_> = palabras.into_iter().map(f32::from_bits).collect();
     let estado = match valores[5] {
@@ -83,22 +95,23 @@ pub(crate) fn datos(gpu: &Gpu) -> Result<String, String> {
     ))
 }
 
-pub(crate) fn capturar(
+pub(crate) fn capturar_bloque(
     gpu: &mut Gpu,
     editor: &EditorHumo,
     fuente: &Fuente,
     ruta: &std::path::Path,
+    bloque: &[f32; 32],
 ) -> Result<(), String> {
     use std::io::Write;
     if ruta.extension().is_none_or(|v| !v.eq_ignore_ascii_case("ppm")) {
         return Err("captura requiere .ppm".into());
     }
     gpu.activar_campos(false)?;
-    let d = diseno((1280, 800));
+    let d = diseno_editor(editor, (1280, 800));
     let imagen = gpu.capturar_campos_interfaz(
         d.tamano,
         [0.03, 0.04, 0.05, 1.0],
-        &bloque(editor, true),
+        bloque,
         telar_gpu::CapaInterfaz {
             shaders: Sombreadores {
                 vertices: &hilo_spirv::interfaz::vertices(),
@@ -133,4 +146,8 @@ pub(crate) fn diseno(tamano: (u32, u32)) -> DisenoObjetos {
         d.visor.alto = lado;
     }
     d
+}
+
+pub(crate) fn diseno_editor(editor: &EditorHumo, tamano: (u32, u32)) -> DisenoObjetos {
+    if editor.volumen { crate::volumen_vista::diseno(tamano) } else { diseno(tamano) }
 }

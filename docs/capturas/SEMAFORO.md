@@ -18,3 +18,5 @@ humo-mac-2d.png procede de la captura real de densidad GPU a 128², no de una si
 presion-adaptativa.png captura controles y franja del estado GPU después de 240 pasos a 128² en RTX 3060; no es una prueba de rendimiento.
 
 estudio-categorias.png procede de la captura Vulkan de la UI nativa; las tarjetas Pendiente describen planes, no funciones ya implementadas.
+
+humo-3d.png es captura GPU real de 180 pasos a 32³ en RTX 3060; PPM convertido a PNG sin modificar el contenido. No representa una explosión de producción ni medición de FPS.

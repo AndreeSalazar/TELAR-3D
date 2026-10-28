@@ -141,3 +141,7 @@ El humo ya incorpora [presión con tolerancia decidida en GPU](docs/PRESION-ADAP
 ## Centro de herramientas por categorías
 
 Abre `TELAR Estudio.cmd` o `.\target\release\telar.exe --estudio`: Escena, Geometría, Simulación, Materiales, Animación, Render, Composición y Datos/HILO. Las herramientas existentes se abren en ventanas independientes; las pendientes muestran su alcance sin fingir funciones. [Organización y controles](docs/ESTUDIO-CATEGORIAS.md).
+
+Humo físico 3D inicial: `telar --humo-3d` o **TELAR Humo 3D.cmd**. Campos MAC
+32³ residentes, presión con tolerancia, cámara orbitable y parámetros .tlar v9.
+[Uso, pruebas y límites](docs/HUMO-3D.md) · [Plan de explosión de producción](docs/PLAN-EXPLOSION-PRODUCCION.md).

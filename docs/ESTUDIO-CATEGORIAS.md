@@ -34,6 +34,7 @@ no implica compatibilidad con VEX, proyectos `.hip` ni sus contextos completos.
 - Objetos y luz / Render progresivo: editor de escena acotada `--estudio-rayos`.
 - Superficie procedural / Aspecto de superficies: estudio existente de rejilla.
 - Humo 2D / Inspección de humo: laboratorio MAC `--humo`.
+- Humo 3D: laboratorio MAC de 32³ con cámara orbitable `--humo-3d`.
 - Esfera de fuego: volumen procedural `--fuego`, distinto de combustión simulada.
 
 Cada tarjeta indica Disponible, Simulación GPU, Procedural GPU o Vista previa

@@ -36,11 +36,20 @@ impl EditorHumo {
         ] {
             lienzo.rect(rect.x, rect.y, rect.ancho, rect.alto, base.fondo);
         }
-        texto(&mut lienzo, [20.0, 18.0, 145.0, 32.0], "TELAR · Humo", &titulo);
+        texto(
+            &mut lienzo,
+            [20.0, 18.0, 145.0, 32.0],
+            if self.volumen { "TELAR · 3D" } else { "TELAR · Humo" },
+            &titulo,
+        );
         texto(
             &mut lienzo,
             [180.0, 22.0, ancho - 200.0, 30.0],
-            "Emisor / advección / fuerzas / presión · 128² · Espacio: pausa · N: paso · R: reiniciar",
+            if self.volumen {
+                "Campos físicos 32³ · arrastrar: órbita · rueda: zoom · Espacio / N / R"
+            } else {
+                "Emisor / advección / fuerzas / presión · 128² · Espacio: pausa · N: paso · R: reiniciar"
+            },
             &etiqueta,
         );
         lienzo.caja(diseno.panel, &panel);

@@ -24,3 +24,5 @@ La entrega de grafo agrega documentación de v3 (hasta 416 B de datos de escena)
 edición numérica y contratos de ocho operaciones geométricas. El documento no
 ejecuta el grafo; los costes de compilación/ejecución se describen por separado
 en GRAFO-EDITABLE.md y los semáforos de UI, HILO y app.
+
+HUMO-3D.md y PLAN-EXPLOSION-PRODUCCION.md documentan la base 32³ y los hitos pendientes, costes lógicos y evidencia numérica; no certifican equivalencia con Houdini.

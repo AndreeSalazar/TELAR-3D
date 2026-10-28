@@ -12,3 +12,5 @@ Limites: Buzón de una entrada, productores serializados, región/ABI verificado
 Evidencia: docs/ARRANQUE-GPU.md, docs/FORMATO-TLAR.md y pruebas de kernel/hilo/SPIR-V.
 
 Clasificación de riesgo, no certificación absoluta ni medición de rendimiento.
+
+OpPhi permite unir ramas de valores en el muestreo volumétrico. Su posición debe preceder instrucciones ordinarias del bloque de unión. SPIR-V y ejecución real se comprueban en telar-app/tests/volumen_gpu.rs; sin dependencia nueva ni trabajo por cuadro en CPU.

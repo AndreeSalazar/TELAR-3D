@@ -32,6 +32,11 @@ pub(crate) fn procesar(args: &[String]) -> Option<Result<(), String>> {
                 .take(4_194_453)
                 .read_to_end(&mut bytes)
                 .map_err(|e| format!("leer {ruta}: {e}"))?;
+            if bytes.get(4..8).is_some_and(|v| v == 9u32.to_le_bytes()) {
+                let humo = crate::volumen_archivo::decodificar(&bytes)?;
+                println!("telar: .tlar v9 · humo 3D 32³ · máximo {} iteraciones", humo.0[7]);
+                return Ok(());
+            }
             if bytes.get(4..8).is_some_and(|v| v == 7u32.to_le_bytes() || v == 8u32.to_le_bytes()) {
                 let humo = crate::humo_archivo::decodificar(&bytes)?;
                 println!(

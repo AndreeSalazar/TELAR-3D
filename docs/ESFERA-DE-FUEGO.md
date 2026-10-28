@@ -98,8 +98,16 @@ Ya existe una primera [esfera procedural](FUEGO-PROCEDURAL.md) con marcha de ray
 
 ## Hito inicial de humo 2D implementado
 
-[HUMO-MAC-2D.md](HUMO-MAC-2D.md) añade campos persistentes, advección, fuerzas y proyección de presión. El editor usa 128²; el emisor admite hasta 256². Fronteras cerradas, Jacobi amortiguado y residual visible bajo petición. Sigue pendiente la versión 3D, presión convergida por tolerancia, combustión e integración con el fuego procedural. La advección actual es difusiva y no conservativa: la conservación estricta de masa del plan anterior continúa como objetivo, no como propiedad demostrada.
+[HUMO-MAC-2D.md](HUMO-MAC-2D.md) añade campos persistentes, advección, fuerzas y proyección de presión. El editor usa 128²; el emisor admite hasta 256². Fronteras cerradas, Jacobi amortiguado y residual visible bajo petición. La evolución 3D y el control de tolerancia están documentados más abajo; siguen pendientes combustión e integración con el fuego procedural. La advección actual es difusiva y no conservativa: la conservación estricta de masa del plan anterior continúa como objetivo, no como propiedad demostrada.
 
 ## Presión con criterio de parada
 
 El laboratorio ya dispone de [control de error en GPU](PRESION-ADAPTATIVA.md), con estado de convergencia/límite/entrada inválida. Esto completa el primer criterio de tolerancia; no convierte Jacobi en solución universal ni completa la esfera física 3D.
+
+## Primera base física 3D
+
+[HUMO-3D.md](HUMO-3D.md) implementa MAC denso, advección trilineal y presión
+controlada por error con cámara orbitable. El editor comienza en 32³ (emisor
+4..64³); 128³/256³ siguen como objetivos, sin reserva ni rendimiento prometidos.
+No fusiona todavía el fuego analítico con combustión. El plan actualizado está en
+[PLAN-EXPLOSION-PRODUCCION.md](PLAN-EXPLOSION-PRODUCCION.md).

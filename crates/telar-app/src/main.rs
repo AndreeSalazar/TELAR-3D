@@ -38,6 +38,7 @@ mod fuego_archivo;
 mod grafo;
 mod grafo_compilar;
 mod humo_archivo;
+mod humo_entrada;
 mod humo_vista;
 mod objetos;
 mod produccion;
@@ -50,6 +51,8 @@ mod sesion;
 mod tipografia;
 mod visor;
 mod vista_objetos;
+mod volumen_archivo;
+mod volumen_vista;
 
 use std::process::ExitCode;
 use std::time::Duration;

@@ -13,9 +13,10 @@ pub(super) struct Memoria {
     constantes: Id,
     push: Id,
     pub lado: u32,
+    pub volumen: bool,
 }
 impl Memoria {
-    pub(super) fn nueva(m: &mut Modulo, lado: u32) -> Self {
+    pub(super) fn nueva(m: &mut Modulo, lado: u32, volumen: bool) -> Self {
         let real = m.tipo_f32();
         let entero = m.tipo_u32();
         let booleano = m.tipo_bool();
@@ -39,7 +40,29 @@ impl Memoria {
             push: m.tipo_puntero(Clase::Constantes, vector),
             constantes,
             lado,
+            volumen,
         }
+    }
+    pub(super) fn celdas(&self) -> u32 {
+        self.lado * self.lado * if self.volumen { self.lado } else { 1 }
+    }
+    pub(super) fn div(&self) -> u32 {
+        if self.volumen { 10 } else { 8 }
+    }
+    pub(super) fn qb(&self) -> u32 {
+        if self.volumen { 12 } else { 10 }
+    }
+    pub(super) fn residual(&self) -> u32 {
+        if self.volumen { 14 } else { 12 }
+    }
+    pub(super) fn parciales(&self) -> u32 {
+        if self.volumen { 15 } else { 13 }
+    }
+    pub(super) fn control(&self) -> u32 {
+        if self.volumen { 16 } else { 14 }
+    }
+    pub(super) fn vecinos_todos(&self, f: &mut Funcion, pixel: Id) -> alloc::vec::Vec<(Id, Id)> {
+        if self.volumen { self.vecinos3(f, pixel).to_vec() } else { self.vecinos(f, pixel).to_vec() }
     }
     pub(super) fn c(f: &mut Funcion, v: f32) -> Id {
         f.modulo().constante_f32(v)
@@ -73,7 +96,7 @@ impl Memoria {
     }
     fn direccion(&self, f: &mut Funcion, pixel: Id, canal: u32) -> Id {
         let cero = Self::u(f, 0);
-        let inicio = Self::u(f, canal * self.lado * self.lado);
+        let inicio = Self::u(f, canal * self.celdas());
         let indice = f.binaria(op::I_ADD, self.entero, pixel, inicio);
         f.acceso(self.puntero, self.buffer, &[cero, indice])
     }

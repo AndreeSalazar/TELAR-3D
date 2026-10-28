@@ -40,3 +40,5 @@ adjuntos adicionales; pico físico sin medir. Capturas/inspecciones diagnóstica
 sí esperan y descargan. Pruebas y límites: docs/VISOR-PROGRESIVO.md.
 
 capturar_presion.rs genera 240 pasos y captura la página de tolerancias con datos reales GPU; descarga/PPM de diagnóstico fuera del producto en vivo.
+
+La captura de presión 2D usa el bloque gráfico explícito; los adaptadores compartidos también conocen el visor 3D, sin iniciarlo en este ejemplo. Compilación comprobada por cargo verify.

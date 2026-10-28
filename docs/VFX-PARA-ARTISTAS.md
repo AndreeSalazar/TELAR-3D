@@ -83,3 +83,10 @@ El criterio de presión por tolerancia ya está disponible en [PRESION-ADAPTATIV
 ## Organización visual
 
 Ya existe un [centro nativo por categorías](ESTUDIO-CATEGORIAS.md), con acceso a editores disponibles y descripción de capacidades pendientes. La sesión compartida, los paneles acoplables y los grafos de contexto siguen pendientes.
+
+## Explosión: recorrido y volumen inicial
+
+[PLAN-EXPLOSION-PRODUCCION.md](PLAN-EXPLOSION-PRODUCCION.md) separa campos,
+tiempo/colisiones, reacción, luz volumétrica, secundarios, cachés y plano final.
+[HUMO-3D.md](HUMO-3D.md) entrega la primera base 32³, campos inspeccionables y
+cámara orbitable; los restantes hitos siguen pendientes.

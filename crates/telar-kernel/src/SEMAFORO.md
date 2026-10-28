@@ -20,3 +20,5 @@ Evidencia y medición: docs/RENDER-AREA.md.
 Humo MAC 2D: emite seis kernels SPIR-V, propiedad de celda por plano y sin atómicos. CPU no simula en vivo; humo_referencia.rs es referencia escalar para pruebas. Presión aproximada, advección difusiva. Ver docs/HUMO-MAC-2D.md.
 
 Presión adaptativa: residual máximo y reducción jerárquica sin atómicos; decisión GPU con tolerancia/presupuesto, 14 programas y hasta 327 pasadas. Estado de quince planos. Referencia CPU acepta cero iteraciones para verificar la estimación inicial. Ver docs/PRESION-ADAPTATIVA.md.
+
+Humo MAC 3D: 17 planos a 4..64³, catorce programas y 7+5*(iter/2) posiciones por paso. Advección, fuerzas, presión y control en GPU; referencia escalar solo de ensayo. 68*N³+4 B lógicos compartidos, sin atómicos ni descargas vivas. El plan host sigue enviando las pasadas acotadas. Pruebas: telar-app/tests/volumen_gpu.rs; límites en docs/HUMO-3D.md.

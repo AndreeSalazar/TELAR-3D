@@ -85,7 +85,8 @@ fn emitir(lado: u32, adaptativo: bool) -> Result<Vec<u32>, &'static str> {
     let opciones = t.cargar(&mut f, 2);
     let srgb = f.extraer(t.real, opciones, 1);
     let color = crate::superficie::salida(&mut f, &t, rgb, expo, srgb);
-    let color = if adaptativo { indicador(&mut f, &t, &mat, estado, puntero, uv, lado, color) } else { color };
+    let color =
+        if adaptativo { indicador(&mut f, &t, &mat, estado, puntero, uv, 14 * lado * lado, color) } else { color };
     f.guardar(salida, color);
     f.volver();
     let main = f.terminar();
@@ -137,18 +138,18 @@ fn leer(
 }
 
 #[allow(clippy::too_many_arguments, reason = "ABI explícita del buffer y color del fragmento")]
-fn indicador(
+pub(super) fn indicador(
     f: &mut Funcion,
     t: &Tipos,
     mat: &Matematica,
     estado: Id,
     puntero: Id,
     uv: Id,
-    lado: u32,
+    base: u32,
     color: Id,
 ) -> Id {
     let cero = f.modulo().constante_u32(0);
-    let indice = f.modulo().constante_u32(14 * lado * lado + 5);
+    let indice = f.modulo().constante_u32(base + 5);
     let ptr = f.acceso(puntero, estado, &[cero, indice]);
     let estado = f.cargar(t.real, ptr);
     let mut franja = t.rgb(f, [0.08, 0.2, 0.45]);

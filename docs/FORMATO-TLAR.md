@@ -148,3 +148,10 @@ atómico del proyecto; no implica recuperación garantizada frente a apagones.
 Los lectores de rejilla rechazan v5 y solicitan `--estudio-rayos`; los lectores
 v5 rechazan v1..v4. El inspector reconoce todos los formatos sin ejecutar shaders.
 Ver [EDITOR-OBJETOS.md](EDITOR-OBJETOS.md) y las pruebas objetos_editor.rs.
+
+## Configuración de humo 3D v9
+
+Registro de 56 B con los mismos diez parámetros f32 y CRC de carga útil que humo
+2D v8; versión 9 identifica un dominio MAC 3D de 32³ en el editor actual. Los
+lectores rechazan el intercambio de versiones 8/9. No contiene campos, cámara,
+semilla ni caché; abrir inicia estado vacío. Ver [HUMO-3D.md](HUMO-3D.md).

@@ -1,4 +1,4 @@
-//! Parámetros del humo MAC 2D y edición numérica; sin recursos GPU.
+//! Parámetros del humo MAC 2D/3D y edición numérica; sin recursos GPU.
 use crate::{Control, DisenoObjetos, EntradaNumero};
 use alloc::{
     format,
@@ -56,8 +56,10 @@ fn dominio(i: usize) -> (&'static str, f32, f32) {
         _ => ("Tolerancia absoluta", 0.0, 0.1),
     }
 }
-/// Inspector del solver MAC 2D; los campos físicos viven en GPU.
+/// Inspector de los solvers MAC; los campos físicos viven en GPU.
 pub struct EditorHumo {
+    /// Selecciona presentación 3D; la app mantiene los campos y su formato por separado.
+    pub volumen: bool,
     /// Avanza el estado físico un paso fijo por fotograma dibujado.
     pub animando: bool,
     /// Valores guardables, independientes de la vista.
@@ -77,6 +79,7 @@ impl Default for EditorHumo {
     fn default() -> Self {
         Self {
             animando: true,
+            volumen: false,
             humo: Humo::default(),
             vista: 0,
             pagina: 0,

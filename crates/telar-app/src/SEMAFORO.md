@@ -77,3 +77,5 @@ Fuego procedural: --fuego envía constantes y tiempo; GPU integra 16..128 pasos 
 --humo usa presión adaptativa en GPU; D solicita solo 64 B de control. .tlar v8 de 56 B carga v7 con tolerancias por defecto. La CPU sigue registrando un plan completo acotado; no se atribuye autonomía total al backend.
 
 --estudio organiza categorías y abre editores conocidos en ventanas independientes mediante Command, sin shell. No mata procesos ni transfiere escenas. Un registro local evita duplicar cada tipo de editor desde esa sesión.
+
+--humo-3d compone MAC 32³ y visor orbitable 512²/64 pasos; campos y presión residen en GPU, CPU maneja cámara/constantes/envíos. D descarga 64 B; F5/F9 guarda/abre configuración v9 de 56 B y reinicia campos al abrir. Reserva lógica 2228228 B más gráficos/alineación; pico físico y FPS sin medir. No hay caché ni combustión. Evidencia adicional: docs/HUMO-3D.md y tests/volumen_gpu.rs.

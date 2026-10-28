@@ -5,7 +5,7 @@ use crate::{Gpu, Sombreadores};
 pub struct PlanCampos<'a> {
     /// Invocaciones por pasada; local X=64.
     pub elementos: u32,
-    /// Palabras u32/f32 por elemento; el shader define su distribución.
+    /// Palabras u32/f32 por elemento, 1..20; estado total hasta 64 MiB.
     pub palabras: u32,
     /// SPIR-V distintos, hasta 16; set 0/binding 1 es el estado.
     pub programas: &'a [Vec<u32>],
@@ -15,7 +15,7 @@ pub struct PlanCampos<'a> {
 impl PlanCampos<'_> {
     pub(crate) fn validar(&self) -> Result<u64, String> {
         if !(1..=1_048_576).contains(&self.elementos)
-            || !(1..=16).contains(&self.palabras)
+            || !(1..=20).contains(&self.palabras)
             || self.programas.is_empty()
             || self.programas.len() > 16
             || self.secuencia.is_empty()
@@ -25,7 +25,11 @@ impl PlanCampos<'_> {
         {
             return Err("plan de campos fuera de contrato".into());
         }
-        Ok(u64::from(self.elementos) * u64::from(self.palabras) * 4)
+        let bytes = u64::from(self.elementos) * u64::from(self.palabras) * 4;
+        if bytes > 67_108_864 {
+            return Err("campos exceden presupuesto de 64 MiB".into());
+        }
+        Ok(bytes)
     }
 }
 impl Gpu {

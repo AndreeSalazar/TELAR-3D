@@ -8,6 +8,8 @@ pub enum Espacio {
     Geometria,
     /// Solver MAC 2D.
     Humo,
+    /// Solver MAC 3D de volumen denso.
+    Humo3d,
     /// Volumen analítico animado.
     Fuego,
 }
@@ -94,11 +96,11 @@ pub const CATEGORIAS: &[Categoria] = &[
                 estado: "Procedural GPU",
             },
             Herramienta {
-                nombre: "Fuego y humo 3D",
-                resumen: "Volúmenes con reacción",
-                detalle: "Plan: campos 3D persistentes, combustión, colisiones, sombras y render del volumen. El fuego procedural y el solver 2D actuales siguen separados.",
-                espacio: None,
-                estado: "Pendiente",
+                nombre: "Humo 3D",
+                resumen: "Campos físicos y visor orbitable",
+                detalle: "Humo MAC 32³ persistente en GPU, con advección trilineal, fuerzas y presión con tolerancia. Visor orbitable de campos. Combustión, colisiones internas, iluminación de producción y cachés siguen pendientes.",
+                espacio: Some(Espacio::Humo3d),
+                estado: "Simulación GPU",
             },
             Herramienta {
                 nombre: "Telas y cuerpos blandos",
