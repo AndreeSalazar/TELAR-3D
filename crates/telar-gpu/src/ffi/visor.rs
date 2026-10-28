@@ -261,6 +261,9 @@ impl Visor {
         self.campos.as_mut().ok_or("faltan campos")?.activo = activo;
         Ok(())
     }
+    pub(crate) fn leer_campos(&self, ctx: &Contexto, desde: u32, cantidad: u32) -> Result<Vec<u32>, String> {
+        self.campos.as_ref().ok_or("faltan campos")?.leer_rango(ctx, desde, cantidad)
+    }
     pub(crate) fn transferir_campos(&self, ctx: &Contexto, datos: Option<&[u32]>) -> Result<Vec<u32>, String> {
         self.campos.as_ref().ok_or("faltan campos")?.transferir(ctx, datos)
     }

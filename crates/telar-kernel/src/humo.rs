@@ -7,7 +7,7 @@ use hilo_spirv::{
 };
 /// Canales por celda: u,v,densidad,calor; cuatro provisionales; div,pA,pB,div final.
 pub const CANALES: u32 = 12;
-/// Configuración estructural. Cambiarla reinicializa los campos.
+/// Configuración de compilación; el ejecutor puede cambiar el presupuesto conservando campos.
 #[derive(Clone, Copy)]
 pub struct Configuracion {
     /// Celdas por lado, 8..256.
@@ -30,14 +30,45 @@ impl Configuracion {
         if !(8..=256).contains(&self.lado) || !(1..=128).contains(&self.iteraciones) {
             return Err("humo fuera de presupuesto");
         }
-        let codigos = (0..6).map(|etapa| programa(self, etapa)).collect();
+        let codigos = (0..6).map(|etapa| programa(self, etapa, false)).collect();
         let mut orden = alloc::vec![0, 1];
         orden.extend((0..self.iteraciones).map(|i| if i % 2 == 0 { 2 } else { 3 }));
         orden.extend([4, 5]);
         Ok(Programas { codigos, orden })
     }
 }
-fn programa(config: Configuracion, etapa: u32) -> Vec<u32> {
+/// Quince planos en modo adaptativo, incluidos parciales y control GPU.
+pub const CANALES_ADAPTATIVOS: u32 = 15;
+/// Plano de control: activo, iteraciones, div∞, residual∞, umbral, estado, máximos y contador.
+pub const CONTROL_ADAPTATIVO: u32 = 14;
+impl Configuracion {
+    /// Compila control de error en GPU, con comprobaciones después de pares Jacobi.
+    /// # Errors
+    /// Rechaza lado fuera de 8..256 o presupuesto impar/fuera de 2..128.
+    pub fn compilar_adaptativo(self) -> Result<Programas, &'static str> {
+        if !(8..=256).contains(&self.lado) {
+            return Err("lado adaptativo inválido");
+        }
+        let orden = orden_adaptativo(self.iteraciones)?;
+        let codigos = (0..14).map(|etapa| programa(self, etapa, true)).collect();
+        Ok(Programas { codigos, orden })
+    }
+}
+/// Plan acotado: los kernels descartan el trabajo posterior a convergencia.
+/// # Errors
+/// Rechaza presupuestos fuera de 2..128 o impares.
+pub fn orden_adaptativo(maximo: u32) -> Result<Vec<usize>, &'static str> {
+    if !(2..=128).contains(&maximo) || !maximo.is_multiple_of(2) {
+        return Err("presupuesto adaptativo inválido");
+    }
+    let mut orden = alloc::vec![0, 1, 6, 7, 8];
+    for _ in 0..maximo / 2 {
+        orden.extend([9, 10, 11, 12, 13]);
+    }
+    orden.extend([4, 5]);
+    Ok(orden)
+}
+fn programa(config: Configuracion, etapa: u32, adaptativo: bool) -> Vec<u32> {
     let mut modulo = Modulo::nuevo();
     let memoria = Memoria::nueva(&mut modulo, config.lado);
     let v3 = modulo.tipo_vector(memoria.entero, 3);
@@ -51,8 +82,14 @@ fn programa(config: Configuracion, etapa: u32) -> Vec<u32> {
     f.bloque(inicio);
     let cargado = f.cargar(v3, global);
     let pixel = f.extraer(memoria.entero, cargado, 0);
-    let cantidad = Memoria::u(&mut f, config.lado * config.lado);
-    let tamano = Memoria::u(&mut f, CANALES * config.lado * config.lado);
+    let invocaciones = match etapa {
+        7 | 12 => (config.lado * config.lado).div_ceil(64),
+        8 | 13 => 1,
+        _ => config.lado * config.lado,
+    };
+    let cantidad = Memoria::u(&mut f, invocaciones);
+    let tamano =
+        Memoria::u(&mut f, (if adaptativo { CANALES_ADAPTATIVOS } else { CANALES }) * config.lado * config.lado);
     let capacidad = f.longitud(memoria.entero, memoria.buffer, 0);
     let cabe = f.binaria(op::U_LESS_THAN_EQUAL, memoria.booleano, tamano, capacidad);
     let activo = f.binaria(op::U_LESS_THAN, memoria.booleano, pixel, cantidad);
@@ -60,7 +97,13 @@ fn programa(config: Configuracion, etapa: u32) -> Vec<u32> {
     f.fusion(fin);
     f.saltar_si(activo, cuerpo, fin);
     f.bloque(cuerpo);
-    crate::humo_pasos::emitir(&mut f, &memoria, pixel, etapa, config.iteraciones);
+    if adaptativo && etapa == 4 {
+        crate::humo_control::emitir(&mut f, &memoria, pixel, 14);
+    } else if etapa < 6 {
+        crate::humo_pasos::emitir(&mut f, &memoria, pixel, etapa, config.iteraciones);
+    } else {
+        crate::humo_control::emitir(&mut f, &memoria, pixel, etapa);
+    }
     f.saltar(fin);
     f.bloque(fin);
     f.volver();

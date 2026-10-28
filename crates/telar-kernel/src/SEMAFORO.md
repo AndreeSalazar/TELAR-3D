@@ -18,3 +18,5 @@ la cadena de puntos con clave idéntica. Solo planes fijos/puramente funcionales
 Evidencia y medición: docs/RENDER-AREA.md.
 
 Humo MAC 2D: emite seis kernels SPIR-V, propiedad de celda por plano y sin atómicos. CPU no simula en vivo; humo_referencia.rs es referencia escalar para pruebas. Presión aproximada, advección difusiva. Ver docs/HUMO-MAC-2D.md.
+
+Presión adaptativa: residual máximo y reducción jerárquica sin atómicos; decisión GPU con tolerancia/presupuesto, 14 programas y hasta 327 pasadas. Estado de quince planos. Referencia CPU acepta cero iteraciones para verificar la estimación inicial. Ver docs/PRESION-ADAPTATIVA.md.

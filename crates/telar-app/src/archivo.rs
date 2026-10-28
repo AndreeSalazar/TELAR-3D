@@ -32,9 +32,12 @@ pub(crate) fn procesar(args: &[String]) -> Option<Result<(), String>> {
                 .take(4_194_453)
                 .read_to_end(&mut bytes)
                 .map_err(|e| format!("leer {ruta}: {e}"))?;
-            if bytes.get(4..8).is_some_and(|v| v == 7u32.to_le_bytes()) {
+            if bytes.get(4..8).is_some_and(|v| v == 7u32.to_le_bytes() || v == 8u32.to_le_bytes()) {
                 let humo = crate::humo_archivo::decodificar(&bytes)?;
-                println!("telar: .tlar v7 · humo MAC 2D · {} iteraciones de presión", humo.0[7]);
+                println!(
+                    "telar: .tlar v{} · humo MAC 2D · máximo {} iteraciones · tolerancias {}/{}",
+                    bytes[4], humo.0[7], humo.0[8], humo.0[9]
+                );
                 return Ok(());
             }
             if bytes.get(4..8).is_some_and(|v| v == 6u32.to_le_bytes()) {

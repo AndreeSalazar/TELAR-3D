@@ -14,6 +14,16 @@ use hilo_spirv::{
 /// Rechaza lados fuera de 8..256.
 #[allow(clippy::cast_precision_loss, reason = "lado <=256")]
 pub fn fragmentos(lado: u32) -> Result<Vec<u32>, &'static str> {
+    emitir(lado, false)
+}
+/// Visor con franja de estado del control adaptativo en el plano 14.
+/// # Errors
+/// Rechaza lados fuera de 8..256; requiere estado de quince planos.
+pub fn fragmentos_adaptativo(lado: u32) -> Result<Vec<u32>, &'static str> {
+    emitir(lado, true)
+}
+#[allow(clippy::cast_precision_loss, reason = "lado <=256")]
+fn emitir(lado: u32, adaptativo: bool) -> Result<Vec<u32>, &'static str> {
     if !(8..=256).contains(&lado) {
         return Err("visor de humo fuera de dominio");
     }
@@ -75,6 +85,7 @@ pub fn fragmentos(lado: u32) -> Result<Vec<u32>, &'static str> {
     let opciones = t.cargar(&mut f, 2);
     let srgb = f.extraer(t.real, opciones, 1);
     let color = crate::superficie::salida(&mut f, &t, rgb, expo, srgb);
+    let color = if adaptativo { indicador(&mut f, &t, &mat, estado, puntero, uv, lado, color) } else { color };
     f.guardar(salida, color);
     f.volver();
     let main = f.terminar();
@@ -123,4 +134,36 @@ fn leer(
     let inferior = mezclar(f, valores[0], valores[1], fracciones[0]);
     let superior = mezclar(f, valores[2], valores[3], fracciones[0]);
     mezclar(f, inferior, superior, fracciones[1])
+}
+
+#[allow(clippy::too_many_arguments, reason = "ABI explícita del buffer y color del fragmento")]
+fn indicador(
+    f: &mut Funcion,
+    t: &Tipos,
+    mat: &Matematica,
+    estado: Id,
+    puntero: Id,
+    uv: Id,
+    lado: u32,
+    color: Id,
+) -> Id {
+    let cero = f.modulo().constante_u32(0);
+    let indice = f.modulo().constante_u32(14 * lado * lado + 5);
+    let ptr = f.acceso(puntero, estado, &[cero, indice]);
+    let estado = f.cargar(t.real, ptr);
+    let mut franja = t.rgb(f, [0.08, 0.2, 0.45]);
+    for (codigo, rgba) in [(1.0, [0.03, 0.6, 0.15]), (2.0, [0.9, 0.55, 0.02]), (3.0, [0.8, 0.03, 0.02])] {
+        let codigo = f.modulo().constante_f32(codigo);
+        let igual = f.binaria(180, mat.booleano, estado, codigo);
+        let alternativa = t.rgb(f, rgba);
+        franja = mat.elegir_vector(f, igual, alternativa, franja);
+    }
+    let arriba = f.extraer(t.real, uv, 1);
+    let ancho = f.modulo().constante_f32(0.012);
+    let banda = f.binaria(op::F_ORD_GREATER_THAN, mat.booleano, ancho, arriba);
+    let rgb = t.xyz(f, color);
+    let rgb = mat.elegir_vector(f, banda, franja, rgb);
+    let canales = core::array::from_fn::<_, 3, _>(|i| f.extraer(t.real, rgb, u32::try_from(i).unwrap_or(0)));
+    let uno = f.modulo().constante_f32(1.0);
+    f.construir(t.v4, &[canales[0], canales[1], canales[2], uno])
 }

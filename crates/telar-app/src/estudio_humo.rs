@@ -64,7 +64,7 @@ fn ejecutar(args: &[String]) -> Result<(), String> {
         }
         let iteraciones = humo_vista::iteraciones(&editor);
         if iteraciones != estado.iteraciones {
-            gpu.secuencia_campos(&humo_vista::secuencia(iteraciones))?;
+            gpu.secuencia_campos(&humo_vista::secuencia(iteraciones)?)?;
             estado.iteraciones = iteraciones;
         }
         if sucio {

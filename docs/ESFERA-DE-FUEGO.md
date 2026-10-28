@@ -99,3 +99,7 @@ Ya existe una primera [esfera procedural](FUEGO-PROCEDURAL.md) con marcha de ray
 ## Hito inicial de humo 2D implementado
 
 [HUMO-MAC-2D.md](HUMO-MAC-2D.md) añade campos persistentes, advección, fuerzas y proyección de presión. El editor usa 128²; el emisor admite hasta 256². Fronteras cerradas, Jacobi amortiguado y residual visible bajo petición. Sigue pendiente la versión 3D, presión convergida por tolerancia, combustión e integración con el fuego procedural. La advección actual es difusiva y no conservativa: la conservación estricta de masa del plan anterior continúa como objetivo, no como propiedad demostrada.
+
+## Presión con criterio de parada
+
+El laboratorio ya dispone de [control de error en GPU](PRESION-ADAPTATIVA.md), con estado de convergencia/límite/entrada inválida. Esto completa el primer criterio de tolerancia; no convierte Jacobi en solución universal ni completa la esfera física 3D.

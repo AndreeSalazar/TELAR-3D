@@ -25,7 +25,7 @@ pub(crate) struct Campos {
 }
 impl Campos {
     pub(super) fn secuencia(&mut self, nueva: &[usize]) -> Result<(), String> {
-        if nueva.is_empty() || nueva.len() > 256 || nueva.iter().any(|v| *v >= self.programas.len()) {
+        if nueva.is_empty() || nueva.len() > 512 || nueva.iter().any(|v| *v >= self.programas.len()) {
             return Err("secuencia de campos inválida".into());
         }
         self.secuencia = nueva.to_vec();
@@ -157,10 +157,27 @@ impl Campos {
         if datos.is_some_and(|v| core::mem::size_of_val(v) as u64 != self.bytes) {
             return Err("tamaño de campos incompatible".into());
         }
+        self.transferir_rango(ctx, datos, 0, self.bytes)
+    }
+    pub(super) fn leer_rango(&self, ctx: &Contexto, desde: u32, cantidad: u32) -> Result<Vec<u32>, String> {
+        let desde = u64::from(desde) * 4;
+        let bytes = u64::from(cantidad) * 4;
+        if cantidad == 0 || desde + bytes > self.bytes {
+            return Err("rango de campos inválido".into());
+        }
+        self.transferir_rango(ctx, None, desde, bytes)
+    }
+    fn transferir_rango(
+        &self,
+        ctx: &Contexto,
+        datos: Option<&[u32]>,
+        desde: u64,
+        bytes: u64,
+    ) -> Result<Vec<u32>, String> {
         let carga = datos.is_some();
         let staging = Buffer::nuevo(
             ctx,
-            self.bytes,
+            bytes,
             if carga { BUFFER_TRANSFER_SRC } else { BUFFER_TRANSFER_DST },
             (MEMORIA_VISIBLE | MEMORIA_COHERENTE, 0),
         )?;
@@ -169,7 +186,8 @@ impl Campos {
         }
         let objeto = self.programas[0].buffers[1];
         una_vez(ctx, |fd, cmd| {
-            let copia = Copia { origen: 0, destino: 0, tamano: self.bytes };
+            let copia =
+                Copia { origen: if carga { 0 } else { desde }, destino: if carga { desde } else { 0 }, tamano: bytes };
             // SAFETY: ambos buffers viven hasta completar una_vez y sus rangos coinciden.
             unsafe {
                 // GPU: transferencias explícitas esperan escrituras y lecturas previas del estado.
@@ -197,7 +215,7 @@ impl Campos {
         if carga {
             return Ok(Vec::new());
         }
-        let bytes = staging.leer(usize::try_from(self.bytes).map_err(|_| "campos excesivos")?)?;
+        let bytes = staging.leer(usize::try_from(bytes).map_err(|_| "campos excesivos")?)?;
         Ok(bytes.as_chunks::<4>().0.iter().map(|v| u32::from_le_bytes(*v)).collect())
     }
 }

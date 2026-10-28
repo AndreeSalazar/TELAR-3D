@@ -155,3 +155,7 @@ rebotes; no se presenta como render de producción terminado.
 ## Humo 2D: primera simulación persistente
 
 El laboratorio [HUMO-MAC-2D.md](HUMO-MAC-2D.md) completa una primera advección/flotación/proyección en GPU y pruebas contra referencia. No completa humo 3D, fuego físico ni el render de producción. Próximos pasos: presión con control de error, paso temporal/subpasos, campos 3D y su integración con el visor volumétrico; HILO editable, atributos generales, GI y restricciones siguen abiertos.
+
+## Control de error de presión integrado
+
+[PRESION-ADAPTATIVA.md](PRESION-ADAPTATIVA.md) añade reducción de residual, tolerancias y parada de actualizaciones decidida en GPU. Los despachos siguen acotados desde CPU; eliminación de huecos, solver más eficaz, subpasos y humo 3D permanecen abiertos.

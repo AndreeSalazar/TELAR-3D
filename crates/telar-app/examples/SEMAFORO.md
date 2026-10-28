@@ -38,3 +38,5 @@ editar y envía constantes; no descarga historial en vivo. Exposición conserva 
 las demás entradas de escena y tamaño reinician. Hay alineación, pipeline y
 adjuntos adicionales; pico físico sin medir. Capturas/inspecciones diagnósticas
 sí esperan y descargan. Pruebas y límites: docs/VISOR-PROGRESIVO.md.
+
+capturar_presion.rs genera 240 pasos y captura la página de tolerancias con datos reales GPU; descarga/PPM de diagnóstico fuera del producto en vivo.

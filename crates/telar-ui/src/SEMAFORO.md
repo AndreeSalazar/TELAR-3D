@@ -66,3 +66,5 @@ sí esperan y descargan. Pruebas y límites: docs/VISOR-PROGRESIVO.md.
 EditorFuego expone ocho parámetros y vistas de campos procedurales. Valida números/Enter; la CPU recompone UI con cambios de tiempo. Sin simulación física ni lectura de VRAM.
 
 EditorHumo valida dt fraccionario e iteraciones pares y expone vistas de campos. Conserva parámetros independientes del backend; no accede a GPU ni hace física.
+
+Humo expone diez parámetros, incluidos dos tolerancias y presupuesto par. Confirma números y conserva campos; el estado de convergencia visual se dibuja desde GPU, no por sondeo CPU.

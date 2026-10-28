@@ -42,3 +42,5 @@ Pruebas y límites: docs/EDITOR-OBJETOS.md, tests/objetos_editor.rs y ui/tests/o
 fuego.rs comprueba dominios de parámetros y confirmación numérica 32 + Enter; pruebas CPU sin reservas GPU.
 
 humo.rs verifica dominios físicos del inspector y confirmación Enter con dt decimal e iteraciones pares.
+
+humo.rs añade dominios de tolerancias y confirmación decimal con Enter.

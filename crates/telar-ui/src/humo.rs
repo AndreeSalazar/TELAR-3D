@@ -5,12 +5,12 @@ use alloc::{
     string::{String, ToString},
 };
 
-/// Radio, emisión, flotación, viento, disipación, dt, exposición e iteraciones.
+/// Radio, emisión, flotación, viento, disipación, dt, exposición, máximo de iteraciones y tolerancias.
 #[derive(Clone, PartialEq)]
-pub struct Humo(pub [f32; 8]);
+pub struct Humo(pub [f32; 10]);
 impl Default for Humo {
     fn default() -> Self {
-        Self([0.065, 3.0, 2.0, 0.08, 0.15, 0.016, 1.0, 64.0])
+        Self([0.065, 3.0, 2.0, 0.08, 0.15, 0.016, 1.0, 64.0, 0.02, 0.005])
     }
 }
 impl Humo {
@@ -30,7 +30,7 @@ impl Humo {
     /// # Errors
     /// Rechaza índices o valores inválidos sin alterar el estado.
     pub fn poner(&mut self, i: usize, valor: f32) -> Result<(), &'static str> {
-        if i >= 8 {
+        if i >= 10 {
             return Err("campo de humo inexistente");
         }
         let previo = self.0[i];
@@ -51,7 +51,9 @@ fn dominio(i: usize) -> (&'static str, f32, f32) {
         4 => ("Disipación de densidad", 0.0, 2.0),
         5 => ("Paso temporal · segundos", 0.001, 0.04),
         6 => ("Exposición", 0.1, 8.0),
-        _ => ("Iteraciones presión · par", 2.0, 128.0),
+        7 => ("Máximo presión · par", 2.0, 128.0),
+        8 => ("Tolerancia relativa", 0.0, 0.5),
+        _ => ("Tolerancia absoluta", 0.0, 0.1),
     }
 }
 /// Inspector del solver MAC 2D; los campos físicos viven en GPU.
@@ -78,7 +80,9 @@ impl Default for EditorHumo {
             humo: Humo::default(),
             vista: 0,
             pagina: 0,
-            mensaje: "Humo MAC 2D · Espacio: pausa · N: paso · R: reiniciar · D: datos · F5/F9".into(),
+            mensaje:
+                "Borde GPU: verde = tolerancia · amarillo = límite · rojo = inválido · D: datos · Espacio/N/R · F5/F9"
+                    .into(),
             hoja: telar_estilo::Hoja::analizar(telar_estilo::TEMA_TELAR).unwrap_or_default(),
             edicion: None,
             reemplazar: false,
@@ -89,7 +93,7 @@ impl Default for EditorHumo {
 impl EditorHumo {
     pub(crate) fn campo(&self, i: usize) -> Option<usize> {
         let campo = self.pagina * 6 + i;
-        (i < 6 && campo < 8).then_some(campo)
+        (i < 6 && campo < 10).then_some(campo)
     }
     /// Parámetro de la página actual.
     #[must_use]

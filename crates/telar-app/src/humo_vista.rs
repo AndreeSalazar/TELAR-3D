@@ -23,15 +23,16 @@ pub(crate) fn preparar(
         Superficie { instancia: m.instancia, ventana: m.ventana },
         ventana.tamano(),
     )?;
-    let programas = telar_kernel::humo::Configuracion { lado: LADO, iteraciones: iteraciones(editor) }.compilar()?;
+    let programas =
+        telar_kernel::humo::Configuracion { lado: LADO, iteraciones: iteraciones(editor) }.compilar_adaptativo()?;
     gpu.preparar_campos(
         Sombreadores {
             vertices: &telar_render::visor_rayos::vertices(),
-            fragmentos: &telar_render::humo::fragmentos(LADO)?,
+            fragmentos: &telar_render::humo::fragmentos_adaptativo(LADO)?,
         },
         PlanCampos {
             elementos: LADO * LADO,
-            palabras: telar_kernel::humo::CANALES,
+            palabras: telar_kernel::humo::CANALES_ADAPTATIVOS,
             programas: &programas.codigos,
             secuencia: &programas.orden,
         },
@@ -52,37 +53,36 @@ pub(crate) fn preparar(
 pub(crate) fn iteraciones(editor: &EditorHumo) -> u32 {
     editor.humo.0[7] as u32
 }
-pub(crate) fn secuencia(iteraciones: u32) -> Vec<usize> {
-    let mut orden = vec![0, 1];
-    orden.extend((0..iteraciones).map(|i| if i % 2 == 0 { 2 } else { 3 }));
-    orden.extend([4, 5]);
-    orden
+pub(crate) fn secuencia(iteraciones: u32) -> Result<Vec<usize>, String> {
+    telar_kernel::humo::orden_adaptativo(iteraciones).map_err(Into::into)
 }
 #[allow(clippy::cast_precision_loss, reason = "vista <=3")]
 pub(crate) fn bloque(editor: &EditorHumo, srgb: bool) -> [f32; 32] {
     let mut bloque = [0.0; 32];
-    bloque[..8].copy_from_slice(&editor.humo.0);
+    bloque[..8].copy_from_slice(&editor.humo.0[..8]);
+    bloque[10] = editor.humo.0[7];
+    bloque[11] = editor.humo.0[8];
+    bloque[12] = editor.humo.0[9];
     bloque[7] = editor.vista as f32;
     bloque[9] = f32::from(u8::from(srgb));
     bloque
 }
 pub(crate) fn datos(gpu: &Gpu) -> Result<String, String> {
-    let valores = gpu.inspeccionar_campos()?;
-    let n = (LADO * LADO) as usize;
-    let plano = |i: usize| valores[i * n..(i + 1) * n].iter().map(|v| f32::from_bits(*v));
-    let densidad = plano(2).fold(0.0_f32, f32::max);
-    let calor = plano(3).fold(0.0_f32, f32::max);
-    let rms = |i: usize| {
-        #[allow(clippy::cast_precision_loss, reason = "conteo de 16384 celdas")]
-        let media = plano(i).map(|v| f64::from(v).powi(2)).sum::<f64>() / n as f64;
-        media.sqrt()
+    let inicio = telar_kernel::humo::CONTROL_ADAPTATIVO * LADO * LADO;
+    let palabras = gpu.inspeccionar_rango_campos(inicio, 16)?;
+    let valores: Vec<_> = palabras.into_iter().map(f32::from_bits).collect();
+    let estado = match valores[5] {
+        1.0 => "tolerancia",
+        2.0 => "límite",
+        3.0 => "inválido",
+        _ => "sin pasos",
     };
     Ok(format!(
-        "Datos bajo petición · dens máx {densidad:.3} · calor máx {calor:.3} · div RMS {:.4} / {:.4}",
-        rms(8),
-        rms(11)
+        "GPU: {estado} · {} iter · residual {:.5} / umbral {:.5} · dens máx {:.3} · calor {:.3}",
+        valores[1], valores[3], valores[4], valores[6], valores[7]
     ))
 }
+
 pub(crate) fn capturar(
     gpu: &mut Gpu,
     editor: &EditorHumo,

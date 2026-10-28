@@ -1,11 +1,11 @@
-//! .tlar v7: ocho parámetros del volumen procedural, CRC y escritura transaccional.
+//! .tlar v8: diez parámetros y CRC; carga v7 con tolerancias predeterminadas.
 use std::{io::Read, path::Path};
 use telar_ui::Humo;
 
 pub(crate) fn codificar(humo: &Humo) -> Result<Vec<u8>, String> {
     humo.validar()?;
-    let mut bytes = Vec::with_capacity(48);
-    for palabra in [0x5241_4c54, 7, 8, 0].into_iter().chain(humo.0.map(f32::to_bits)) {
+    let mut bytes = Vec::with_capacity(56);
+    for palabra in [0x5241_4c54, 8, 10, 0].into_iter().chain(humo.0.map(f32::to_bits)) {
         bytes.extend_from_slice(&palabra.to_le_bytes());
     }
     let crc = crate::proyecto::crc32(&bytes[16..]);
@@ -13,14 +13,18 @@ pub(crate) fn codificar(humo: &Humo) -> Result<Vec<u8>, String> {
     Ok(bytes)
 }
 pub(crate) fn decodificar(bytes: &[u8]) -> Result<Humo, String> {
-    if bytes.len() != 48 {
+    if !matches!(bytes.len(), 48 | 56) {
         return Err("tamaño de escena de humo inválido".into());
     }
     let palabras: Vec<_> = bytes.as_chunks::<4>().0.iter().map(|v| u32::from_le_bytes(*v)).collect();
-    if palabras[..3] != [0x5241_4c54, 7, 8] || palabras[3] != crate::proyecto::crc32(&bytes[16..]) {
-        return Err("cabecera/CRC de humo .tlar v7 inválidos".into());
+    let (version, cantidad) = if bytes.len() == 48 { (7, 8) } else { (8, 10) };
+    if palabras[..3] != [0x5241_4c54, version, cantidad] || palabras[3] != crate::proyecto::crc32(&bytes[16..]) {
+        return Err("cabecera/CRC de configuración de humo inválidos".into());
     }
-    let humo = Humo(core::array::from_fn(|i| f32::from_bits(palabras[i + 4])));
+    let mut humo = Humo::default();
+    for (destino, valor) in humo.0.iter_mut().zip(&palabras[4..]) {
+        *destino = f32::from_bits(*valor);
+    }
     humo.validar()?;
     Ok(humo)
 }
@@ -29,7 +33,7 @@ pub(crate) fn leer(ruta: &Path) -> Result<Humo, String> {
     let mut bytes = Vec::new();
     std::fs::File::open(ruta)
         .map_err(|e| e.to_string())?
-        .take(49)
+        .take(57)
         .read_to_end(&mut bytes)
         .map_err(|e| e.to_string())?;
     decodificar(&bytes)
@@ -54,6 +58,20 @@ mod tests {
         let mut extra = bytes;
         extra.push(0);
         assert!(decodificar(&extra).is_err());
+        Ok(())
+    }
+    #[test]
+    fn migra_v7_con_tolerancias_y_rechaza_version_mezclada() -> Result<(), String> {
+        let humo = Humo::default();
+        let mut bytes = Vec::new();
+        for palabra in [0x5241_4c54, 7, 8, 0].into_iter().chain(humo.0[..8].iter().map(|v| v.to_bits())) {
+            bytes.extend_from_slice(&palabra.to_le_bytes());
+        }
+        let crc = crate::proyecto::crc32(&bytes[16..]);
+        bytes[12..16].copy_from_slice(&crc.to_le_bytes());
+        assert_eq!(decodificar(&bytes)?.0, humo.0);
+        bytes[4..8].copy_from_slice(&8u32.to_le_bytes());
+        assert!(decodificar(&bytes).is_err());
         Ok(())
     }
 }

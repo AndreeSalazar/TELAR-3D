@@ -156,7 +156,7 @@ fn muestra(estado: &[f32], lado: usize, coords: [f32; 2], canal: usize) -> f32 {
 
 fn validar(lado: usize, iteraciones: u32, estado: &[f32], p: &[f32; 8]) -> Result<(), &'static str> {
     if !(8..=256).contains(&lado)
-        || !(1..=128).contains(&iteraciones)
+        || iteraciones > 128
         || estado.len() != 12 * lado * lado
         || estado.iter().chain(p).any(|v| !v.is_finite())
         || !(0.02..=0.18).contains(&p[0])

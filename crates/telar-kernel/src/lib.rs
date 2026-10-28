@@ -9,6 +9,7 @@ mod buzon;
 pub mod cache;
 mod coordinador;
 pub mod humo;
+mod humo_control;
 mod humo_memoria;
 mod humo_pasos;
 mod maquina;
