@@ -10,7 +10,7 @@ Se estudian guías públicas; no se dispone del código propietario de Houdini.
 | Hito | Entrega verificable | Estado actual |
 |---|---|---|
 | P1 · Campos 3D | Velocidad MAC, densidad y calor persistentes; advección trilineal, fuerzas, presión, visor orbitable y referencia escalar | Base implementada y probada a 32³; ver HUMO-3D.md |
-| P2 · Tiempo y colisiones | Subpasos temporales, control de estabilidad, obstáculos y velocidades de colisión; error de presión medido | Pendiente; 2D/3D ya miden convergencia |
+| P2 · Tiempo y colisiones | Subpasos temporales, control de estabilidad, obstáculos y velocidades de colisión; error de presión medido | Parcial: subpasos, predictor CFL GPU y esfera estática probados; faltan mallas y colisiones móviles |
 | P3 · Explosión | Fuente animada de corta duración, expansión objetivo, reacción/enfriamiento y humo; parámetros separados de simulación y aspecto | Pendiente |
 | P4 · Render volumétrico | Absorción, emisión, sombras y dispersión; temperatura con unidades/mapeo y gestión de color | Pendiente; existe fuego analítico separado |
 | P5 · Secundarios | Trayectorias, estelas, chispas y fragmentos con edad/vida; fuentes secundarias controlables | Pendiente |
@@ -43,7 +43,7 @@ La CPU mantiene eventos, cámara, archivos y envíos; los campos se calculan y
 conservan en GPU. La referencia CPU se utiliza para comprobar, no para simular
 los fotogramas del producto. El primer prototipo 3D será deliberadamente pequeño
 y denso antes de estudiar regiones activas y mayores resoluciones. La entrega
-[HUMO-3D.md](HUMO-3D.md) documenta esa base y su captura; P2–P7 continúan abiertos.
+[HUMO-3D.md](HUMO-3D.md) documenta esa base y su captura; P2 tiene su primera entrega en [TIEMPO-COLISION-3D.md](TIEMPO-COLISION-3D.md); P2 avanzado y P3–P7 continúan abiertos.
 
 ## Guías públicas de referencia
 

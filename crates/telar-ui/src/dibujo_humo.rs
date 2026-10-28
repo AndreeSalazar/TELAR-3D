@@ -60,10 +60,14 @@ impl EditorHumo {
             lienzo.caja(rect, &boton);
             lienzo.etiqueta(rect.interior(6.0), nombre, &boton);
         }
-        let paginas = ["Emisor / fuerzas", "Presión / visor"];
+        let paginas: &[&str] = if self.volumen {
+            &["Emisor", "Presión", "Tiempo / col."]
+        } else {
+            &["Emisor / fuerzas", "Presión / visor"]
+        };
         for (i, nombre) in paginas.iter().enumerate() {
             let estilo = self.estilo("boton", self.pagina == i);
-            let rect = diseno.pagina(i);
+            let rect = self.pagina_rect(diseno, i);
             lienzo.caja(rect, &estilo);
             lienzo.etiqueta(rect.interior(4.0), nombre, &estilo);
         }

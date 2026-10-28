@@ -71,16 +71,16 @@ pub(crate) fn bloque(editor: &EditorHumo, srgb: bool) -> [f32; 32] {
     bloque
 }
 pub(crate) fn datos(gpu: &Gpu) -> Result<String, String> {
-    resumen(gpu, telar_kernel::humo::CONTROL_ADAPTATIVO * LADO * LADO)
+    resumen(gpu, telar_kernel::humo::CONTROL_ADAPTATIVO * LADO * LADO, false)
 }
 pub(crate) fn datos_editor(gpu: &Gpu, editor: &EditorHumo) -> Result<String, String> {
     if editor.volumen {
-        resumen(gpu, telar_kernel::humo3d::CONTROL * crate::volumen_vista::LADO.pow(3))
+        resumen(gpu, telar_kernel::humo3d::CONTROL * crate::volumen_vista::LADO.pow(3), true)
     } else {
         datos(gpu)
     }
 }
-fn resumen(gpu: &Gpu, inicio: u32) -> Result<String, String> {
+fn resumen(gpu: &Gpu, inicio: u32, temporal: bool) -> Result<String, String> {
     let palabras = gpu.inspeccionar_rango_campos(inicio, 16)?;
     let valores: Vec<_> = palabras.into_iter().map(f32::from_bits).collect();
     let estado = match valores[5] {
@@ -89,10 +89,22 @@ fn resumen(gpu: &Gpu, inicio: u32) -> Result<String, String> {
         3.0 => "inválido",
         _ => "sin pasos",
     };
-    Ok(format!(
+    let texto = format!(
         "GPU: {estado} · {} iter · residual {:.5} / umbral {:.5} · dens máx {:.3} · calor {:.3}",
         valores[1], valores[3], valores[4], valores[6], valores[7]
-    ))
+    );
+    if temporal {
+        let estado_tiempo = match valores[14] {
+            1.0 => "CFL limita",
+            2.0 => "tiempo inválido",
+            _ => "dt",
+        };
+        return Ok(format!(
+            "{texto} · {estado_tiempo} {:.5} · t {:.3}s · CFL {:.3}",
+            valores[10], valores[13], valores[12]
+        ));
+    }
+    Ok(texto)
 }
 
 pub(crate) fn capturar_bloque(

@@ -46,3 +46,5 @@ humo.rs verifica dominios físicos del inspector y confirmación Enter con dt de
 humo.rs añade dominios de tolerancias y confirmación decimal con Enter.
 
 catalogo.rs verifica hit testing, capacidades pendientes, acciones de una sola lectura, CSS transaccional y geometría dentro de ventana en cuatro resoluciones.
+
+La prueba de humo añade Enter/decimal con coma para tiempo y esfera, rechazo transaccional de subpasos fraccionarios y dominios; no ejecuta shaders.

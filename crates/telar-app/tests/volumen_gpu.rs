@@ -18,7 +18,7 @@ fn validar(codigo: &[u32], indice: usize) {
     assert!(salida.status.success(), "{}", String::from_utf8_lossy(&salida.stderr));
 }
 fn preparar() -> (telar_ventana::Ventana, Gpu) {
-    let plan = telar_kernel::humo3d::Configuracion { lado: 9, iteraciones: 8 }.compilar().unwrap();
+    let plan = telar_kernel::humo3d::Configuracion { lado: 9, iteraciones: 8 }.compilar_temporal(2).unwrap();
     for (i, codigo) in plan.codigos.iter().enumerate() {
         validar(codigo, i);
     }
@@ -45,6 +45,7 @@ fn preparar() -> (telar_ventana::Ventana, Gpu) {
         PlanCampos { elementos: 729, palabras: 17, programas: &plan.codigos, secuencia: &plan.orden },
     )
     .unwrap();
+    gpu.secuencia_campos(&telar_kernel::humo::orden_adaptativo(8).unwrap()).unwrap();
     gpu.subir_malla(&MALLA, &[0, 2, 1]).unwrap();
     gpu.preparar_interfaz(Sombreadores {
         vertices: &hilo_spirv::interfaz::vertices(),
@@ -155,6 +156,7 @@ fn volumen_coincide_con_referencia_y_orbita_sin_alterar_campos() {
     }
     gpu.limpiar_campos().unwrap();
     assert!(gpu.inspeccionar_campos().unwrap().iter().all(|v| *v == 0));
+    tiempo_colision(&mut gpu);
     drop(gpu);
     drop(ventana);
     assert_eq!(telar_gpu::avisos_de_validacion(), 0);
@@ -181,4 +183,80 @@ fn control(gpu: &mut Gpu, estado: &[f32], p: &[f32; 32]) {
     let invalido = paso(gpu, &roto, &p);
     assert_eq!(invalido[CONTROL + 5].to_bits(), 3.0f32.to_bits());
     assert_eq!(invalido[..5 * CELDAS], estado[..5 * CELDAS]);
+}
+
+fn tiempo_colision(gpu: &mut Gpu) {
+    gpu.secuencia_campos(&telar_kernel::humo3d::orden_temporal(8, 2).unwrap()).unwrap();
+    let mut p = bloque();
+    p[5] = 0.04;
+    p[2] = 2.0;
+    p[3] = 0.08;
+    p[13] = 2.0;
+    p[14] = 0.23;
+    p[15] = 0.52;
+    p[19] = 0.1;
+    let mut estado = inicial();
+    for v in &mut estado[..3 * CELDAS] {
+        *v *= 100.0;
+    }
+    let resultado = paso(gpu, &estado, &p);
+    let mut esperado = estado.clone();
+    let mut tiempo = 0.0;
+    for _ in 0..2 {
+        let velocidad = (0..3)
+            .map(|e| esperado[e * CELDAS..(e + 1) * CELDAS].iter().map(|v| v.abs()).fold(0.0, f32::max))
+            .sum::<f32>();
+        let calor = esperado[4 * CELDAS..5 * CELDAS].iter().map(|v| v.abs()).fold(0.0, f32::max);
+        let cota = velocidad + 0.02 * calor * (p[2] + p[3].abs());
+        let dt = f32::min(0.02, 0.1 / (LADO as f32 * f32::max(cota, 1e-6)));
+        tiempo += dt;
+        let mut parametros: [f32; 8] = p[..8].try_into().unwrap();
+        parametros[5] = dt;
+        telar_kernel::humo3d::referencia::paso_con_obstaculo(LADO, 8, &mut esperado, &parametros, [0.23, 0.52])
+            .unwrap();
+    }
+    for (i, (a, b)) in resultado[..14 * CELDAS].iter().zip(&esperado).enumerate() {
+        assert!(a.is_finite() && (a - b).abs() < 0.0003, "colisión {i}: GPU {a}, referencia {b}");
+    }
+    assert!((resultado[CONTROL + 13] - tiempo).abs() < 1e-6);
+    assert!(tiempo < 0.04 && resultado[CONTROL + 12] <= 0.10001);
+    let solido = |i: usize| {
+        let coords = [i % LADO, (i / LADO) % LADO, i / (LADO * LADO)];
+        coords
+            .into_iter()
+            .zip([0.5, 0.52, 0.5])
+            .map(|(v, c)| {
+                let d = (v as f32 + 0.5) / LADO as f32 - c;
+                d * d
+            })
+            .sum::<f32>()
+            <= 0.23 * 0.23
+    };
+    for i in 0..CELDAS {
+        if solido(i) {
+            for canal in 0..5 {
+                assert_eq!(resultado[canal * CELDAS + i].to_bits(), 0.0f32.to_bits());
+            }
+        }
+        for (eje, paso) in [1, LADO, LADO * LADO].into_iter().enumerate() {
+            let coord = [i % LADO, (i / LADO) % LADO, i / (LADO * LADO)][eje];
+            if coord + 1 < LADO && (solido(i) || solido(i + paso)) {
+                assert_eq!(resultado[eje * CELDAS + i].to_bits(), 0.0f32.to_bits());
+            }
+        }
+    }
+    assert_eq!(resultado, paso(gpu, &estado, &p));
+    p[14] = 0.0;
+    assert_ne!(resultado, paso(gpu, &estado, &p));
+    let maximo = telar_kernel::humo3d::orden_temporal(128, 4).unwrap();
+    assert_eq!(maximo.len(), 1316);
+    gpu.secuencia_campos(&maximo).unwrap();
+    p[10] = 128.0;
+    p[13] = 4.0;
+    let vacio = vec![0.0; 17 * CELDAS];
+    let cuatro = paso(gpu, &vacio, &p);
+    assert!((cuatro[CONTROL + 13] - 0.04).abs() < 1e-6);
+    assert_eq!(cuatro[CONTROL + 8].to_bits(), 4.0f32.to_bits());
+    assert!(telar_kernel::humo3d::orden_temporal(128, 5).is_err());
+    assert!(telar_kernel::humo3d::orden_temporal(33, 4).is_err());
 }

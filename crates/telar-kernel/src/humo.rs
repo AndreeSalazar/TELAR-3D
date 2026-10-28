@@ -83,8 +83,8 @@ pub(super) fn programa(config: Configuracion, etapa: u32, adaptativo: bool, volu
     let cargado = f.cargar(v3, global);
     let pixel = f.extraer(memoria.entero, cargado, 0);
     let invocaciones = match etapa {
-        7 | 12 => memoria.celdas().div_ceil(64),
-        8 | 13 => 1,
+        7 | 12 | 15 => memoria.celdas().div_ceil(64),
+        8 | 13 | 16 => 1,
         _ => memoria.celdas(),
     };
     let cantidad = Memoria::u(&mut f, invocaciones);
@@ -103,7 +103,9 @@ pub(super) fn programa(config: Configuracion, etapa: u32, adaptativo: bool, volu
     f.fusion(fin);
     f.saltar_si(activo, cuerpo, fin);
     f.bloque(cuerpo);
-    if adaptativo && etapa == 4 {
+    if volumen && etapa >= 15 {
+        crate::humo3d_tiempo::emitir(&mut f, &memoria, pixel, etapa);
+    } else if adaptativo && etapa == 4 {
         crate::humo_control::emitir(&mut f, &memoria, pixel, 14);
     } else if etapa < 6 && volumen {
         crate::humo3d_pasos::emitir(&mut f, &memoria, pixel, etapa, config.iteraciones);

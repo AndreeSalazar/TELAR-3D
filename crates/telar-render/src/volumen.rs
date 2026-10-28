@@ -107,7 +107,10 @@ fn integrar(
         let avance = f.binaria(op::VECTOR_TIMES_SCALAR, t.v3, direccion, avance);
         let punto = f.binaria(op::F_ADD, t.v3, origen, avance);
         let valor = v.campo(f, t, mat, punto, vista);
+        let solido = v.solido(f, t, mat, punto);
+        let opaco = Matematica::escalar(f, 40.0);
         let densidad = f.glsl(t.real, 4, &[valor]);
+        let densidad = f.elegir(t.real, solido, opaco, densidad);
         let densidad = f.binaria(op::F_MUL, t.real, densidad, paso);
         let factor = Matematica::escalar(f, -6.0);
         let espesor = f.binaria(op::F_MUL, t.real, densidad, factor);
@@ -116,6 +119,8 @@ fn integrar(
         let antes_t = f.extraer(t.real, previo, 3);
         let ponderacion = f.binaria(op::F_MUL, t.real, antes_t, alfa);
         let color = color_campo(f, mat, vista, valor);
+        let obstaculo = mat.vector(f, [0.12, 0.25, 0.35]);
+        let color = mat.elegir_vector(f, solido, obstaculo, color);
         let aporte = f.binaria(op::VECTOR_TIMES_SCALAR, t.v3, color, ponderacion);
         let previo_rgb = t.xyz(f, previo);
         let rgb = f.binaria(op::F_ADD, t.v3, previo_rgb, aporte);

@@ -145,3 +145,5 @@ Abre `TELAR Estudio.cmd` o `.\target\release\telar.exe --estudio`: Escena, Geome
 Humo físico 3D inicial: `telar --humo-3d` o **TELAR Humo 3D.cmd**. Campos MAC
 32³ residentes, presión con tolerancia, cámara orbitable y parámetros .tlar v9.
 [Uso, pruebas y límites](docs/HUMO-3D.md) · [Plan de explosión de producción](docs/PLAN-EXPLOSION-PRODUCCION.md).
+
+Tiempo y colisión 3D: subpasos 1..4, predictor CFL GPU y esfera estática editable; .tlar v10 migra v9. Uso y límites: [docs/TIEMPO-COLISION-3D.md](docs/TIEMPO-COLISION-3D.md).

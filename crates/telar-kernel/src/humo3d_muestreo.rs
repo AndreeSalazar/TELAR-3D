@@ -63,7 +63,9 @@ impl Memoria {
             let fila = f.binaria(op::I_MUL, self.entero, fila, lado);
             let pixel = f.binaria(op::I_ADD, self.entero, fila, indices[0]);
             let muestra = self.leer(f, pixel, canal);
+            let fluido = self.fluido(f, pixel);
             let vacio = Self::c(f, 0.0);
+            let muestra = f.elegir(self.real, fluido, muestra, vacio);
             *valor = if halo { f.elegir(self.real, valido, muestra, vacio) } else { muestra };
         }
         for (eje, peso) in pesos.into_iter().enumerate() {

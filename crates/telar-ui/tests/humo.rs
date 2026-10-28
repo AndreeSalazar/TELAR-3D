@@ -44,3 +44,29 @@ fn dominios_y_confirmacion() -> Result<(), &'static str> {
     assert_eq!(editor.humo.0[8].to_bits(), 0.015f32.to_bits());
     editor.humo.validar()
 }
+#[test]
+fn tiempo_y_colision_se_editan_sin_aceptar_estados_invalidos() -> Result<(), &'static str> {
+    let mut editor = EditorHumo::default();
+    editor.volumen = true;
+    editor.pagina = 2;
+    let d = DisenoObjetos::nuevo((1280, 800));
+    for (fila, texto, esperado) in [(0, "4", 4.0f32), (1, "0", 0.0), (2, "0,6", 0.6), (3, "0.25", 0.25)] {
+        let rect = d.valor(fila);
+        editor.pulsar(d, rect.x + 4.0, rect.y + 4.0);
+        for c in texto.chars() {
+            editor.numero(EntradaNumero::Caracter(c));
+        }
+        editor.numero(EntradaNumero::Confirmar);
+        assert!(!editor.editando());
+        assert_eq!(editor.volumen_opciones.0[fila].to_bits(), esperado.to_bits());
+    }
+    for (i, valor) in [(0, 2.5), (0, 0.0), (0, 5.0), (1, -0.1), (1, 0.4), (2, 0.9), (3, 0.0), (3, f32::NAN)] {
+        let previo = editor.volumen_opciones;
+        assert!(editor.volumen_opciones.poner(i, valor).is_err());
+        assert_eq!(editor.volumen_opciones, previo);
+    }
+    editor.volumen_opciones.validar()?;
+    editor.volumen = false;
+    assert!(editor.control(0).is_none());
+    Ok(())
+}

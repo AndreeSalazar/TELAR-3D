@@ -20,7 +20,7 @@ fn ejecutar(args: &[String]) -> Result<(), String> {
     let mut editor = EditorHumo::default();
     editor.volumen = volumen;
     if let Some(ruta) = &abrir {
-        editor.humo = leer(Path::new(ruta), volumen)?;
+        leer_editor(Path::new(ruta), &mut editor)?;
     }
     let prueba = args.iter().any(|v| v == "--prueba");
     let fuente = crate::tipografia::crear()?;
@@ -31,7 +31,12 @@ fn ejecutar(args: &[String]) -> Result<(), String> {
         !args.iter().any(|v| v == "--sin-validacion"),
     )?;
     let mut entrada = crate::humo_entrada::Entrada::default();
-    let mut estado = Estado { paso: false, iteraciones: humo_vista::iteraciones(&editor), pasos: 0 };
+    let mut estado = Estado {
+        paso: false,
+        secuencia: secuencia(&editor)?,
+        controles: [editor.humo.0[7], editor.volumen_opciones.0[0]].map(f32::to_bits),
+        pasos: 0,
+    };
     let mut tamano = (0, 0);
     let mut cuadros = 0;
     let inicio = Instant::now();
@@ -64,11 +69,7 @@ fn ejecutar(args: &[String]) -> Result<(), String> {
                 atender(accion, &mut editor, &mut estado, &gpu, ruta);
             }
         }
-        let iteraciones = humo_vista::iteraciones(&editor);
-        if iteraciones != estado.iteraciones {
-            gpu.secuencia_campos(&humo_vista::secuencia(iteraciones)?)?;
-            estado.iteraciones = iteraciones;
-        }
+        actualizar_secuencia(&editor, &mut estado, &mut gpu)?;
         if sucio {
             gpu.actualizar_interfaz(&editor.dibujar(d, &fuente)?, d.area())?;
             tamano = d.tamano;
@@ -120,15 +121,15 @@ fn finalizar(gpu: telar_gpu::Gpu, ventana: telar_ventana::Ventana) -> Result<(),
 }
 struct Estado {
     paso: bool,
-    iteraciones: u32,
+    secuencia: Vec<usize>,
+    controles: [u32; 2],
     pasos: u32,
 }
 fn atender(tecla: u32, editor: &mut EditorHumo, estado: &mut Estado, gpu: &telar_gpu::Gpu, ruta: &Path) {
     let resultado = match tecla {
         116 => guardar_editor(ruta, editor).map(|()| "Configuración guardada; sin caché de campos".into()),
-        120 => leer(ruta, editor.volumen).and_then(|humo| {
+        120 => leer_editor(ruta, editor).and_then(|()| {
             gpu.limpiar_campos()?;
-            editor.humo = humo;
             estado.pasos = 0;
             Ok("Configuración abierta; campos reiniciados".into())
         }),
@@ -194,11 +195,38 @@ fn validar_modo(args: &[String]) -> Result<(), String> {
 
 fn guardar_editor(ruta: &Path, editor: &EditorHumo) -> Result<(), String> {
     if editor.volumen {
-        crate::volumen_archivo::guardar(ruta, &editor.humo)
+        crate::volumen_archivo::guardar(ruta, &editor.humo, &editor.volumen_opciones)
     } else {
         crate::humo_archivo::guardar(ruta, &editor.humo)
     }
 }
-fn leer(ruta: &Path, volumen: bool) -> Result<telar_ui::Humo, String> {
-    if volumen { crate::volumen_archivo::leer(ruta) } else { crate::humo_archivo::leer(ruta) }
+fn leer_editor(ruta: &Path, editor: &mut EditorHumo) -> Result<(), String> {
+    if editor.volumen {
+        let (humo, opciones) = crate::volumen_archivo::leer(ruta)?;
+        editor.humo = humo;
+        editor.volumen_opciones = opciones;
+    } else {
+        editor.humo = crate::humo_archivo::leer(ruta)?;
+    }
+    Ok(())
+}
+fn secuencia(editor: &EditorHumo) -> Result<Vec<usize>, String> {
+    if editor.volumen {
+        crate::volumen_vista::secuencia(editor)
+    } else {
+        humo_vista::secuencia(humo_vista::iteraciones(editor))
+    }
+}
+fn actualizar_secuencia(editor: &EditorHumo, estado: &mut Estado, gpu: &mut telar_gpu::Gpu) -> Result<(), String> {
+    let controles = [editor.humo.0[7], editor.volumen_opciones.0[0]].map(f32::to_bits);
+    if controles == estado.controles {
+        return Ok(());
+    }
+    let nueva = secuencia(editor)?;
+    if nueva != estado.secuencia {
+        gpu.secuencia_campos(&nueva)?;
+        estado.secuencia = nueva;
+    }
+    estado.controles = controles;
+    Ok(())
 }

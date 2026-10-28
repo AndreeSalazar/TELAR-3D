@@ -62,7 +62,7 @@ impl Memoria {
         if self.volumen { 16 } else { 14 }
     }
     pub(super) fn vecinos_todos(&self, f: &mut Funcion, pixel: Id) -> alloc::vec::Vec<(Id, Id)> {
-        if self.volumen { self.vecinos3(f, pixel).to_vec() } else { self.vecinos(f, pixel).to_vec() }
+        if self.volumen { self.vecinos_fluidos(f, pixel).to_vec() } else { self.vecinos(f, pixel).to_vec() }
     }
     pub(super) fn c(f: &mut Funcion, v: f32) -> Id {
         f.modulo().constante_f32(v)

@@ -20,3 +20,5 @@ presion-adaptativa.png captura controles y franja del estado GPU después de 240
 estudio-categorias.png procede de la captura Vulkan de la UI nativa; las tarjetas Pendiente describen planes, no funciones ya implementadas.
 
 humo-3d.png es captura GPU real de 180 pasos a 32³ en RTX 3060; PPM convertido a PNG sin modificar el contenido. No representa una explosión de producción ni medición de FPS.
+
+humo-3d-colision.png procede de 240 cuadros GPU reales a 32³ con esfera estática y dos subpasos; conversión PPM a PNG sin retoque. La máscara es voxelizada, no superficie final de producción.

@@ -72,3 +72,5 @@ Humo expone diez parámetros, incluidos dos tolerancias y presupuesto par. Confi
 Catálogo no_std de ocho categorías con destinos tipados y funciones pendientes sin apertura. Composición CSS y texto ajustado por palabras, solo al cambiar vista. No ejecuta procesos ni simulaciones.
 
 EditorHumo distingue 2D/3D con un indicador de presentación; la física y el render permanecen fuera de UI. El catálogo añade destino Humo3d. No reserva campos; triangulación CPU solo al cambiar UI. Pruebas de catálogo y de geometría del editor en cargo verify.
+
+VolumenHumo añade cuatro parámetros y pestaña Tiempo/col., sin recursos GPU. Enter y sliders validan enteros/rangos antes de aplicar; subpasos predeterminados 2. Prueba: tests/humo.rs.

@@ -13,12 +13,13 @@ pub(super) fn emitir(f: &mut Funcion, m: &Memoria, pixel: Id, etapa: u32, iterac
         _ => {
             let div = divergencia(f, m, pixel, 0);
             m.guardar(f, pixel, 13, div);
+            tiempo(f, m, pixel);
         }
     }
 }
 #[allow(clippy::cast_precision_loss, reason = "lado <=64")]
 fn divergencia(f: &mut Funcion, m: &Memoria, pixel: Id, canal: u32) -> Id {
-    let vecinos = m.vecinos3(f, pixel);
+    let vecinos = m.vecinos_fluidos(f, pixel);
     let cero = Memoria::c(f, 0.0);
     let mut suma = cero;
     for eje in 0..3 {
@@ -37,7 +38,7 @@ fn jacobi(f: &mut Funcion, m: &Memoria, pixel: Id, primera: bool) {
     let uno = Memoria::c(f, 1.0);
     let mut suma = cero;
     let mut cantidad = cero;
-    for (vecino, existe) in m.vecinos3(f, pixel) {
+    for (vecino, existe) in m.vecinos_fluidos(f, pixel) {
         let valor = m.leer(f, vecino, entrada);
         let valor = f.elegir(m.real, existe, valor, cero);
         suma = m.add(f, suma, valor);
@@ -47,16 +48,19 @@ fn jacobi(f: &mut Funcion, m: &Memoria, pixel: Id, primera: bool) {
     let div = m.leer(f, pixel, 10);
     let rhs = m.escala(f, div, 1.0 / (m.lado * m.lado) as f32);
     let candidata = m.sub(f, suma, rhs);
+    let cantidad = f.glsl(m.real, op::GLSL_MAXIMO, &[cantidad, uno]);
     let candidata = f.binaria(op::F_DIV, m.real, candidata, cantidad);
     let candidata = m.escala(f, candidata, 2.0 / 3.0);
     let antes = m.leer(f, pixel, entrada);
     let antes = m.escala(f, antes, 1.0 / 3.0);
     let valor = m.add(f, candidata, antes);
+    let fluido = m.fluido(f, pixel);
+    let valor = f.elegir(m.real, fluido, valor, cero);
     m.guardar(f, pixel, salida, valor);
 }
 #[allow(clippy::cast_precision_loss, reason = "lado <=64")]
 fn proyectar(f: &mut Funcion, m: &Memoria, pixel: Id, presion: u32) {
-    let vecinos = m.vecinos3(f, pixel);
+    let vecinos = m.vecinos_fluidos(f, pixel);
     let centro = m.leer(f, pixel, presion);
     let cero = Memoria::c(f, 0.0);
     for eje in 0..3 {
@@ -79,8 +83,14 @@ fn proyectar(f: &mut Funcion, m: &Memoria, pixel: Id, presion: u32) {
 fn advectar(f: &mut Funcion, m: &Memoria, pixel: Id) {
     let coords = m.coords3(f, pixel).map(|v| f.unaria(op::U_A_F, m.real, v));
     let dt = m.parametro(f, 5);
+    let subpasos = m.parametro(f, 13);
+    let cero = Memoria::c(f, 0.0);
+    let temporal = f.binaria(op::F_ORD_GREATER_THAN, m.booleano, subpasos, cero);
+    let indice = Memoria::u(f, 10);
+    let efectivo = m.leer(f, indice, m.control());
+    let dt = f.elegir(m.real, temporal, efectivo, dt);
     let escala = m.escala(f, dt, m.lado as f32);
-    let vecinos = m.vecinos3(f, pixel);
+    let vecinos = m.vecinos_fluidos(f, pixel);
     let cero = Memoria::c(f, 0.0);
     let medio = Memoria::c(f, 0.5);
     let fuente = mascara(f, m, coords);
@@ -126,6 +136,8 @@ fn advectar(f: &mut Funcion, m: &Memoria, pixel: Id) {
             valor = m.add(f, valor, aporte);
             valor = m.limitar(f, valor, 0.0, 10.0);
         }
+        let fluido = m.fluido(f, pixel);
+        let valor = f.elegir(m.real, fluido, valor, cero);
         m.guardar(f, pixel, canal + 5, valor);
     }
 }
@@ -147,4 +159,28 @@ fn mascara(f: &mut Funcion, m: &Memoria, coords: [Id; 3]) -> Id {
     let peso = m.sub(f, uno, relativo);
     let peso = m.limitar(f, peso, 0.0, 1.0);
     m.mul(f, peso, peso)
+}
+
+fn tiempo(f: &mut Funcion, m: &Memoria, pixel: Id) {
+    let cero_u = Memoria::u(f, 0);
+    let primero = f.binaria(op::I_EQUAL, m.booleano, pixel, cero_u);
+    let cuerpo = f.etiqueta();
+    let fin = f.etiqueta();
+    f.fusion(fin);
+    f.saltar_si(primero, cuerpo, fin);
+    f.bloque(cuerpo);
+    let indice = Memoria::u(f, 10);
+    let dt = m.leer(f, indice, m.control());
+    let indice = Memoria::u(f, 5);
+    let estado = m.leer(f, indice, m.control());
+    let tres = Memoria::c(f, 3.0);
+    let valido = f.binaria(op::F_ORD_GREATER_THAN, m.booleano, tres, estado);
+    let cero = Memoria::c(f, 0.0);
+    let dt = f.elegir(m.real, valido, dt, cero);
+    let indice = Memoria::u(f, 13);
+    let previo = m.leer(f, indice, m.control());
+    let nuevo = m.add(f, previo, dt);
+    m.guardar(f, indice, m.control(), nuevo);
+    f.saltar(fin);
+    f.bloque(fin);
 }

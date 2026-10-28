@@ -4,6 +4,18 @@ use alloc::vec::Vec;
 /// # Errors
 /// Rechaza dominios, datos no finitos y parámetros físicos fuera de rango.
 pub fn paso(lado: usize, iteraciones: u32, estado: &mut [f32], p: &[f32; 8]) -> Result<(), &'static str> {
+    paso_con_obstaculo(lado, iteraciones, estado, p, [0.0, 0.52])
+}
+/// Referencia con esfera voxelizada de radio/altura normalizados; radio cero la desactiva.
+/// # Errors
+/// Rechaza estado, dt o esfera fuera del dominio.
+pub fn paso_con_obstaculo(
+    lado: usize,
+    iteraciones: u32,
+    estado: &mut [f32],
+    p: &[f32; 8],
+    esfera: [f32; 2],
+) -> Result<(), &'static str> {
     if !(4..=64).contains(&lado)
         || iteraciones > 128
         || estado.len() != 17 * lado * lado * lado
@@ -13,24 +25,42 @@ pub fn paso(lado: usize, iteraciones: u32, estado: &mut [f32], p: &[f32; 8]) -> 
         || !(0.0..=8.0).contains(&p[2])
         || !(-1.0..=1.0).contains(&p[3])
         || !(0.0..=2.0).contains(&p[4])
-        || !(0.001..=0.04).contains(&p[5])
+        || !(0.000_000_1..=0.04).contains(&p[5])
+        || esfera.iter().any(|v| !v.is_finite())
+        || !(0.0..=0.3).contains(&esfera[0])
+        || !(0.31..=0.69).contains(&esfera[1])
     {
         return Err("referencia 3D inválida");
     }
     let n = lado * lado * lado;
-    let temporal = advectar(lado, estado, p);
+    let fluidos: Vec<_> = (0..n)
+        .map(|i| {
+            let coords = coords(lado, i);
+            #[allow(clippy::cast_precision_loss, reason = "lado <=64")]
+            let distancia = coords
+                .into_iter()
+                .zip([0.5, esfera[1], 0.5])
+                .map(|(v, c)| {
+                    let d = (v as f32 + 0.5) / lado as f32 - c;
+                    d * d
+                })
+                .sum::<f32>();
+            esfera[0] == 0.0 || distancia > esfera[0] * esfera[0]
+        })
+        .collect();
+    let temporal = advectar(lado, estado, p, &fluidos);
     estado[5 * n..10 * n].copy_from_slice(&temporal);
     let div = divergencia(lado, &temporal);
     estado[10 * n..11 * n].copy_from_slice(&div);
     let mut anterior = estado[12 * n..13 * n].to_vec();
     let mut siguiente = anterior.clone();
     for iter in 0..iteraciones {
-        resolver(lado, &anterior, &div, &mut siguiente);
+        resolver(lado, &anterior, &div, &mut siguiente, &fluidos);
         let plano = if iter % 2 == 0 { 11 } else { 12 };
         estado[plano * n..(plano + 1) * n].copy_from_slice(&siguiente);
         core::mem::swap(&mut anterior, &mut siguiente);
     }
-    proyectar(lado, &temporal, &anterior, estado);
+    proyectar(lado, &temporal, &anterior, estado, &fluidos);
     estado[3 * n..5 * n].copy_from_slice(&temporal[3 * n..5 * n]);
     let posterior = divergencia(lado, estado);
     estado[13 * n..14 * n].copy_from_slice(&posterior);
@@ -53,14 +83,20 @@ fn vecinos(lado: usize, pixel: usize) -> [Option<usize>; 6] {
     }
     salida
 }
+fn abiertos(lado: usize, pixel: usize, fluidos: &[bool]) -> [Option<usize>; 6] {
+    vecinos(lado, pixel).map(|v| v.filter(|i| fluidos[pixel] && fluidos[*i]))
+}
 #[allow(clippy::cast_precision_loss, reason = "lado <=64")]
-fn advectar(lado: usize, estado: &[f32], p: &[f32; 8]) -> Vec<f32> {
+fn advectar(lado: usize, estado: &[f32], p: &[f32; 8], fluidos: &[bool]) -> Vec<f32> {
     let n = lado * lado * lado;
     let mut salida = alloc::vec![0.0;5*n];
     let escala = lado as f32;
     for pixel in 0..n {
         let posicion = coords(lado, pixel).map(|v| v as f32);
-        let contorno = vecinos(lado, pixel);
+        let contorno = abiertos(lado, pixel, fluidos);
+        if !fluidos[pixel] {
+            continue;
+        }
         let centro = [(escala - 1.0) * 0.5, escala * 0.18, (escala - 1.0) * 0.5];
         let r2 = posicion.into_iter().zip(centro).map(|(v, c)| (v - c) * (v - c)).sum::<f32>();
         let radio = p[0] * escala;
@@ -74,16 +110,16 @@ fn advectar(lado: usize, estado: &[f32], p: &[f32; 8]) -> Vec<f32> {
             let velocidad = core::array::from_fn::<_, 3, _>(|eje| {
                 let mut punto = punto;
                 punto[eje] -= 0.5;
-                muestra(estado, lado, punto, eje)
+                muestra(estado, lado, punto, eje, fluidos)
             });
             let mut antes = core::array::from_fn(|eje| punto[eje] - velocidad[eje] * p[5] * escala);
             if canal < 3 {
                 antes[canal] -= 0.5;
             }
-            let mut valor = muestra(estado, lado, antes, canal);
+            let mut valor = muestra(estado, lado, antes, canal, fluidos);
             if canal < 3 {
                 let fuerza = if canal < 2 {
-                    muestra(estado, lado, posicion, 4) * p[if canal == 0 { 3 } else { 2 }]
+                    muestra(estado, lado, posicion, 4, fluidos) * p[if canal == 0 { 3 } else { 2 }]
                 } else {
                     0.0
                 };
@@ -121,23 +157,27 @@ pub fn divergencia(lado: usize, estado: &[f32]) -> Vec<f32> {
     salida
 }
 #[allow(clippy::cast_precision_loss, reason = "lado <=64")]
-fn resolver(lado: usize, anterior: &[f32], div: &[f32], salida: &mut [f32]) {
+fn resolver(lado: usize, anterior: &[f32], div: &[f32], salida: &mut [f32], fluidos: &[bool]) {
     for pixel in 0..anterior.len() {
         let mut suma = 0.0;
         let mut cantidad = 0.0;
-        for vecino in vecinos(lado, pixel).into_iter().flatten() {
+        for vecino in abiertos(lado, pixel, fluidos).into_iter().flatten() {
             suma += anterior[vecino];
             cantidad += 1.0;
         }
-        let candidata = (suma - div[pixel] / (lado * lado) as f32) / cantidad;
+        let candidata = (suma - div[pixel] / (lado * lado) as f32) / f32::max(cantidad, 1.0);
+        if !fluidos[pixel] {
+            salida[pixel] = 0.0;
+            continue;
+        }
         salida[pixel] = candidata * (2.0 / 3.0) + anterior[pixel] * (1.0 / 3.0);
     }
 }
 #[allow(clippy::cast_precision_loss, reason = "lado <=64")]
-fn proyectar(lado: usize, provisional: &[f32], presion: &[f32], salida: &mut [f32]) {
+fn proyectar(lado: usize, provisional: &[f32], presion: &[f32], salida: &mut [f32], fluidos: &[bool]) {
     let n = lado * lado * lado;
     for pixel in 0..n {
-        for (eje, vecino) in vecinos(lado, pixel).into_iter().skip(1).step_by(2).enumerate() {
+        for (eje, vecino) in abiertos(lado, pixel, fluidos).into_iter().skip(1).step_by(2).enumerate() {
             salida[eje * n + pixel] =
                 vecino.map_or(0.0, |i| provisional[eje * n + pixel] - (presion[i] - presion[pixel]) * lado as f32);
         }
@@ -149,7 +189,7 @@ fn proyectar(lado: usize, provisional: &[f32], presion: &[f32], salida: &mut [f3
     clippy::cast_sign_loss,
     reason = "coordenadas tras clamp al dominio <=64"
 )]
-fn muestra(estado: &[f32], lado: usize, coords: [f32; 3], canal: usize) -> f32 {
+fn muestra(estado: &[f32], lado: usize, coords: [f32; 3], canal: usize, fluidos: &[bool]) -> f32 {
     let halo = canal < 3;
     let minimo = if halo { -1.0 } else { 0.0 };
     let coords = coords.map(|v| v.clamp(minimo, (lado - 1) as f32) + 1.0);
@@ -162,7 +202,8 @@ fn muestra(estado: &[f32], lado: usize, coords: [f32; 3], canal: usize) -> f32 {
             continue;
         }
         let [x, y, z] = indices.map(|v| v.saturating_sub(1).min(lado - 1));
-        *valor = estado[canal * lado * lado * lado + (z * lado + y) * lado + x];
+        let pixel = (z * lado + y) * lado + x;
+        *valor = if fluidos[pixel] { estado[canal * lado * lado * lado + pixel] } else { 0.0 };
     }
     for (eje, peso) in pesos.into_iter().enumerate() {
         for i in 0..(4 >> eje) {

@@ -78,3 +78,5 @@ humo_gpu.rs contrasta doce planos con referencia a 17², proyección, pausa, cam
 humo_adaptativo_gpu.rs verifica convergencia, límite, datos no finitos, resumen, franjas GPU y equivalencia con referencia a la cuenta efectiva; no es benchmark de velocidad.
 
 volumen_gpu.rs valida catorce kernels SPIR-V y visor, compara 14 planos contra referencia a 9³, comprueba presupuesto, fuente, repetibilidad, cámara/pausa y reinicio con descargas explícitas. No es benchmark. Configuración v9 verifica corrupción y rechazo cruzado 2D/3D.
+
+volumen_gpu.rs amplía referencia a dos subpasos con fuerzas y esfera: caras normales/celdas sólidas nulas, recorte CFL, reloj y repetibilidad. Valida 16 shaders; no benchmark. Formato v10 prueba corrupción y migración de v9.

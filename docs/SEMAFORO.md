@@ -26,3 +26,5 @@ ejecuta el grafo; los costes de compilación/ejecución se describen por separad
 en GRAFO-EDITABLE.md y los semáforos de UI, HILO y app.
 
 HUMO-3D.md y PLAN-EXPLOSION-PRODUCCION.md documentan la base 32³ y los hitos pendientes, costes lógicos y evidencia numérica; no certifican equivalencia con Houdini.
+
+TIEMPO-COLISION-3D.md documenta predictor CFL, límites de tiempo/esfera y formato v10; distingue colisión estática de mallas/movimiento pendientes. No ejecuta el solver.

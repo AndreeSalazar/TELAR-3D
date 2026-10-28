@@ -23,7 +23,7 @@ pub(crate) fn preparar(
     )?;
     let programas =
         telar_kernel::humo3d::Configuracion { lado: LADO, iteraciones: crate::humo_vista::iteraciones(editor) }
-            .compilar()?;
+            .compilar_temporal(subpasos(editor))?;
     gpu.preparar_campos(
         Sombreadores {
             vertices: &telar_render::visor_rayos::vertices(),
@@ -66,5 +66,18 @@ pub(crate) fn bloque(editor: &EditorHumo, camara: &nudo::Camara, srgb: bool) -> 
     for (inicio, vector) in [(16, camara.frente), (20, camara.derecha), (24, camara.arriba), (28, camara.origen)] {
         bloque[inicio..inicio + 3].copy_from_slice(&vector);
     }
+    let [subpasos, radio, altura, cfl] = editor.volumen_opciones.0;
+    bloque[13] = subpasos;
+    bloque[14] = radio;
+    bloque[15] = altura;
+    bloque[19] = cfl;
     Ok(bloque)
+}
+
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss, reason = "UI valida entero 1..4")]
+pub(crate) fn subpasos(editor: &EditorHumo) -> u32 {
+    editor.volumen_opciones.0[0] as u32
+}
+pub(crate) fn secuencia(editor: &EditorHumo) -> Result<Vec<usize>, String> {
+    telar_kernel::humo3d::orden_temporal(crate::humo_vista::iteraciones(editor), subpasos(editor)).map_err(Into::into)
 }

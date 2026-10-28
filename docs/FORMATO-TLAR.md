@@ -155,3 +155,7 @@ Registro de 56 B con los mismos diez parámetros f32 y CRC de carga útil que hu
 2D v8; versión 9 identifica un dominio MAC 3D de 32³ en el editor actual. Los
 lectores rechazan el intercambio de versiones 8/9. No contiene campos, cámara,
 semilla ni caché; abrir inicia estado vacío. Ver [HUMO-3D.md](HUMO-3D.md).
+
+## Tiempo y esfera de humo v10
+
+Registro 72 B: cabecera TLAR/version=10/cantidad=14/CRC, diez f32 de humo y cuatro de subpasos, radio, altura y CFL. CRC sobre carga útil; dominios validados antes de aplicar. V9 migra sin esfera, un subpaso y CFL 0.5. No contiene campos/reloj/cámara. Ver [TIEMPO-COLISION-3D.md](TIEMPO-COLISION-3D.md).

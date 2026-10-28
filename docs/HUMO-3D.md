@@ -1,7 +1,7 @@
 # Humo MAC 3D: primer volumen físico residente
 
 Entrega del 28 de octubre de 2026: prototipo denso de **32³ celdas**, con tres
-componentes de velocidad MAC, densidad y calor. Cada paso ejecuta en GPU advección
+componentes de velocidad MAC, densidad y calor. Cada subpaso ejecuta en GPU advección
 semi-lagrangiana trilineal, emisión esférica continua, flotación/viento y proyección
 de presión. La CPU mantiene eventos, cámara, archivos y envíos Vulkan.
 
@@ -18,7 +18,7 @@ presión/visor. Densidad, calor, velocidad y divergencia se inspeccionan por sep
 La franja verde/amarilla/roja indica tolerancia/límite/invalidez del último paso.
 Mover la cámara y cambiar exposición/vista conservan los campos.
 
-F5/F9 guarda/abre parámetros `.tlar` **v9, 56 B**; no guarda campos ni cámara.
+F5/F9 guarda/abre parámetros `.tlar` **v10, 72 B**; no guarda campos ni cámara. V9 migra con un subpaso y sin obstáculo.
 V8 identifica humo 2D y se rechaza en este modo para evitar reinterpretarlo.
 Abrir o reiniciar limpia el volumen. Fuente y valores se reconstruyen desde cero.
 
@@ -53,7 +53,7 @@ El estado contiene diecisiete planos f32 de N³ palabras:
 | 14–16 | Residual absoluto, reducción parcial y control global |
 
 Los límites se validan antes de reservar: N=4..64, presupuesto par=2..128,
-14 programas únicos y hasta 327 posiciones de despacho (167 con 64 iteraciones).
+16 programas únicos y hasta 1316 posiciones de despacho (338 con 64 iteraciones y dos subpasos); el plan histórico sin tiempo conserva 14 programas.
 La GPU desactiva el contenido de las pasadas restantes al converger; la CPU sigue
 registrando el plan acotado completo. No es despacho indirecto de presión.
 
@@ -71,15 +71,15 @@ Todavía no hay luz volumétrica, sombras propias, dispersión ni temperatura f�
 Este visor diagnóstico no es render volumétrico de producción.
 
 El emisor es continuo y fijo. La advección difunde y no conserva masa exactamente;
-el paso temporal es fijo, sin control CFL ni subpasos. El límite ±0.8 se aplica a
+el nuevo [control temporal y esfera](TIEMPO-COLISION-3D.md) añade subpasos y predictor CFL residente. El límite ±0.8 se aplica a
 velocidades provisionales, no demuestra estabilidad del sistema. Una fuente menor
-que una celda puede quedar insuficientemente resuelta. No hay obstáculos internos,
+que una celda puede quedar insuficientemente resuelta. Hay una esfera estática voxelizada; no hay colisionadores generales,
 combustible/reacción, expansión explosiva, turbulencia controlada, regiones dispersas,
 chispas, caché de campos ni secuencia HDR de volumen.
 
 El recorrido completo y sus criterios están en
 [PLAN-EXPLOSION-PRODUCCION.md](PLAN-EXPLOSION-PRODUCCION.md).
-El siguiente hito es controlar tiempo y colisiones antes de añadir reacción.
+El siguiente hito físico es completar colisiones móviles y preparar reacción. La primera entrega de tiempo/colisión está documentada por separado.
 
 ## Evidencia
 

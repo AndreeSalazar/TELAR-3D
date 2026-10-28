@@ -25,7 +25,7 @@ pub(crate) struct Campos {
 }
 impl Campos {
     pub(super) fn secuencia(&mut self, nueva: &[usize]) -> Result<(), String> {
-        if nueva.is_empty() || nueva.len() > 512 || nueva.iter().any(|v| *v >= self.programas.len()) {
+        if nueva.is_empty() || nueva.len() > 2048 || nueva.iter().any(|v| *v >= self.programas.len()) {
             return Err("secuencia de campos inválida".into());
         }
         self.secuencia = nueva.to_vec();

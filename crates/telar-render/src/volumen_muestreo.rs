@@ -74,6 +74,30 @@ impl Volumen {
         }
         f.elegir(t.real, dentro, valores[0], cero)
     }
+    #[allow(clippy::cast_precision_loss, reason = "lado <=64")]
+    pub(super) fn solido(&self, f: &mut Funcion, t: &Tipos, mat: &Matematica, punto: Id) -> Id {
+        let bloque = t.cargar(f, 3);
+        let radio = f.extraer(t.real, bloque, 2);
+        let altura = f.extraer(t.real, bloque, 3);
+        let medio = Matematica::escalar(f, 0.5);
+        let escala = Matematica::escalar(f, self.lado as f32);
+        let cero = Matematica::escalar(f, 0.0);
+        let mut distancia = cero;
+        for eje in 0..3 {
+            let coord = f.extraer(t.real, punto, eje);
+            let coord = f.binaria(op::F_MUL, t.real, coord, escala);
+            let coord = f.glsl(t.real, 8, &[coord]);
+            let coord = f.binaria(op::F_ADD, t.real, coord, medio);
+            let coord = f.binaria(op::F_DIV, t.real, coord, escala);
+            let delta = f.binaria(op::F_SUB, t.real, coord, if eje == 1 { altura } else { medio });
+            let cuadrado = f.binaria(op::F_MUL, t.real, delta, delta);
+            distancia = f.binaria(op::F_ADD, t.real, distancia, cuadrado);
+        }
+        let radio2 = f.binaria(op::F_MUL, t.real, radio, radio);
+        let dentro = f.binaria(188, mat.booleano, distancia, radio2);
+        let activo = f.binaria(op::F_ORD_GREATER_THAN, mat.booleano, radio, cero);
+        f.binaria(op::LOGICAL_AND, mat.booleano, dentro, activo)
+    }
     pub(super) fn campo(&self, f: &mut Funcion, t: &Tipos, mat: &Matematica, punto: Id, vista: Id) -> Id {
         let dos = f.modulo().constante_f32(2.0);
         let es_velocidad = f.binaria(180, mat.booleano, vista, dos);

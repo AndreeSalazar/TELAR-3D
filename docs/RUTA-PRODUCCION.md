@@ -166,3 +166,5 @@ El recorrido completo queda registrado en [PLAN-EXPLOSION-PRODUCCION.md](PLAN-EX
 La primera base [HUMO-3D.md](HUMO-3D.md) ya transporta y proyecta campos MAC a 32³
 en GPU. No cierra P7 de esta ruta: faltan estabilidad temporal, colisiones,
 combustión, iluminación de volumen, secundarios, cachés y secuencias finales.
+
+La rama 3D añade [tiempo y esfera estática](TIEMPO-COLISION-3D.md), con dt decidido en GPU y subpasos acotados. P2 avanzado y la explosión física completa siguen abiertos.

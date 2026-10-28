@@ -68,3 +68,5 @@ campos.rs conserva un SSBO, seis pipelines en humo y barreras entre pasadas/cuad
 Transferencias por rango validan offsets, tamaño y barreras; humo_adaptativo_gpu.rs prueba el resumen de 64 B y rechazo de rangos vacíos/fuera del buffer. FFI sigue ROJO por sincronización y vida útil.
 
 Captura permite escena opcional; el camino UI-only reutiliza los destinos/barreras de captura existentes. FFI sigue ROJO: vida de atlas, descriptores, destinos y descarga se valida en pruebas Vulkan.
+
+Campos valida hasta 2048 posiciones también al sustituir la secuencia; se conservan las barreras y el propietario del estado compartido. No se añade API FFI ni reserva; más posiciones implican más grabación/envíos. Caso real temporal en telar-app/tests/volumen_gpu.rs.

@@ -9,7 +9,7 @@ pub struct PlanCampos<'a> {
     pub palabras: u32,
     /// SPIR-V distintos, hasta 16; set 0/binding 1 es el estado.
     pub programas: &'a [Vec<u32>],
-    /// Índices de programas en orden, hasta 512 pasadas por cuadro.
+    /// Índices de programas en orden, hasta 2048 pasadas por cuadro.
     pub secuencia: &'a [usize],
 }
 impl PlanCampos<'_> {
@@ -19,7 +19,7 @@ impl PlanCampos<'_> {
             || self.programas.is_empty()
             || self.programas.len() > 16
             || self.secuencia.is_empty()
-            || self.secuencia.len() > 512
+            || self.secuencia.len() > 2048
             || self.secuencia.iter().any(|v| *v >= self.programas.len())
             || self.programas.iter().any(|p| p.len() < 5 || p[0] != 0x0723_0203)
         {

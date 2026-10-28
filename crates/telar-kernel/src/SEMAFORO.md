@@ -22,3 +22,5 @@ Humo MAC 2D: emite seis kernels SPIR-V, propiedad de celda por plano y sin atóm
 Presión adaptativa: residual máximo y reducción jerárquica sin atómicos; decisión GPU con tolerancia/presupuesto, 14 programas y hasta 327 pasadas. Estado de quince planos. Referencia CPU acepta cero iteraciones para verificar la estimación inicial. Ver docs/PRESION-ADAPTATIVA.md.
 
 Humo MAC 3D: 17 planos a 4..64³, catorce programas y 7+5*(iter/2) posiciones por paso. Advección, fuerzas, presión y control en GPU; referencia escalar solo de ensayo. 68*N³+4 B lógicos compartidos, sin atómicos ni descargas vivas. El plan host sigue enviando las pasadas acotadas. Pruebas: telar-app/tests/volumen_gpu.rs; límites en docs/HUMO-3D.md.
+
+Tiempo/esfera 3D: dos programas adicionales de reducción/decisión dt y stencil de caras fluidas, 16 programas únicos. 1..4 subpasos; máximo 1316 posiciones. Misma reserva 17 planos; aumenta el cómputo por máscara matemática y subpasos, sin benchmark. Reloj y predictor en control, sin lectura host viva. Prueba ampliada: telar-app/tests/volumen_gpu.rs; docs/TIEMPO-COLISION-3D.md.
