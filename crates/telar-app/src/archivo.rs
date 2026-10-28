@@ -32,6 +32,11 @@ pub(crate) fn procesar(args: &[String]) -> Option<Result<(), String>> {
                 .take(4_194_453)
                 .read_to_end(&mut bytes)
                 .map_err(|e| format!("leer {ruta}: {e}"))?;
+            if bytes.get(4..8).is_some_and(|v| v == 5u32.to_le_bytes()) {
+                let escena = crate::objetos::decodificar(&bytes)?;
+                println!("telar: .tlar v5 · dos cajas, luz y salida editables · {} spp", escena.valores()[30]);
+                return Ok(());
+            }
             if bytes.get(4..8).is_some_and(|v| [2u32, 3, 4].iter().any(|n| v == n.to_le_bytes())) {
                 let escena = crate::proyecto::Proyecto::decodificar(&bytes)?;
                 println!(

@@ -41,6 +41,8 @@ pub struct Trabajo {
     pub radio_luz: f32,
     /// Radiancia de la luz, 0..100.
     pub energia: f32,
+    /// Color lineal de la luz, componentes de cero a uno.
+    pub color_luz: [f32; 3],
     /// Exposición de la vista sRGB; el HDR permanece lineal sin exposición.
     pub exposicion: f32,
     /// Habilita rayos de sombra entre todos los triángulos.
@@ -61,6 +63,9 @@ impl Trabajo {
     /// # Errors
     /// No acepta datos no finitos, triángulos degenerados o bases colapsadas.
     pub fn validar(&self) -> Result<(), &'static str> {
+        if !self.color_luz.iter().all(|v| v.is_finite() && (0.0..=1.0).contains(v)) {
+            return Err("color de luz inválido");
+        }
         if !self.exposicion.is_finite() || !(0.01..=16.0).contains(&self.exposicion) {
             return Err("exposición fuera de 0.01..16");
         }

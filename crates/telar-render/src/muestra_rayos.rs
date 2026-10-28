@@ -9,6 +9,10 @@ pub(crate) fn muestra(f: &mut Funcion, mat: &Matematica, trabajo: &Trabajo, pixe
     let semilla = f.binaria(op::I_MUL, mat.entero, semilla, mezcla);
     let semilla = f.binaria(op::I_ADD, mat.entero, semilla, indice);
     let direccion = direccion(f, mat, trabajo, pixel, semilla);
+    iluminar(f, mat, trabajo, direccion, semilla)
+}
+
+pub(crate) fn iluminar(f: &mut Funcion, mat: &Matematica, trabajo: &Trabajo, direccion: Id, semilla: Id) -> Id {
     let origen = mat.vector(f, trabajo.camara.origen);
     let minimo = Matematica::escalar(f, 0.001);
     let maximo = Matematica::escalar(f, 1000.0);
@@ -46,6 +50,8 @@ pub(crate) fn muestra(f: &mut Funcion, mat: &Matematica, trabajo: &Trabajo, pixe
     let factor = f.binaria(op::F_MUL, mat.real, factor, visible);
     let factor = f.binaria(op::F_DIV, mat.real, factor, distancia2);
     let iluminado = f.binaria(op::VECTOR_TIMES_SCALAR, mat.vector, impacto.color, factor);
+    let color_luz = mat.vector(f, trabajo.color_luz);
+    let iluminado = f.binaria(op::F_MUL, mat.vector, iluminado, color_luz);
     let fondo = mat.vector(f, [0.015, 0.02, 0.03]);
     mat.elegir_vector(f, impacto.existe, iluminado, fondo)
 }

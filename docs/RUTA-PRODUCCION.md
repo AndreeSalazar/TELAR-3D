@@ -1,6 +1,6 @@
 # Ruta hacia el estudio VFX y el render de producción
 
-Estado del **28 de octubre de 2026**: edición numérica, MSAA solicitado hasta 64x, escenas .tlar v2/v3/v4 y render por lotes con varios objetos, sombras y exportación HDR; sigue separado del visor.
+Estado del **28 de octubre de 2026**: edición numérica, MSAA solicitado hasta 64x, escenas .tlar v2/v3/v4 y editor de objetos/luz con vista GPU, .tlar v5 y exportación HDR; el grafo procedural conserva su modo propio.
 Objetivo personal: TELAR 3D con un flujo procedural inspirado en Houdini y una
 dirección visual cinematográfica inspirada en RenderMan. Código y contratos propios;
 no se afirma compatibilidad ni equivalencia con esos productos.
@@ -24,8 +24,8 @@ de añadir escenas, efectos y millones de rayos con dependencias complejas.
 | Geometría residente | Rejilla y hasta ocho Ondas/Relieves conectables, compilados a HILO | Un único campo de alturas; sin mallas/recursos arbitrarios |
 | HILO | IR tipado, intérprete y SPIR-V; escalares vivos | Sin lenguaje textual ni atributos generales |
 | Interfaz | CSS nativo, números editables, instancias, puertos y omisión | Sin borrado/deshacer ni mezcla de geometrías |
-| Render | Visor GGX/área/autosombra; render por lotes de 26 triángulos con sombras y HDR | Sin BVH, GI ni historial progresivo; controles por CLI, fuera del editor |
-| `.tlar` | V1 arranque; V2 cadena histórica; V3 grafo editable; V4 peticiones MSAA altas, cámara y parámetros | Un dominio de rejilla, sin recursos externos de producción |
+| Render | Visor GGX/área/autosombra; render por lotes de 26 triángulos con sombras y HDR | Sin BVH, GI ni historial progresivo; objetos editables en modo propio, sin historial progresivo |
+| `.tlar` | V1 arranque; V2 cadena histórica; V3 grafo editable; V4 peticiones MSAA altas; V5 escena de dos cajas, luz y cámara | Un dominio de rejilla, sin recursos externos de producción |
 | Bordes | MSAA 2x inicial, peticiones numéricas hasta 64x según soporte; ver CALIDAD-RENDER.md | Reduce aliasing de cobertura; no aumenta detalle geométrico |
 
 ## Orden propuesto y criterios de aceptación
@@ -44,7 +44,7 @@ de añadir escenas, efectos y millones de rayos con dependencias complejas.
 Ondas con valores propios, creación/conexión/omisión y reapertura v3. Ver
 GRAFO-EDITABLE.md. Esto no cierra todavía escenas generales con varios objetos,
 mezcla de geometrías, atributos o recursos externos.
-**P3 avanzado, sin cerrar:** escena de ensayo con 26 triángulos, rayos de cámara y sombras entre objetos. **P4 parcial:** acumula 1..1024 spp dentro de un único despacho, sin historial entre envíos. **P6 parcial:** PFM lineal y PPM sRGB de revisión. Los controles son por CLI; faltan BVH, recursos persistentes, integración UI y transporte completo. Ver [RENDER-POR-LOTES.md](RENDER-POR-LOTES.md).
+**P3 avanzado, sin cerrar:** escena de ensayo con 26 triángulos, rayos de cámara y sombras entre objetos. **P4 parcial:** acumula 1..1024 spp dentro de un único despacho, sin historial entre envíos. **P6 parcial:** PFM lineal y PPM sRGB de revisión. Los controles nativos de dos cajas/luz/salida ya guardan .tlar v5; faltan BVH, recursos de malla generales, historial y transporte completo. Ver [EDITOR-OBJETOS.md](EDITOR-OBJETOS.md). Ver [RENDER-POR-LOTES.md](RENDER-POR-LOTES.md).
 
 P2 sigue siendo la prioridad técnica del kernel (H2/H3 en RUMBO-KERNEL.md).
 Ambas vías se coordinan: el compilador prepara un plan válido y el kernel decide

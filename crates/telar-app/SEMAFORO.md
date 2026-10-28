@@ -36,3 +36,12 @@ RAM para resultados y PFM/PPM; E/S explícita por --render-rayos.
 Sin BVH ni historial entre envíos; nuevas ejecuciones reconstruyen recursos.
 No se afirma pico físico ni rendimiento universal; ver docs/RENDER-POR-LOTES.md
 y crates/telar-app/tests/render_final.rs para evidencia RTX 3060.
+
+Editor de objetos: dos cajas y luz con controles nativos, escena v5 de 184 B.
+CPU prepara shaders al confirmar cambios; la vista traza 1 spp en GPU, limitada
+a 1024×768, sin descarga viva ni reconstrucción UI en cuadros estables. Ediciones
+esperan/reemplazan pipeline; pico transitorio no medido. La UI mantiene estado,
+texto de hasta 24 caracteres y triángulos/atlas; usa buffers de overlay existentes.
+E/S solo F5/F9/F6 o comandos explícitos; HDR síncrono 20 B/píxel más staging,
+código y alineación. Capturas diagnósticas esperan y descargan; fuera del visor.
+Pruebas y límites: docs/EDITOR-OBJETOS.md, tests/objetos_editor.rs y ui/tests/objetos.rs.

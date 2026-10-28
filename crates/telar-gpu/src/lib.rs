@@ -188,6 +188,28 @@ impl Gpu {
         };
         self.presentacion.dibujar(&self.contexto, eleccion::color_para(formato, fondo), escena.as_ref(), None)
     }
+
+    /// Dibuja una malla no procedural con overlay y viewport de interfaz.
+    /// El bloque es opaco para Vulkan; no interpreta cámara ni materiales.
+    /// # Errors
+    /// Rechaza constantes no finitas, visor ausente o errores del backend.
+    pub fn dibujar_bloque_interfaz(&mut self, fondo: [f32; 4], bloque: &[f32; 32]) -> Result<bool, String> {
+        if !bloque.iter().all(|v| v.is_finite()) {
+            return Err("constantes no finitas".into());
+        }
+        let formato = self.presentacion.formato;
+        if let Some(interfaz) = &mut self.interfaz {
+            interfaz.formato(&self.contexto, formato)?;
+        }
+        let visor = self.visor.as_mut().ok_or("falta el visor")?;
+        let escena = visor.escena(&self.contexto, formato, bloque)?;
+        self.presentacion.dibujar(
+            &self.contexto,
+            eleccion::color_para(formato, fondo),
+            escena.as_ref(),
+            self.interfaz.as_mut(),
+        )
+    }
 }
 
 /// Un contexto sin ventana: instancia y dispositivo, para calcular (la Fase 2)

@@ -30,13 +30,13 @@ pub(crate) fn triangulos(desplazamiento: f32) -> Vec<Triangulo> {
     escena
 }
 
-fn cuadrado(escena: &mut Vec<Triangulo>, puntos: [[f32; 3]; 4], color: [f32; 3]) {
+pub(crate) fn cuadrado(escena: &mut Vec<Triangulo>, puntos: [[f32; 3]; 4], color: [f32; 3]) {
     for indices in [[0, 1, 2], [0, 2, 3]] {
         escena.push(Triangulo { vertices: indices.map(|i| puntos[i]), color });
     }
 }
 
-fn caja(escena: &mut Vec<Triangulo>, centro: [f32; 3], radio: [f32; 3], color: [f32; 3]) {
+pub(crate) fn caja(escena: &mut Vec<Triangulo>, centro: [f32; 3], radio: [f32; 3], color: [f32; 3]) {
     let puntos: [[_; 3]; 8] = core::array::from_fn(|indice| {
         core::array::from_fn(|eje| centro[eje] + if indice & (1 << eje) == 0 { -radio[eje] } else { radio[eje] })
     });

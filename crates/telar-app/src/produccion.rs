@@ -61,6 +61,7 @@ fn ejecutar(args: &[String]) -> Result<(), String> {
         luz: vector(args, "--luz", [-1.0, 4.0, 1.0])?,
         radio_luz: numero(args, "--radio-luz", 0.65)?,
         energia: numero(args, "--energia", 25.0)?,
+        color_luz: [1.0; 3],
         sombras: !args.iter().any(|a| a == "--sin-sombras"),
     };
     let codigo = trabajo.compilar()?;

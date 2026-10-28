@@ -117,3 +117,34 @@ Al abrir se consulta el soporte de color y profundidad en el dispositivo destino
 se elige el mayor nivel admitido que no exceda la petición. Por ejemplo, una petición
 32 puede dar 8 efectivos y se conserva como 32 al volver a guardar. El visor muestra
 ambos números. V4 sigue siendo datos acotados, sin shaders proporcionados por archivo.
+
+## Escena v5 · objetos y luz editables
+
+Formato independiente del payload de rejilla: 184 B fijos, cabecera LE u32
+`[0x52414c54,5,42,CRC32(payload)]` y 42 palabras. No incluye código ejecutable.
+Palabras relativas al payload:
+
+| Índices | Contenido |
+|---|---|
+| 0..9, 10..19 | Cada caja: posición XYZ, tamaño completo XYZ, color lineal RGB y visible 0/1 |
+| 20..22 | Centro de luz XYZ |
+| 23, 24 | Semilado y radiancia |
+| 25..27, 28 | Color lineal de luz RGB, sombras 0/1 |
+| 29..33 | Exposición, spp final, ancho, alto, semilla |
+| 34..36, 37..39 | Ojo XYZ y objetivo XYZ |
+| 40, 41 | Selección 0..3, página 0..1 |
+
+Las primeras 40 palabras son bits f32, incluyendo opciones enteras codificadas
+como valores f32 exactos; selección/página son u32. La semilla está limitada a
+16777215. Todos los valores deben ser finitos; tamaños 0.1..3, colores 0..1,
+coordenadas de cajas X/Z -3..3 y Y 0..3, luz X/Z -10..10 y Y 0.1..10,
+radio 0.01..3, radiancia 0..100, exposición 0.01..16. Cámara -10..10,
+dirección no vertical ni colapsada. spp 1..1024, dimensiones 1..512 y producto
+ancho×alto×spp <=1048576. Visible y sombras deben valer exactamente 0 o 1.
+
+Decodificación de tamaño fijo y transaccional; el lector toma como máximo 185 B
+para detectar exceso. El escritor reutiliza el temporal exclusivo y reemplazo
+atómico del proyecto; no implica recuperación garantizada frente a apagones.
+Los lectores de rejilla rechazan v5 y solicitan `--estudio-rayos`; los lectores
+v5 rechazan v1..v4. El inspector reconoce todos los formatos sin ejecutar shaders.
+Ver [EDITOR-OBJETOS.md](EDITOR-OBJETOS.md) y las pruebas objetos_editor.rs.

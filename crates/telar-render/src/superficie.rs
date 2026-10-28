@@ -89,7 +89,7 @@ pub(super) fn iluminar(f: &mut Funcion, t: &Tipos, s: &Superficie, luz: Id) -> I
     f.binaria(op::VECTOR_TIMES_SCALAR, t.v3, brdf, nl)
 }
 
-fn salida(f: &mut Funcion, t: &Tipos, radiancia: Id, exposicion: Id, codificar: Id) -> Id {
+pub(super) fn salida(f: &mut Funcion, t: &Tipos, radiancia: Id, exposicion: Id, codificar: Id) -> Id {
     let expuesta = f.binaria(op::VECTOR_TIMES_SCALAR, t.v3, radiancia, exposicion);
     let blanco = t.rgb(f, [1.0; 3]);
     let divisor = f.binaria(op::F_ADD, t.v3, expuesta, blanco);

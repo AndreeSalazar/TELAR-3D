@@ -116,3 +116,7 @@ si superan 4. El inspector separa el pedido del resultado real de la GPU.
 Render experimental con suelo/dos cajas, sombras entre objetos y salida HDR:
 [controles numéricos, 256 spp y límites](docs/RENDER-POR-LOTES.md).
 Se ejecuta por lotes; el editor todavía usa el visor procedural.
+
+Editor nativo de objetos y luz: `telar --estudio-rayos`, selección y propiedades
+independientes, vista raytraced GPU, F5/F9 para .tlar v5 y F6 para HDR.
+[Controles y límites](docs/EDITOR-OBJETOS.md).

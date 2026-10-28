@@ -27,6 +27,7 @@ fn plano(muestras: u32) -> Trabajo {
         luz: [0.0, 3.0, 0.0],
         radio_luz: 0.5,
         energia: 10.0,
+        color_luz: [1.0; 3],
         sombras: true,
     }
 }

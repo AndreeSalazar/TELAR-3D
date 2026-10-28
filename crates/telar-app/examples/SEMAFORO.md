@@ -20,3 +20,12 @@ pico de VRAM no medido. Estado estable: diez buffers, dos grabaciones, dos
 mapeos y seis pipelines compute en la ruta fusionada (ocho en la histórica).
 La escena de datos v3 ocupa hasta 416 B; E/S solo explícita. Evidencia adicional:
 docs/GRAFO-EDITABLE.md, tests/grafo_gpu.rs y tests/red.rs de sus crates.
+
+Editor de objetos: dos cajas y luz con controles nativos, escena v5 de 184 B.
+CPU prepara shaders al confirmar cambios; la vista traza 1 spp en GPU, limitada
+a 1024×768, sin descarga viva ni reconstrucción UI en cuadros estables. Ediciones
+esperan/reemplazan pipeline; pico transitorio no medido. La UI mantiene estado,
+texto de hasta 24 caracteres y triángulos/atlas; usa buffers de overlay existentes.
+E/S solo F5/F9/F6 o comandos explícitos; HDR síncrono 20 B/píxel más staging,
+código y alineación. Capturas diagnósticas esperan y descargan; fuera del visor.
+Pruebas y límites: docs/EDITOR-OBJETOS.md, tests/objetos_editor.rs y ui/tests/objetos.rs.

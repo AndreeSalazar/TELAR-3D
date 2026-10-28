@@ -12,6 +12,36 @@ use super::{
 };
 use crate::eleccion::{MEMORIA_COHERENTE, MEMORIA_VISIBLE};
 
+pub(crate) fn capturar_malla(
+    ctx: &Contexto,
+    shaders: crate::Sombreadores,
+    malla: (&[[f32; 6]], &[u32]),
+    tamano: (u32, u32),
+    fondo: [f32; 4],
+    constantes: &[f32; 32],
+    capa: crate::CapaInterfaz,
+) -> Result<crate::CapturaEstudio, String> {
+    if capa.area[2] == 0
+        || capa.area[3] == 0
+        || capa.area[0].checked_add(capa.area[2]).is_none_or(|v| v > tamano.0)
+        || capa.area[1].checked_add(capa.area[3]).is_none_or(|v| v > tamano.1)
+    {
+        return Err("área de captura inválida".into());
+    }
+    let pipeline =
+        super::pipeline_grafico::PipelineGrafico::nuevo(ctx, shaders.vertices, shaders.fragmentos, FORMATO_RGBA8)?;
+    let malla = super::malla_gpu::MallaGpu::nueva(ctx, malla.0, malla.1)?;
+    let mut ui = super::interfaz::InterfazGpu::nueva(ctx, capa.shaders, FORMATO_RGBA8)?;
+    if let Some(atlas) = capa.atlas {
+        ui.fuente(ctx, atlas.ancho, atlas.alto, atlas.cobertura)?;
+    }
+    ui.actualizar(capa.vertices, capa.area)?;
+    let dibujo = ui.juego(0)?;
+    let escena =
+        Escena { pipeline: &pipeline, malla: &malla, constantes, indirecto: None, conjunto: None, calculo: None };
+    capturar(ctx, &escena, &dibujo, tamano, fondo)
+}
+
 pub(super) fn capturar(
     ctx: &Contexto,
     escena: &Escena,

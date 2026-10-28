@@ -41,7 +41,8 @@ la CLI usa únicamente esta escena de ensayo, sin importador de mallas todavía.
 Presupuesto adicional: **ancho × alto × spp <= 1 048 576**. Por eso 256 spp
 está habilitado a 64×64, pero no a 512×512. Este tope controla trabajo, no
 garantiza un tiempo límite en toda GPU. No depende de los niveles MSAA del visor.
-No existen todavía controles interactivos de esta ruta dentro del inspector.
+El nuevo modo `--estudio-rayos` añade controles nativos y .tlar v5 sobre la
+misma base: ver [EDITOR-OBJETOS.md](EDITOR-OBJETOS.md).
 
 ## Tres archivos de salida
 

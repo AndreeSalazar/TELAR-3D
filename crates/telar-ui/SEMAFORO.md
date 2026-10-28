@@ -22,3 +22,12 @@ serialización de datos y recorte de triángulos UI consumen CPU/RAM al editar.
 No evalúa puntos 3D ni reserva recursos GPU; la app recibe peticiones de recompilar
 y de E/S. La extensión de escena ocupa hasta 72 palabras; sin código ejecutable.
 Ver docs/GRAFO-EDITABLE.md y tests/numeros.rs, red.rs y estado.rs.
+
+Editor de objetos: dos cajas y luz con controles nativos, escena v5 de 184 B.
+CPU prepara shaders al confirmar cambios; la vista traza 1 spp en GPU, limitada
+a 1024×768, sin descarga viva ni reconstrucción UI en cuadros estables. Ediciones
+esperan/reemplazan pipeline; pico transitorio no medido. La UI mantiene estado,
+texto de hasta 24 caracteres y triángulos/atlas; usa buffers de overlay existentes.
+E/S solo F5/F9/F6 o comandos explícitos; HDR síncrono 20 B/píxel más staging,
+código y alineación. Capturas diagnósticas esperan y descargan; fuera del visor.
+Pruebas y límites: docs/EDITOR-OBJETOS.md, tests/objetos_editor.rs y ui/tests/objetos.rs.

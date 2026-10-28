@@ -4,6 +4,11 @@
 extern crate alloc;
 
 mod calidad;
+mod escena_objetos;
+pub use escena_objetos::{EscenaObjetos, PALABRAS_OBJETOS};
+mod dibujo_objetos;
+mod editor_objetos;
+pub use editor_objetos::{AccionEditor, DisenoObjetos, EditorObjetos};
 mod dibujo;
 mod estado;
 pub use estado::PALABRAS_ESTUDIO;

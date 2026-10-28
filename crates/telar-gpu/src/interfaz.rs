@@ -1,6 +1,27 @@
 //! API segura para la interfaz 2D; los eventos y el diseño pertenecen a telar-ui.
 use crate::{Constantes, Gpu, Procedural, Sombreadores, ffi};
 
+impl crate::Calculo {
+    /// Captura diagnóstica de malla y overlay, sin ventana. Espera y descarga.
+    /// No se usa en el bucle vivo del editor de objetos.
+    /// # Errors
+    /// Rechaza constantes/áreas inválidas, geometría incorrecta o errores Vulkan.
+    pub fn capturar_malla_interfaz(
+        &self,
+        shaders: Sombreadores,
+        malla: (&[[f32; 6]], &[u32]),
+        tamano: (u32, u32),
+        fondo: [f32; 4],
+        bloque: &[f32; 32],
+        capa: CapaInterfaz,
+    ) -> Result<CapturaEstudio, String> {
+        if !bloque.iter().chain(&fondo).all(|v| v.is_finite()) {
+            return Err("constantes de captura no finitas".into());
+        }
+        ffi::capturar_malla(&self.contexto, shaders, malla, tamano, fondo, bloque, capa)
+    }
+}
+
 /// Overlay para capturas diagnósticas de la escena completa.
 #[derive(Clone, Copy)]
 pub struct CapaInterfaz<'a> {

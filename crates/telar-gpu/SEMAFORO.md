@@ -30,3 +30,12 @@ de formatos color/profundidad. La petición no obliga a reservar muestras que
 la GPU no soporte. Para N efectivo > 1, sobrecoste lógico RGBA8/D32 de 8*N-4 B
 por píxel; 8x añade 52,73 MiB a 1280x720. Pico físico y tiempo de niveles altos
 no medidos. Evidencia: tests/calidad_visor.rs y docs/CALIDAD-RENDER.md.
+
+Editor de objetos: dos cajas y luz con controles nativos, escena v5 de 184 B.
+CPU prepara shaders al confirmar cambios; la vista traza 1 spp en GPU, limitada
+a 1024×768, sin descarga viva ni reconstrucción UI en cuadros estables. Ediciones
+esperan/reemplazan pipeline; pico transitorio no medido. La UI mantiene estado,
+texto de hasta 24 caracteres y triángulos/atlas; usa buffers de overlay existentes.
+E/S solo F5/F9/F6 o comandos explícitos; HDR síncrono 20 B/píxel más staging,
+código y alineación. Capturas diagnósticas esperan y descargan; fuera del visor.
+Pruebas y límites: docs/EDITOR-OBJETOS.md, tests/objetos_editor.rs y ui/tests/objetos.rs.

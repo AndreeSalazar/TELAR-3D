@@ -95,6 +95,9 @@ impl Proyecto {
             return Err("tamaño de escena .tlar inválido".into());
         }
         let palabras: Vec<u32> = bytes.as_chunks::<4>().0.iter().map(|b| u32::from_le_bytes(*b)).collect();
+        if palabras[1] == 5 {
+            return Err("escena de objetos: abre con --estudio-rayos --abrir-escena".into());
+        }
         if palabras[0] != FIRMA
             || !matches!(palabras[1], 2..=4)
             || palabras[2] as usize != palabras.len() - 4
@@ -129,7 +132,7 @@ impl Proyecto {
     }
 }
 
-fn crc32(bytes: &[u8]) -> u32 {
+pub(crate) fn crc32(bytes: &[u8]) -> u32 {
     let mut crc = u32::MAX;
     for byte in bytes {
         crc ^= u32::from(*byte);
@@ -161,6 +164,11 @@ pub(crate) fn leer(ruta: &Path) -> Result<Proyecto, String> {
 pub(crate) fn guardar(ruta: &Path, proyecto: &Proyecto) -> Result<(), String> {
     validar_ruta(ruta)?;
     let bytes = proyecto.codificar()?;
+    guardar_bytes(ruta, &bytes)
+}
+
+pub(crate) fn guardar_bytes(ruta: &Path, bytes: &[u8]) -> Result<(), String> {
+    validar_ruta(ruta)?;
     // Temporal exclusivo en el mismo directorio: no truncar el proyecto anterior.
     let id = TEMPORALES.fetch_add(1, Ordering::Relaxed);
     let nombre = ruta.file_name().ok_or("ruta de escena sin nombre")?.to_string_lossy();
@@ -171,7 +179,7 @@ pub(crate) fn guardar(ruta: &Path, proyecto: &Proyecto) -> Result<(), String> {
         .open(&temporal)
         .map_err(|e| format!("crear temporal de escena: {e}"))?;
     let resultado = (|| {
-        archivo.write_all(&bytes).map_err(|e| format!("escribir escena: {e}"))?;
+        archivo.write_all(bytes).map_err(|e| format!("escribir escena: {e}"))?;
         archivo.sync_all().map_err(|e| format!("sincronizar escena: {e}"))?;
         drop(archivo);
         fs::rename(&temporal, ruta).map_err(|e| format!("reemplazar escena {}: {e}", ruta.display()))

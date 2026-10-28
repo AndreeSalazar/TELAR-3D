@@ -6,6 +6,7 @@
 //! deforma una rejilla en GPU; --esfera-cpu conserva el visor de referencia.
 //!
 //! ```text
+//! cargo run -p telar-app --release -- --estudio-rayos  editor de objetos/luz y .tlar v5
 //! cargo run -p telar-app --release            el visor (Esc o la X para salir)
 //! cargo run -p telar-app -- --prueba          ventana oculta, 120 fotogramas; sale con 1 si hay avisos
 //! cargo run -p telar-app -- --sin-validacion  sin las capas de validación (más rápido)
@@ -26,13 +27,17 @@ mod arranque;
 mod calculo;
 mod calidad;
 mod controles;
+mod entrada_objetos;
 mod escena;
 mod escena_final;
+mod estudio_objetos;
 mod grafo;
 mod grafo_compilar;
+mod objetos;
 mod produccion;
 mod proyecto;
 mod render;
+mod render_objetos;
 mod salida_hdr;
 mod sesion;
 mod tipografia;
@@ -50,6 +55,15 @@ const PUNTOS_DE_PRUEBA: u32 = 40_000;
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
+    if let Some(resultado) = estudio_objetos::procesar(&args) {
+        return match resultado {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(error) => {
+                eprintln!("telar: {error}");
+                ExitCode::FAILURE
+            }
+        };
+    }
     if let Some(resultado) = produccion::procesar(&args) {
         return match resultado {
             Ok(()) => ExitCode::SUCCESS,
