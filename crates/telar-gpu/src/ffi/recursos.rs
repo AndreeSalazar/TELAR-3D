@@ -111,6 +111,13 @@ impl Recursos {
 
     /// Pipeline de cálculo con `cantidad` buffers de almacenamiento consecutivos.
     pub(super) fn pipeline_enlaces(&mut self, spirv: &[u32], cantidad: u32) -> Result<(), String> {
+        self.pipeline_opciones(spirv, cantidad, 0)
+    }
+
+    pub(super) fn pipeline_base(&mut self, spirv: &[u32]) -> Result<(), String> {
+        self.pipeline_opciones(spirv, 1, 0x10) // VK_PIPELINE_CREATE_DISPATCH_BASE_BIT.
+    }
+    fn pipeline_opciones(&mut self, spirv: &[u32], cantidad: u32, flags: u32) -> Result<(), String> {
         let fc = self.fd.calculo;
         let modulo = InfoModulo {
             s_type: ST_SHADER_MODULE_CREATE_INFO,
@@ -163,7 +170,7 @@ impl Recursos {
         let info = InfoPipelineCalculo {
             s_type: ST_COMPUTE_PIPELINE_CREATE_INFO,
             p_next: nulo,
-            flags: 0,
+            flags,
             etapa: InfoEtapa {
                 s_type: ST_PIPELINE_SHADER_STAGE_CREATE_INFO,
                 p_next: nulo,
@@ -242,8 +249,14 @@ impl Recursos {
 
     /// Un comando primario reutilizable y el número solicitado de consultas.
     pub(super) fn preparar_consultas(&mut self, ctx: &Contexto, cantidad: u32) -> Result<Comandos, String> {
+        self.preparar_opciones(ctx, cantidad, 0)
+    }
+    pub(super) fn preparar_reutilizable(&mut self, ctx: &Contexto) -> Result<Comandos, String> {
+        self.preparar_opciones(ctx, 0, 2) // VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT.
+    }
+    fn preparar_opciones(&mut self, ctx: &Contexto, cantidad: u32, flags: u32) -> Result<Comandos, String> {
         let (fd, fc, nulo) = (self.fd, self.fd.calculo, core::ptr::null());
-        let pool = InfoSimple { s_type: ST_COMMAND_POOL_CREATE_INFO, p_next: nulo, flags: 0, familia: ctx.familia };
+        let pool = InfoSimple { s_type: ST_COMMAND_POOL_CREATE_INFO, p_next: nulo, flags, familia: ctx.familia };
         let valla = InfoSimple { s_type: ST_FENCE_CREATE_INFO, p_next: nulo, flags: 0, familia: 0 };
         let consultas = InfoConsultas {
             s_type: ST_QUERY_POOL_CREATE_INFO,

@@ -19,6 +19,8 @@ pub mod eleccion;
 mod escena;
 mod ffi;
 mod interfaz;
+mod lotes;
+pub use lotes::{PlanLotes, ProgresoLotes};
 mod perfil;
 mod plan;
 mod procedural;

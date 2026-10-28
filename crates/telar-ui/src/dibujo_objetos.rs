@@ -37,18 +37,17 @@ impl EditorObjetos {
             lienzo.rect(rect.x, rect.y, rect.ancho, rect.alto, base.fondo);
         }
         texto(&mut lienzo, [20.0, 18.0, 145.0, 32.0], "TELAR · Escena", &titulo);
-        for (i, nombre) in ["Guardar · F5", "Abrir · F9", "Render · F6"].iter().enumerate() {
+        for (i, nombre) in
+            ["Guardar · F5", "Abrir · F9", if self.render_activo { "Cancelar · F6" } else { "Render · F6" }]
+                .iter()
+                .enumerate()
+        {
             let boton = self.estilo("boton", false);
             let rect = DisenoObjetos::accion(i);
             lienzo.caja(rect, &boton);
             lienzo.etiqueta(rect.interior(6.0), nombre, &boton);
         }
-        texto(
-            &mut lienzo,
-            [548.0, 22.0, (ancho - 568.0).max(1.0), 30.0],
-            "Vista GPU · 1 spp · órbita / rueda",
-            &etiqueta,
-        );
+        texto(&mut lienzo, [548.0, 22.0, (ancho - 568.0).max(1.0), 30.0], &self.estado_render, &etiqueta);
         lienzo.caja(diseno.panel, &panel);
         texto(&mut lienzo, [diseno.panel.x + 16.0, 80.0, 288.0, 24.0], "Elementos de escena", &titulo);
         for (i, nombre) in ["Caja naranja", "Caja azul", "Luz de área", "Salida"].iter().enumerate() {

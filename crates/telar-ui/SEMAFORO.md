@@ -28,6 +28,15 @@ CPU prepara shaders al confirmar cambios; la vista traza 1 spp en GPU, limitada
 a 1024×768, sin descarga viva ni reconstrucción UI en cuadros estables. Ediciones
 esperan/reemplazan pipeline; pico transitorio no medido. La UI mantiene estado,
 texto de hasta 24 caracteres y triángulos/atlas; usa buffers de overlay existentes.
-E/S solo F5/F9/F6 o comandos explícitos; HDR síncrono 20 B/píxel más staging,
+E/S solo F5/F9/F6 o comandos explícitos; HDR final 20 B/píxel más staging,
 código y alineación. Capturas diagnósticas esperan y descargan; fuera del visor.
 Pruebas y límites: docs/EDITOR-OBJETOS.md, tests/objetos_editor.rs y ui/tests/objetos.rs.
+
+Render final asíncrono: un trabajador y un canal de ocho estados, cancelación
+atómica entre lotes. CPU prepara/envía/espera vallas fuera del bucle de ventana;
+GPU conserva la salida, mismo pipeline/dos buffers/un comando por trabajo.
+20 B/píxel de salida más staging equivalente; una descarga final o ninguna al
+cancelar antes de copiar. Coexiste con el visor: pico físico no medido.
+La E/S de render va en el trabajador; otras ediciones/guardados pueden esperar
+a sus operaciones normales. No garantiza FPS ni cancelación de un despacho ya
+enviado. Fuente de evidencia: docs/RENDER-ASINCRONO.md y tests/lotes.rs.

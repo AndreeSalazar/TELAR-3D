@@ -52,23 +52,55 @@ pub(crate) fn preparar(gpu: &mut Gpu, escena: &EscenaObjetos, aspecto: f32) -> R
     gpu.preparar_visor(Sombreadores { vertices: &vertices, fragmentos: &fragmentos })
 }
 pub(crate) fn exportar(escena: &EscenaObjetos, ruta: &Path, validacion: bool) -> Result<(), String> {
+    exportar_controlado(escena, ruta, validacion, |_| true).map(|_| ())
+}
+
+#[derive(Clone, Copy)]
+pub(crate) enum Avance {
+    Preparando,
+    Pixeles(telar_gpu::ProgresoLotes),
+    Exportando,
+}
+
+/// Falso significa cancelación antes de publicar archivos; no interrumpe escrituras iniciadas.
+pub(crate) fn exportar_controlado(
+    escena: &EscenaObjetos,
+    ruta: &Path,
+    validacion: bool,
+    mut continuar: impl FnMut(Avance) -> bool,
+) -> Result<bool, String> {
     if ruta.extension().and_then(|v| v.to_str()) != Some("pfm") {
         return Err("salida HDR requiere .pfm".into());
+    }
+    if !continuar(Avance::Preparando) {
+        return Ok(false);
     }
     let trabajo = trabajo(escena, None)?;
     let codigo = trabajo.compilar()?;
     let gpu = telar_gpu::Calculo::nuevo(&telar_gpu::Opciones { validacion, ..telar_gpu::Opciones::default() })?;
-    let datos = gpu.ejecutar(&codigo, trabajo.tamano[0] * trabajo.tamano[1] * 5, 64)?;
-    let (pfm, ppm) = crate::salida_hdr::codificar(&datos.datos, trabajo.tamano, trabajo.muestras)?;
+    let pixeles = trabajo.tamano[0] * trabajo.tamano[1];
+    let plan = telar_gpu::PlanLotes {
+        elementos: pixeles * 5,
+        invocaciones: pixeles,
+        grupo: 64,
+        grupos_por_lote: (32768 / (64 * trabajo.muestras)).clamp(1, 64),
+    };
+    let Some(datos) = gpu.ejecutar_lotes(&codigo, plan, |p| continuar(Avance::Pixeles(p)))? else { return Ok(false) };
+    let (pfm, ppm) = crate::salida_hdr::codificar(&datos, trabajo.tamano, trabajo.muestras)?;
     let receta = format!(
-        "TELAR objetos · escena v5\nGPU: {}\nEstado: {:?}\nGPU ns: {:?}\n",
+        "TELAR objetos · escena v5 · ejecución por lotes\nGPU: {}\nEstado: {:?}\nGrupos/lote: {}\nDescarga final: {} B\n",
         gpu.dispositivo(),
         escena.guardar(),
-        datos.nanosegundos
+        plan.grupos_por_lote,
+        datos.len() * 4
     );
     drop(gpu);
     if telar_gpu::avisos_de_validacion() != 0 {
         return Err("render HDR con avisos de validación".into());
     }
-    crate::salida_hdr::guardar(ruta, &pfm, &ppm, &receta)
+    if !continuar(Avance::Exportando) {
+        return Ok(false);
+    }
+    crate::salida_hdr::guardar(ruta, &pfm, &ppm, &receta)?;
+    Ok(true)
 }

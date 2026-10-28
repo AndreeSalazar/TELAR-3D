@@ -37,11 +37,13 @@ mod objetos;
 mod produccion;
 mod proyecto;
 mod render;
+mod render_asincrono;
 mod render_objetos;
 mod salida_hdr;
 mod sesion;
 mod tipografia;
 mod visor;
+mod vista_objetos;
 
 use std::process::ExitCode;
 use std::time::Duration;

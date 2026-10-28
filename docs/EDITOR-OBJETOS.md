@@ -39,8 +39,8 @@ No hay diálogo de archivos ni autoguardado implícito.
 
 **Render/F6** calcula el HDR con los parámetros actuales y crea junto a la escena
 `nombre-render-0001.pfm`, `.ppm` y `.txt`, escogiendo un número libre. No reemplaza
-salidas existentes. La exportación es síncrona: la ventana puede esperar mientras
-se prepara/calcula/escribe el trabajo. El render puede usar valores todavía no
+salidas existentes. La exportación se ejecuta en un trabajador: el botón cambia a Cancelar/F6
+y la ventana muestra progreso mientras sigue atendiendo eventos. El render puede usar valores todavía no
 guardados; el TXT conserva las palabras exactas de ese estado.
 
 También puedes renderizar un archivo guardado sin abrir el editor:
@@ -106,3 +106,6 @@ de mallas ni conexiones de estos elementos al grafo procedural. También faltan
 BVH, acumulación progresiva entre fotogramas, invalidación de historial, rebotes,
 vidrio y texturas. Esta entrega cierra controles y persistencia de la escena
 pequeña, sin presentar el estudio como render de producción terminado.
+
+La separación de hilos, cancelación y trabajo en VRAM se detallan en
+[RENDER-ASINCRONO.md](RENDER-ASINCRONO.md). La vista previa aún no acumula muestras.

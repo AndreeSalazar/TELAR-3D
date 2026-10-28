@@ -101,6 +101,10 @@ pub struct EditorObjetos {
     pub escena: EscenaObjetos,
     /// Estado o error para el usuario.
     pub mensaje: String,
+    /// Trabajo final en curso; no forma parte del archivo de escena.
+    pub render_activo: bool,
+    /// Progreso enviado por el trabajador, independiente de los mensajes de edición.
+    pub estado_render: String,
     pub(crate) hoja: telar_estilo::Hoja,
     pub(crate) edicion: Option<(usize, String)>,
     reemplazar: bool,
@@ -112,6 +116,8 @@ impl Default for EditorObjetos {
         Self {
             escena: EscenaObjetos::default(),
             mensaje: "Escena de objetos sin guardar".into(),
+            render_activo: false,
+            estado_render: "Vista GPU · 1 spp · órbita / rueda".into(),
             hoja: telar_estilo::Hoja::analizar(telar_estilo::TEMA_TELAR).unwrap_or_default(),
             edicion: None,
             reemplazar: false,

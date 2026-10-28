@@ -22,7 +22,6 @@ fn render_archivo(args: &[String]) -> Result<(), String> {
     println!("telar: escena v5 renderizada · {} spp · 0 avisos de validación", escena.valores()[30]);
     Ok(())
 }
-#[allow(clippy::cast_precision_loss, reason = "tamaño del viewport <=1024×768")]
 fn ejecutar(args: &[String]) -> Result<(), String> {
     if args.iter().any(|a| matches!(a.as_str(), "--render-rayos" | "--calculo" | "--esfera-cpu")) {
         return Err("modo de objetos incompatible con las otras rutas".into());
@@ -46,56 +45,47 @@ fn ejecutar(args: &[String]) -> Result<(), String> {
         .map(|i| args.get(i + 1).ok_or("falta --segundos")?.parse::<u64>().map_err(|_| "--segundos inválido"))
         .transpose()?;
     let (mut ventana, mut gpu, fuente) = preparar(ruta, prueba, validacion, &editor)?;
-    let mut aplicada = editor.escena.guardar();
-    let mut tamano = gpu.imagenes().1;
-    let mut formato = gpu.imagenes().0;
+    let mut vista = crate::vista_objetos::Vista::nueva(&gpu, &editor);
     let mut entrada = crate::entrada_objetos::Entrada::default();
-    let mut ui = Vec::new();
+    let mut render = crate::render_asincrono::RenderAsincrono::default();
+    let mut cerrando = false;
+    let mut cuadros_render = 0;
     let mut sucio = true;
-    let mut ui_tamano = (0, 0);
+    if prueba && args.iter().any(|v| v == "--prueba-render") {
+        editor.solicitar(AccionEditor::Renderizar);
+    }
     let mut cuadros = 0;
     let inicio = Instant::now();
     let mut exportaciones = 0;
-    'principal: loop {
+    loop {
         let diseno = DisenoObjetos::nuevo(gpu.imagenes().1);
         for evento in ventana.eventos() {
             sucio = true;
             if let Evento::Tamano { ancho, alto } = evento {
                 gpu.redimensionar(ancho, alto);
             } else if entrada.evento(&mut editor, diseno, evento) {
-                break 'principal;
+                cerrando = true;
+                render.cancelar();
             }
         }
         entrada.terminar_lote(&mut editor);
-        if let Some(accion) = editor.tomar_accion() {
+        if let Some(accion) = editor.tomar_accion().filter(|_| !cerrando) {
             sucio = true;
-            procesar_accion(&mut editor, ruta, accion, &mut exportaciones, validacion)?;
+            procesar_accion(&mut editor, ruta, accion, &mut exportaciones, validacion, &mut render)?;
         }
-        let estado = editor.escena.guardar();
-        let actual = gpu.imagenes();
-        if !editor.arrastrando()
-            && !entrada.orbitando
-            && (estado[..40] != aplicada[..40] || tamano != actual.1 || formato != actual.0)
-        {
-            crate::render_objetos::preparar(&mut gpu, &editor.escena, diseno.visor.ancho / diseno.visor.alto)?;
-            aplicada = estado;
-            tamano = actual.1;
-            formato = actual.0;
+        sucio |= actualizar_render(&mut render, &mut editor);
+        if cerrando && !render.activo() {
+            break;
         }
-        if sucio || ui_tamano != actual.1 {
-            let nueva = editor.dibujar(diseno, &fuente)?;
-            if nueva != ui || ui_tamano != actual.1 {
-                gpu.actualizar_interfaz(&nueva, diseno.area())?;
-                ui = nueva;
-            }
-            ui_tamano = actual.1;
-            sucio = false;
+        if render.activo() {
+            cuadros_render += 1;
         }
-        if gpu.dibujar_bloque_interfaz([0.04, 0.05, 0.07, 1.0], &[0.0; 32])? {
+        if vista.dibujar(&mut gpu, &editor, diseno, &fuente, editor.arrastrando() || entrada.orbitando, sucio)? {
             cuadros += 1;
         } else {
             std::thread::sleep(Duration::from_millis(16));
         }
+        sucio = false;
         if prueba && cuadros == 40 {
             ventana.cambiar_tamano(500, 300);
         }
@@ -103,7 +93,12 @@ fn ejecutar(args: &[String]) -> Result<(), String> {
             ventana.cambiar_tamano(1280, 800);
         }
         if (prueba && cuadros >= 120) || segundos.is_some_and(|s| inicio.elapsed() >= Duration::from_secs(s)) {
-            break;
+            if render.activo() {
+                cerrando = true;
+                render.cancelar();
+            } else {
+                break;
+            }
         }
     }
     if guardar.is_some() {
@@ -114,6 +109,7 @@ fn ejecutar(args: &[String]) -> Result<(), String> {
     if telar_gpu::avisos_de_validacion() != 0 {
         return Err("editor de objetos con avisos de validación".into());
     }
+    println!("telar: interfaz · {cuadros_render} fotogramas con render final activo");
     println!("telar: objetos · {cuadros} fotogramas · 0 avisos de validación");
     Ok(())
 }
@@ -124,14 +120,24 @@ fn procesar_accion(
     accion: AccionEditor,
     exportaciones: &mut u32,
     validacion: bool,
+    render: &mut crate::render_asincrono::RenderAsincrono,
 ) -> Result<(), String> {
     let resultado = match accion {
         AccionEditor::Guardar => crate::objetos::guardar(ruta, &editor.escena),
         AccionEditor::Abrir => crate::objetos::leer(ruta).map(|escena| editor.escena = escena),
         AccionEditor::Renderizar => {
-            let salida = destino_render(ruta, exportaciones)?;
-            crate::render_objetos::exportar(&editor.escena, &salida, validacion)
-                .map(|()| println!("telar: HDR {}", salida.display()))
+            if render.activo() {
+                render.cancelar();
+                editor.estado_render = "Cancelando al terminar el lote...".into();
+                Ok(())
+            } else {
+                let salida = destino_render(ruta, exportaciones)?;
+                let resultado = render.iniciar(editor.escena.clone(), salida, validacion);
+                if resultado.is_ok() {
+                    editor.estado_render = "Preparando render... · F6 cancela".into();
+                }
+                resultado
+            }
         }
     };
     editor.mensaje = resultado.map_or_else(
@@ -140,11 +146,12 @@ fn procesar_accion(
             match accion {
                 AccionEditor::Guardar => "Escena guardada",
                 AccionEditor::Abrir => "Escena abierta",
-                AccionEditor::Renderizar => "HDR / PPM exportados",
+                AccionEditor::Renderizar => "Solicitud de render atendida",
             }
             .into()
         },
     );
+    editor.render_activo = render.activo();
     editor.soltar();
     Ok(())
 }
@@ -198,4 +205,32 @@ fn destino_render(ruta: &Path, contador: &mut u32) -> Result<std::path::PathBuf,
         }
     }
     Err("no se encontró nombre libre para el render".into())
+}
+
+fn actualizar_render(render: &mut crate::render_asincrono::RenderAsincrono, editor: &mut EditorObjetos) -> bool {
+    let anterior = editor.estado_render.clone();
+    let resultado = render.sondear(|avance| {
+        editor.estado_render = match avance {
+            crate::render_objetos::Avance::Preparando => "Preparando render...".into(),
+            crate::render_objetos::Avance::Pixeles(p) => {
+                format!("Render: {}% píxeles · F6 cancela", u64::from(p.completadas) * 100 / u64::from(p.total))
+            }
+            crate::render_objetos::Avance::Exportando => "Guardando HDR / PPM...".into(),
+        }
+    });
+    if let Some(resultado) = resultado {
+        editor.render_activo = false;
+        editor.estado_render = match resultado {
+            Ok(crate::render_asincrono::Fin::Guardado(ruta)) => {
+                println!("telar: HDR {}", ruta.display());
+                format!("HDR exportado: {}", ruta.display())
+            }
+            Ok(crate::render_asincrono::Fin::Cancelado) => "Render cancelado".into(),
+            Err(e) => format!("Error de render: {e}"),
+        };
+    }
+    if render.cancelando() {
+        editor.estado_render = "Cancelando al terminar el lote...".into();
+    }
+    anterior != editor.estado_render
 }

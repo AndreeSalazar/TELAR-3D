@@ -97,6 +97,15 @@ fn vista_previa_y_hdr_reflejan_escena_guardada_y_cambios_de_color_luz() {
     escena.poner(0, 0.0).unwrap();
     assert_ne!(original, render(&escena));
     let trabajo = render_objetos::trabajo(&escena, None).unwrap();
+    let por_lotes = gpu
+        .ejecutar_lotes(
+            &trabajo.compilar().unwrap(),
+            telar_gpu::PlanLotes { elementos: 16 * 16 * 5, invocaciones: 16 * 16, grupo: 64, grupos_por_lote: 1 },
+            |_| true,
+        )
+        .unwrap()
+        .unwrap();
+    assert_eq!(por_lotes, render(&escena), "muestras y colores idénticos entre un despacho y cuatro lotes");
     let shaders =
         [telar_render::visor_rayos::vertices(), telar_render::visor_rayos::fragmentos(&trabajo, true).unwrap()];
     validar(&shaders[0]);
@@ -139,6 +148,20 @@ fn vista_previa_y_hdr_reflejan_escena_guardada_y_cambios_de_color_luz() {
     for extension in ["pfm", "ppm", "txt"] {
         std::fs::remove_file(salida.with_extension(extension)).unwrap();
     }
+    let cancelado = ruta("cancelado").with_extension("pfm");
+    let mut progreso = Vec::new();
+    let terminado = render_objetos::exportar_controlado(&escena, &cancelado, true, |avance| match avance {
+        render_objetos::Avance::Pixeles(p) => {
+            assert!(p.completadas <= p.total);
+            progreso.push(p.completadas);
+            p.completadas == 0
+        }
+        _ => true,
+    })
+    .unwrap();
+    assert!(!terminado);
+    assert!(progreso.len() >= 2);
+    assert!(!cancelado.exists());
     drop(gpu);
     assert_eq!(telar_gpu::avisos_de_validacion(), 0);
 }
@@ -198,6 +221,25 @@ fn binario_reabre_escena_v5_y_renderiza_el_mismo_hdr() {
     assert!(inspeccion.status.success());
     assert!(String::from_utf8_lossy(&inspeccion.stdout).contains(".tlar v5"));
     for archivo in [origen, destino, hdr.clone(), hdr.with_extension("ppm"), hdr.with_extension("txt")] {
+        std::fs::remove_file(archivo).unwrap();
+    }
+}
+
+#[test]
+fn ventana_completa_render_final_sin_detener_su_bucle() {
+    let escena = ruta("asincrona");
+    let hdr = escena.with_file_name(format!("{}-render-0001.pfm", escena.file_stem().unwrap().to_string_lossy()));
+    let salida = std::process::Command::new(env!("CARGO_BIN_EXE_telar"))
+        .args(["--estudio-rayos", "--prueba", "--prueba-render", "--guardar-escena"])
+        .arg(&escena)
+        .output()
+        .unwrap();
+    let texto = String::from_utf8_lossy(&salida.stdout);
+    assert!(salida.status.success(), "{texto}\n{}", String::from_utf8_lossy(&salida.stderr));
+    assert!(texto.contains("fotogramas con render final activo"));
+    assert!(texto.contains("telar: HDR "));
+    assert!(texto.contains("120 fotogramas · 0 avisos"));
+    for archivo in [escena, hdr.clone(), hdr.with_extension("ppm"), hdr.with_extension("txt")] {
         std::fs::remove_file(archivo).unwrap();
     }
 }

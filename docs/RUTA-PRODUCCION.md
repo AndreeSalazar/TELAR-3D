@@ -1,6 +1,6 @@
 # Ruta hacia el estudio VFX y el render de producción
 
-Estado del **28 de octubre de 2026**: edición numérica, MSAA solicitado hasta 64x, escenas .tlar v2/v3/v4 y editor de objetos/luz con vista GPU, .tlar v5 y exportación HDR; el grafo procedural conserva su modo propio.
+Estado del **28 de octubre de 2026**: edición numérica, MSAA solicitado hasta 64x, escenas .tlar v2/v3/v4 y editor de objetos/luz con vista GPU, .tlar v5 y HDR asíncrono cancelable; el grafo procedural conserva su modo propio.
 Objetivo personal: TELAR 3D con un flujo procedural inspirado en Houdini y una
 dirección visual cinematográfica inspirada en RenderMan. Código y contratos propios;
 no se afirma compatibilidad ni equivalencia con esos productos.
@@ -139,3 +139,7 @@ de un kernel propio no sustituye esos componentes.
 
 Los planes anteriores se conservan como historial; esta página da el estado y
 orden actual. Render progresivo, GI, proyectos completos y cola general siguen pendientes.
+
+El render final del editor ya se divide en lotes con un trabajador separado,
+progreso y cancelación: [RENDER-ASINCRONO.md](RENDER-ASINCRONO.md). Esto mejora
+la coordinación de la ventana; no cierra el historial progresivo de P4.

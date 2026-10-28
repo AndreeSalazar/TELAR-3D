@@ -164,7 +164,7 @@ impl Recursos {
     }
 
     /// Copia los `elementos` del buffer de lectura a un `Vec`.
-    fn leer(&self, tamano: u64, elementos: u32) -> Result<Vec<u32>, String> {
+    pub(super) fn leer(&self, tamano: u64, elementos: u32) -> Result<Vec<u32>, String> {
         let fc = self.fd.calculo;
         let mut puntero: *mut c_void = core::ptr::null_mut();
         // SAFETY: la memoria es visible y coherente para la CPU, la GPU ya terminó, y

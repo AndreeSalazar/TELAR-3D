@@ -120,3 +120,7 @@ Se ejecuta por lotes; el editor todavía usa el visor procedural.
 Editor nativo de objetos y luz: `telar --estudio-rayos`, selección y propiedades
 independientes, vista raytraced GPU, F5/F9 para .tlar v5 y F6 para HDR.
 [Controles y límites](docs/EDITOR-OBJETOS.md).
+
+F6 ahora renderiza en segundo plano con progreso y cancelación entre lotes.
+La salida permanece en GPU hasta la descarga final;
+[contrato y pruebas](docs/RENDER-ASINCRONO.md).
