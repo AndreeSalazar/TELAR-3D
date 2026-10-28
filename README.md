@@ -124,3 +124,6 @@ independientes, vista raytraced GPU, F5/F9 para .tlar v5 y F6 para HDR.
 F6 ahora renderiza en segundo plano con progreso y cancelación entre lotes.
 La salida permanece en GPU hasta la descarga final;
 [contrato y pruebas](docs/RENDER-ASINCRONO.md).
+
+Visor progresivo GPU: conserva HDR entre fotogramas, reinicia al editar escena
+y mantiene historial al cambiar exposición. [Uso y evidencia](docs/VISOR-PROGRESIVO.md).

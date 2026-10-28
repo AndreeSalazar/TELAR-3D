@@ -139,7 +139,7 @@ fn vista_previa_y_hdr_reflejan_escena_guardada_y_cambios_de_color_luz() {
         ventana.tamano(),
     )
     .unwrap();
-    render_objetos::preparar(&mut contexto, &escena, 1.0).unwrap();
+    render_objetos::preparar_progresivo(&mut contexto, &escena, [16, 16]).unwrap();
     drop(contexto);
     let _ = ventana.eventos();
     drop(ventana);

@@ -45,6 +45,7 @@ pub(crate) struct Escena<'a> {
     pub(crate) constantes: &'a [f32; 32],
     pub(crate) indirecto: Option<Objeto>,
     pub(crate) conjunto: Option<Objeto>,
+    pub(crate) historial: Option<&'a super::historial::Historial>,
     pub(crate) calculo: Option<(&'a Ranura, ParametrosNodos)>,
 }
 
@@ -64,6 +65,12 @@ pub(crate) unsafe fn grabar(
     escena: Option<&Escena>,
     interfaz: Option<&DibujoInterfaz>,
 ) {
+    if let Some(historial) = escena.and_then(|e| e.historial) {
+        // SAFETY: contrato de grabar; escena e historial viven hasta la valla del envío.
+        unsafe {
+            historial.grabar(fd, cmd);
+        }
+    }
     let color = Rango { aspecto: ASPECTO_COLOR, mip_base: 0, n_mips: 1, capa_base: 0, n_capas: 1 };
     let profundidad = Rango { aspecto: ASPECTO_PROFUNDIDAD, ..color };
     let (imagen_prof, vista_prof) = destino.profundidad;

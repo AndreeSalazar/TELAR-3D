@@ -37,8 +37,15 @@ pub(crate) fn capturar_malla(
     }
     ui.actualizar(capa.vertices, capa.area)?;
     let dibujo = ui.juego(0)?;
-    let escena =
-        Escena { pipeline: &pipeline, malla: &malla, constantes, indirecto: None, conjunto: None, calculo: None };
+    let escena = Escena {
+        pipeline: &pipeline,
+        malla: &malla,
+        constantes,
+        indirecto: None,
+        conjunto: None,
+        historial: None,
+        calculo: None,
+    };
     capturar(ctx, &escena, &dibujo, tamano, fondo)
 }
 

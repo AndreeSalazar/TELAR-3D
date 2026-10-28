@@ -40,3 +40,12 @@ cancelar antes de copiar. Coexiste con el visor: pico físico no medido.
 La E/S de render va en el trabajador; otras ediciones/guardados pueden esperar
 a sus operaciones normales. No garantiza FPS ni cancelación de un despacho ya
 enviado. Fuente de evidencia: docs/RENDER-ASINCRONO.md y tests/lotes.rs.
+
+Visor progresivo: historial GPU de suma RGB f32/contador u32, 16 B/píxel más
+4 B auxiliares, máximo 12 MiB +4 B lógicos a 1024×768. Compute añade una muestra
+por cuadro hasta el objetivo; fragmentos solo leen la media. Una reserva compartida
+entre fotogramas, con barreras; sin atómicos ni fragment stores. CPU prepara al
+editar y envía constantes; no descarga historial en vivo. Exposición conserva datos,
+las demás entradas de escena y tamaño reinician. Hay alineación, pipeline y
+adjuntos adicionales; pico físico sin medir. Capturas/inspecciones diagnósticas
+sí esperan y descargan. Pruebas y límites: docs/VISOR-PROGRESIVO.md.

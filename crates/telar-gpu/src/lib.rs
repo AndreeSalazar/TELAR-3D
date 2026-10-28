@@ -18,6 +18,7 @@ mod calidad;
 pub mod eleccion;
 mod escena;
 mod ffi;
+mod historial;
 mod interfaz;
 mod lotes;
 pub use lotes::{PlanLotes, ProgresoLotes};

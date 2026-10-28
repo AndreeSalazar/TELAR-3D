@@ -31,18 +31,29 @@ pub(crate) struct Visor {
     pipeline: Option<PipelineGrafico>,
     malla: Option<MallaGpu>,
     procedural: Option<Residente>,
+    historial: Option<super::historial::Historial>,
 }
 
 impl Visor {
     pub(crate) fn nuevo(ctx: &Contexto, (vertices, fragmentos): Sombreadores) -> Result<Self, String> {
         let fd = ctx.fd.ok_or("el contexto no tiene dispositivo")?;
         let (vertices, fragmentos) = (vertices.to_vec(), fragmentos.to_vec());
-        Ok(Self { fd, d: ctx.dispositivo, vertices, fragmentos, pipeline: None, malla: None, procedural: None })
+        Ok(Self {
+            fd,
+            d: ctx.dispositivo,
+            vertices,
+            fragmentos,
+            pipeline: None,
+            malla: None,
+            procedural: None,
+            historial: None,
+        })
     }
 
     /// Otros shaders: el pipeline se rehará en el próximo dibujo.
     pub(crate) fn cambiar(&mut self, ctx: &Contexto, (vertices, fragmentos): Sombreadores) -> Result<(), String> {
         esperar(ctx)?;
+        self.historial = None;
         self.pipeline = None;
         (self.vertices, self.fragmentos) = (vertices.to_vec(), fragmentos.to_vec());
         Ok(())
@@ -63,11 +74,22 @@ impl Visor {
         formato: u32,
         constantes: &'a [f32; 32],
     ) -> Result<Option<Escena<'a>>, String> {
+        if let Some(historial) = &self.historial {
+            historial.validar_bloque(constantes)?;
+        }
         let muestras = ctx.muestras(formato)?;
         if self.pipeline.as_ref().is_none_or(|p| p.formato != formato || p.muestras != muestras) {
             esperar(ctx)?;
             self.pipeline = None;
-            self.pipeline = Some(if let Some(residente) = &self.procedural {
+            self.pipeline = Some(if let Some(historial) = &self.historial {
+                PipelineGrafico::residente(
+                    ctx,
+                    &self.vertices,
+                    &self.fragmentos,
+                    formato,
+                    historial.recursos.disposicion,
+                )?
+            } else if let Some(residente) = &self.procedural {
                 let disposicion = residente.ranuras[0].etapas[0].recursos.disposicion;
                 PipelineGrafico::residente(ctx, &self.vertices, &self.fragmentos, formato, disposicion)?
             } else {
@@ -75,9 +97,15 @@ impl Visor {
             });
         }
         Ok(match (&self.pipeline, &self.malla) {
-            (Some(pipeline), Some(malla)) => {
-                Some(Escena { pipeline, malla, constantes, indirecto: None, conjunto: None, calculo: None })
-            }
+            (Some(pipeline), Some(malla)) => Some(Escena {
+                pipeline,
+                malla,
+                constantes,
+                indirecto: None,
+                conjunto: self.historial.as_ref().map(|h| h.recursos.conjunto),
+                historial: self.historial.as_ref(),
+                calculo: None,
+            }),
             _ => None,
         })
     }
@@ -90,6 +118,7 @@ impl Visor {
     ) -> Result<(), String> {
         esperar(ctx)?;
         self.pipeline = None;
+        self.historial = None;
         self.procedural = Some(Residente::nuevo(ctx, capacidad, plan, 2)?);
         self.malla = None;
         Ok(())
@@ -115,10 +144,55 @@ impl Visor {
             constantes,
             indirecto: Some(ranura.control.objeto),
             conjunto: Some(ranura.etapas[0].recursos.conjunto),
+            historial: None,
             calculo: Some((ranura, parametros)),
         })
     }
 
+    pub(crate) fn preparar_historial(
+        &mut self,
+        ctx: &Contexto,
+        shaders: Sombreadores,
+        codigo: &[u32],
+        tamano: [u32; 2],
+    ) -> Result<(), String> {
+        let nuevo = super::historial::Historial::nuevo(ctx, codigo, tamano)?;
+        esperar(ctx)?;
+        self.pipeline = None;
+        self.procedural = None;
+        self.vertices = shaders.0.to_vec();
+        self.fragmentos = shaders.1.to_vec();
+        self.historial = Some(nuevo);
+        Ok(())
+    }
+    pub(crate) fn inspeccionar_historial(&self, ctx: &Contexto) -> Result<Vec<[u32; 4]>, String> {
+        self.historial.as_ref().ok_or("falta historial")?.inspeccionar(ctx)
+    }
+    pub(crate) fn capturar_historial(
+        &mut self,
+        ctx: &Contexto,
+        tamano: (u32, u32),
+        fondo: [f32; 4],
+        bloque: &[f32; 32],
+        capa: crate::CapaInterfaz,
+    ) -> Result<crate::CapturaEstudio, String> {
+        if self.historial.is_none() {
+            return Err("falta historial".into());
+        }
+        if capa.area[0].checked_add(capa.area[2]).is_none_or(|v| v > tamano.0)
+            || capa.area[1].checked_add(capa.area[3]).is_none_or(|v| v > tamano.1)
+        {
+            return Err("área fuera de captura".into());
+        }
+        let escena = self.escena(ctx, super::tipos_grafico::FORMATO_RGBA8, bloque)?.ok_or("falta malla de pantalla")?;
+        let mut ui = super::interfaz::InterfazGpu::nueva(ctx, capa.shaders, super::tipos_grafico::FORMATO_RGBA8)?;
+        if let Some(atlas) = capa.atlas {
+            ui.fuente(ctx, atlas.ancho, atlas.alto, atlas.cobertura)?;
+        }
+        ui.actualizar(capa.vertices, capa.area)?;
+        let dibujo = ui.juego(0)?;
+        super::captura_interfaz::capturar(ctx, &escena, &dibujo, tamano, fondo)
+    }
     pub(crate) fn contar_paso(&mut self) {
         if let Some(procedural) = &mut self.procedural {
             procedural.contar_paso();
@@ -189,7 +263,7 @@ pub(super) fn capturar_buffers(
         extension: (ancho, alto),
         despues: (LAYOUT_TRANSFER_SRC, ETAPA_TRANSFER, ACCESO_TRANSFER_READ),
     };
-    let escena = Escena { pipeline, malla, constantes, indirecto, conjunto: None, calculo: None };
+    let escena = Escena { pipeline, malla, constantes, indirecto, conjunto: None, historial: None, calculo: None };
     let copia = CopiaImagen {
         desplazamiento: 0,
         largo_fila: 0, // filas seguidas, sin relleno

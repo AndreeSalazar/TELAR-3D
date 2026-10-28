@@ -29,3 +29,12 @@ texto de hasta 24 caracteres y triángulos/atlas; usa buffers de overlay existen
 E/S solo F5/F9/F6 o comandos explícitos; HDR síncrono 20 B/píxel más staging,
 código y alineación. Capturas diagnósticas esperan y descargan; fuera del visor.
 Pruebas y límites: docs/EDITOR-OBJETOS.md, tests/objetos_editor.rs y ui/tests/objetos.rs.
+
+Visor progresivo: historial GPU de suma RGB f32/contador u32, 16 B/píxel más
+4 B auxiliares, máximo 12 MiB +4 B lógicos a 1024×768. Compute añade una muestra
+por cuadro hasta el objetivo; fragmentos solo leen la media. Una reserva compartida
+entre fotogramas, con barreras; sin atómicos ni fragment stores. CPU prepara al
+editar y envía constantes; no descarga historial en vivo. Exposición conserva datos,
+las demás entradas de escena y tamaño reinician. Hay alineación, pipeline y
+adjuntos adicionales; pico físico sin medir. Capturas/inspecciones diagnósticas
+sí esperan y descargan. Pruebas y límites: docs/VISOR-PROGRESIVO.md.

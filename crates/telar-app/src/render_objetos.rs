@@ -44,12 +44,13 @@ pub(crate) fn trabajo(escena: &EscenaObjetos, aspecto: Option<f32>) -> Result<Tr
         sombras: v[28] != 0.0,
     })
 }
-pub(crate) fn preparar(gpu: &mut Gpu, escena: &EscenaObjetos, aspecto: f32) -> Result<(), String> {
-    let trabajo = trabajo(escena, Some(aspecto))?;
+#[allow(clippy::cast_precision_loss, reason = "viewport <=1024×768")]
+pub(crate) fn preparar_progresivo(gpu: &mut Gpu, escena: &EscenaObjetos, tamano: [u32; 2]) -> Result<(), String> {
+    let trabajo = trabajo(escena, Some(tamano[0] as f32 / tamano[1].max(1) as f32))?;
     let vertices = telar_render::visor_rayos::vertices();
-    let fragmentos =
-        telar_render::visor_rayos::fragmentos(&trabajo, gpu.imagenes().0 != telar_gpu::eleccion::FORMATO_SRGB)?;
-    gpu.preparar_visor(Sombreadores { vertices: &vertices, fragmentos: &fragmentos })
+    let fragmentos = telar_render::historial_rayos::resolver();
+    let compute = telar_render::historial_rayos::acumular(&trabajo, tamano)?;
+    gpu.preparar_historial(Sombreadores { vertices: &vertices, fragmentos: &fragmentos }, &compute, tamano)
 }
 pub(crate) fn exportar(escena: &EscenaObjetos, ruta: &Path, validacion: bool) -> Result<(), String> {
     exportar_controlado(escena, ruta, validacion, |_| true).map(|_| ())

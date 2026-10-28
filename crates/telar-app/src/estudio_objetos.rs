@@ -80,7 +80,7 @@ fn ejecutar(args: &[String]) -> Result<(), String> {
         if render.activo() {
             cuadros_render += 1;
         }
-        if vista.dibujar(&mut gpu, &editor, diseno, &fuente, editor.arrastrando() || entrada.orbitando, sucio)? {
+        if vista.dibujar(&mut gpu, &mut editor, diseno, &fuente, entrada.orbitando, sucio)? {
             cuadros += 1;
         } else {
             std::thread::sleep(Duration::from_millis(16));
@@ -185,12 +185,12 @@ fn preparar(
         cobertura: &fuente.cobertura,
     })?;
     let diseno = DisenoObjetos::nuevo(gpu.imagenes().1);
-    crate::render_objetos::preparar(&mut gpu, &editor.escena, diseno.visor.ancho / diseno.visor.alto)?;
+    crate::render_objetos::preparar_progresivo(&mut gpu, &editor.escena, [diseno.area()[2], diseno.area()[3]])?;
     gpu.subir_malla(
         &[[-1.0, -1.0, 0.5, 0.0, 0.0, 1.0], [3.0, -1.0, 0.5, 0.0, 0.0, 1.0], [-1.0, 3.0, 0.5, 0.0, 0.0, 1.0]],
         &[0, 2, 1],
     )?;
-    println!("telar: editor de objetos · {} · .tlar v5 · vista 1 spp · F5/F9/F6", gpu.dispositivo());
+    println!("telar: editor de objetos · {} · .tlar v5 · vista progresiva GPU · F5/F9/F6", gpu.dispositivo());
 
     Ok((ventana, gpu, fuente))
 }

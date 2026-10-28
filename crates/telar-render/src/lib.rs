@@ -5,6 +5,7 @@ extern crate alloc;
 mod area;
 mod color_rayos;
 pub mod escena_rayos;
+pub mod historial_rayos;
 mod imagen_rayos;
 mod muestra_rayos;
 mod programa;

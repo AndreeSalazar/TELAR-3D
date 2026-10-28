@@ -43,6 +43,7 @@ mod fuente_gpu;
 mod funciones;
 mod funciones_calculo;
 mod funciones_grafico;
+mod historial;
 mod imagen;
 mod interfaz;
 mod malla_gpu;

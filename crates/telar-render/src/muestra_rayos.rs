@@ -3,12 +3,23 @@ use crate::{escena_rayos::Trabajo, rayos::Rayo, trazado::Matematica};
 use hilo_spirv::{Funcion, Id, op};
 
 pub(crate) fn muestra(f: &mut Funcion, mat: &Matematica, trabajo: &Trabajo, pixel: Id, indice: Id) -> Id {
+    muestra_dimension(f, mat, trabajo, pixel, indice, trabajo.tamano)
+}
+
+pub(crate) fn muestra_dimension(
+    f: &mut Funcion,
+    mat: &Matematica,
+    trabajo: &Trabajo,
+    pixel: Id,
+    indice: Id,
+    tamano: [u32; 2],
+) -> Id {
     let semilla = f.modulo().constante_u32(trabajo.semilla);
     let mezcla = f.modulo().constante_u32(104_729);
     let semilla = f.binaria(op::I_ADD, mat.entero, semilla, pixel);
     let semilla = f.binaria(op::I_MUL, mat.entero, semilla, mezcla);
     let semilla = f.binaria(op::I_ADD, mat.entero, semilla, indice);
-    let direccion = direccion(f, mat, trabajo, pixel, semilla);
+    let direccion = direccion(f, mat, trabajo, pixel, semilla, tamano);
     iluminar(f, mat, trabajo, direccion, semilla)
 }
 
@@ -56,16 +67,15 @@ pub(crate) fn iluminar(f: &mut Funcion, mat: &Matematica, trabajo: &Trabajo, dir
     mat.elegir_vector(f, impacto.existe, iluminado, fondo)
 }
 
-#[allow(clippy::cast_precision_loss, reason = "dimensiones <=512")]
-fn direccion(f: &mut Funcion, mat: &Matematica, trabajo: &Trabajo, pixel: Id, semilla: Id) -> Id {
-    let ancho = f.modulo().constante_u32(trabajo.tamano[0]);
+#[allow(clippy::cast_precision_loss, reason = "dimensiones <=1024")]
+fn direccion(f: &mut Funcion, mat: &Matematica, trabajo: &Trabajo, pixel: Id, semilla: Id, tamano: [u32; 2]) -> Id {
+    let ancho = f.modulo().constante_u32(tamano[0]);
     let columna = f.binaria(op::U_MOD, mat.entero, pixel, ancho);
     let fila = f.binaria(op::U_DIV, mat.entero, pixel, ancho);
     let mut direccion = mat.vector(f, trabajo.camara.frente);
-    for (eje, dimension, base, sal, invertir) in [
-        (columna, trabajo.tamano[0], trabajo.camara.derecha, 0, false),
-        (fila, trabajo.tamano[1], trabajo.camara.arriba, 1, true),
-    ] {
+    for (eje, dimension, base, sal, invertir) in
+        [(columna, tamano[0], trabajo.camara.derecha, 0, false), (fila, tamano[1], trabajo.camara.arriba, 1, true)]
+    {
         let posicion = f.unaria(op::U_A_F, mat.real, eje);
         let subpixel = if trabajo.muestras == 1 { Matematica::escalar(f, 0.5) } else { mat.azar(f, semilla, sal) };
         let posicion = f.binaria(op::F_ADD, mat.real, posicion, subpixel);

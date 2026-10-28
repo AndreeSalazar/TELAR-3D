@@ -52,12 +52,13 @@ También puedes renderizar un archivo guardado sin abrir el editor:
 
 ## Calidad y trabajo real
 
-La vista previa traza **una muestra por píxel físico** por fotograma. Puede tener
-ruido y bordes dentados; el control spp corresponde al render final, no aumenta
-las muestras de esta vista. Su viewport está limitado a 1024×768 y MSAA 1x.
-La salida final conserva el presupuesto del render por lotes: hasta 512 por eje,
-1024 spp y **ancho × alto × spp <= 1 048 576**. Para 256 spp selecciona primero
-64×64 en Salida. El material es difuso y hay iluminación directa, sin rebotes.
+La vista previa añade una muestra por píxel físico y acumula HDR hasta el objetivo
+seleccionado, sin descargas en vivo. El contador y la imagen avanzan mientras la
+escena está quieta; editar cámara/objetos/luz reinicia, cambiar exposición conserva.
+Viewport máximo 1024×768, MSAA 1x. El control spp ahora sirve al visor y al render
+final; el presupuesto de salida sigue limitado a ancho×alto×spp <=1048576.
+Para 256 spp selecciona primero salida final de 64×64; el viewport conserva su
+resolución física. Contrato y capturas: [VISOR-PROGRESIVO.md](VISOR-PROGRESIVO.md).
 
 Los rayos, sombras, radiancia, exposición y codificación de la vista se calculan
 en GPU. La CPU prepara geometría/shaders al confirmar cambios, atiende eventos
@@ -103,9 +104,9 @@ de shaders y las capturas añaden RAM/VRAM transitoria. No se promete coste cero
 
 Todavía son dos cajas fijas: no hay crear/borrar objetos, rotación, importación
 de mallas ni conexiones de estos elementos al grafo procedural. También faltan
-BVH, acumulación progresiva entre fotogramas, invalidación de historial, rebotes,
+BVH, muestreo adaptativo por error, rebotes,
 vidrio y texturas. Esta entrega cierra controles y persistencia de la escena
 pequeña, sin presentar el estudio como render de producción terminado.
 
 La separación de hilos, cancelación y trabajo en VRAM se detallan en
-[RENDER-ASINCRONO.md](RENDER-ASINCRONO.md). La vista previa aún no acumula muestras.
+[RENDER-ASINCRONO.md](RENDER-ASINCRONO.md). La vista ya acumula muestras en GPU; ver VISOR-PROGRESIVO.md.

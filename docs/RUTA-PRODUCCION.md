@@ -24,7 +24,7 @@ de añadir escenas, efectos y millones de rayos con dependencias complejas.
 | Geometría residente | Rejilla y hasta ocho Ondas/Relieves conectables, compilados a HILO | Un único campo de alturas; sin mallas/recursos arbitrarios |
 | HILO | IR tipado, intérprete y SPIR-V; escalares vivos | Sin lenguaje textual ni atributos generales |
 | Interfaz | CSS nativo, números editables, instancias, puertos y omisión | Sin borrado/deshacer ni mezcla de geometrías |
-| Render | Visor GGX/área/autosombra; render por lotes de 26 triángulos con sombras y HDR | Sin BVH, GI ni historial progresivo; objetos editables en modo propio, sin historial progresivo |
+| Render | Visor GGX/área/autosombra; render por lotes de 26 triángulos con sombras y HDR | Sin BVH ni GI; historial progresivo implementado en el visor de objetos |
 | `.tlar` | V1 arranque; V2 cadena histórica; V3 grafo editable; V4 peticiones MSAA altas; V5 escena de dos cajas, luz y cámara | Un dominio de rejilla, sin recursos externos de producción |
 | Bordes | MSAA 2x inicial, peticiones numéricas hasta 64x según soporte; ver CALIDAD-RENDER.md | Reduce aliasing de cobertura; no aumenta detalle geométrico |
 
@@ -44,7 +44,7 @@ de añadir escenas, efectos y millones de rayos con dependencias complejas.
 Ondas con valores propios, creación/conexión/omisión y reapertura v3. Ver
 GRAFO-EDITABLE.md. Esto no cierra todavía escenas generales con varios objetos,
 mezcla de geometrías, atributos o recursos externos.
-**P3 avanzado, sin cerrar:** escena de ensayo con 26 triángulos, rayos de cámara y sombras entre objetos. **P4 parcial:** acumula 1..1024 spp dentro de un único despacho, sin historial entre envíos. **P6 parcial:** PFM lineal y PPM sRGB de revisión. Los controles nativos de dos cajas/luz/salida ya guardan .tlar v5; faltan BVH, recursos de malla generales, historial y transporte completo. Ver [EDITOR-OBJETOS.md](EDITOR-OBJETOS.md). Ver [RENDER-POR-LOTES.md](RENDER-POR-LOTES.md).
+**P3 avanzado, sin cerrar:** escena de ensayo con 26 triángulos, rayos de cámara y sombras entre objetos. **P4 base implementada para iluminación directa:** historial HDR residente por píxel, contador, parada e invalidación; ver [VISOR-PROGRESIVO.md](VISOR-PROGRESIVO.md). **P6 parcial:** PFM lineal y PPM sRGB de revisión. Los controles nativos de dos cajas/luz/salida ya guardan .tlar v5; faltan BVH, recursos de malla generales, muestreo adaptativo y transporte completo. Ver [EDITOR-OBJETOS.md](EDITOR-OBJETOS.md). Ver [RENDER-POR-LOTES.md](RENDER-POR-LOTES.md).
 
 P2 sigue siendo la prioridad técnica del kernel (H2/H3 en RUMBO-KERNEL.md).
 Ambas vías se coordinan: el compilador prepara un plan válido y el kernel decide
@@ -94,12 +94,11 @@ cámara, luz o material se invalidará el historial correspondiente. Se decidir�
 trabajo adicional por necesidad de convergencia, en lugar de repetir trabajo ya
 suficiente. Los umbrales y tamaños de lote deben verificarse con escenas reales.
 
-**Siguiente entrega:** mantener escena y acumulación HDR entre envíos, con
-invalidación y controles conectados al editor. El ensayo por lotes ya tiene
-intersecciones, sombras y recuentos, pero recompila/reinicia cada trabajo.
-Comparar 16/64/256 spp con una referencia de mayor muestreo y medir error/ruido
-sigue pendiente; ejecutar esos valores no demuestra convergencia por sí solo.
-Después añadir muestreo adaptativo y transporte con rebotes.
+**Siguiente entrega:** acelerar intersecciones de escenas mayores y añadir el
+primer transporte indirecto validado. La base del visor ya conserva HDR entre
+cuadros; aún falta medir error/ruido frente a referencias y decidir trabajo por
+convergencia. El render final sigue siendo un trabajo independiente por lotes.
+Después ampliar materiales y salida, manteniendo pruebas de cada componente.
 
 Referencias primarias: [capacidades de imágenes Vulkan](https://docs.vulkan.org/refpages/latest/refpages/source/VkImageFormatProperties.html)
 y [muestreo y optimización en RenderMan](https://renderman.pixar.com/debugging-and-optimization).
@@ -142,4 +141,9 @@ orden actual. Render progresivo, GI, proyectos completos y cola general siguen p
 
 El render final del editor ya se divide en lotes con un trabajador separado,
 progreso y cancelación: [RENDER-ASINCRONO.md](RENDER-ASINCRONO.md). Esto mejora
-la coordinación de la ventana; no cierra el historial progresivo de P4.
+la coordinación de la ventana. La entrega posterior VISOR-PROGRESIVO.md añade
+el historial del visor; muestreo adaptativo y transporte completo siguen pendientes.
+
+El visor de objetos acumula ahora entre fotogramas y conserva el historial al
+cambiar exposición. Aún faltan BVH, control adaptativo de ruido y transporte con
+rebotes; no se presenta como render de producción terminado.

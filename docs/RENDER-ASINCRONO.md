@@ -84,6 +84,7 @@ Referencias de código: tests/lotes.rs y tests/objetos_editor.rs de telar-app,
 y la prueba del controlador en render_asincrono.rs. `cargo verify` incluye
 regresiones del visor procedural y de las escenas anteriores.
 
-Todavía falta acumulación progresiva en la vista previa y presentar avances de
-imagen. Los lotes calculan regiones de la imagen final; no añaden rebotes, BVH,
-denoiser ni historial HDR entre fotogramas. La vista previa continúa a 1 spp.
+El visor ahora tiene su propio historial progresivo, independiente de este trabajo
+final: [VISOR-PROGRESIVO.md](VISOR-PROGRESIVO.md). Faltan presentación de avances
+del render final, rebotes, BVH y denoiser. La exportación por lotes mantiene su
+instantánea y resolución/aspecto propios.
