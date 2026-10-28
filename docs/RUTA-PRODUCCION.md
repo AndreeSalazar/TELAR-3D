@@ -1,6 +1,6 @@
 # Ruta hacia el estudio VFX y el render de producción
 
-Estado del **27 de octubre de 2026**, con edición numérica, MSAA 2x inicial y grafo editable guardable en .tlar v3.
+Estado del **28 de octubre de 2026**: edición numérica, MSAA solicitado hasta 64x, escenas .tlar v2/v3/v4 y primera base de intersecciones GPU probada fuera del visor.
 Objetivo personal: TELAR 3D con un flujo procedural inspirado en Houdini y una
 dirección visual cinematográfica inspirada en RenderMan. Código y contratos propios;
 no se afirma compatibilidad ni equivalencia con esos productos.
@@ -24,8 +24,8 @@ de añadir escenas, efectos y millones de rayos con dependencias complejas.
 | Geometría residente | Rejilla y hasta ocho Ondas/Relieves conectables, compilados a HILO | Un único campo de alturas; sin mallas/recursos arbitrarios |
 | HILO | IR tipado, intérprete y SPIR-V; escalares vivos | Sin lenguaje textual ni atributos generales |
 | Interfaz | CSS nativo, números editables, instancias, puertos y omisión | Sin borrado/deshacer ni mezcla de geometrías |
-| Render | GGX, luz de área, autosombra de campo de alturas | Sin BVH, GI, trazado de caminos ni acumulación HDR |
-| `.tlar` | V1 arranque; V2 cadena histórica; V3 grafo editable, cámara y parámetros | Un dominio de rejilla, sin recursos externos de producción |
+| Render | Visor GGX/área/autosombra; intersección rayo–triángulo GPU aislada y verificada | Intersecciones aún fuera del visor; sin BVH, GI, trazado de caminos ni acumulación HDR |
+| `.tlar` | V1 arranque; V2 cadena histórica; V3 grafo editable; V4 peticiones MSAA altas, cámara y parámetros | Un dominio de rejilla, sin recursos externos de producción |
 | Bordes | MSAA 2x inicial, peticiones numéricas hasta 64x según soporte; ver CALIDAD-RENDER.md | Reduce aliasing de cobertura; no aumenta detalle geométrico |
 
 ## Orden propuesto y criterios de aceptación
@@ -44,6 +44,8 @@ de añadir escenas, efectos y millones de rayos con dependencias complejas.
 Ondas con valores propios, creación/conexión/omisión y reapertura v3. Ver
 GRAFO-EDITABLE.md. Esto no cierra todavía escenas generales con varios objetos,
 mezcla de geometrías, atributos o recursos externos.
+**P3 iniciado, sin cerrar:** intersección rayo–triángulo emitida en SPIR-V y comprobada en RTX 3060 contra planos/baricéntricas f64. Falta robustez general, recursos de escena, BVH e integración de sombras. Ver [INTERSECCIONES-GPU.md](INTERSECCIONES-GPU.md).
+
 P2 sigue siendo la prioridad técnica del kernel (H2/H3 en RUMBO-KERNEL.md).
 Ambas vías se coordinan: el compilador prepara un plan válido y el kernel decide
 trabajo dentro de él. No hace falta terminar un administrador GPU general para

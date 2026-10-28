@@ -12,3 +12,10 @@ Limites: Rugosidad efectiva >=0.08; energía validada. Mediana de dibujo 0,834 m
 Evidencia: crates/telar-render/README.md; tests/render.rs, crates/telar-app/tests/sombras_gpu.rs y docs/RENDER-AREA.md.
 
 Clasificación de riesgo, no certificación absoluta ni medición de rendimiento.
+
+Intersecciones experimentales: emisor rayo–triángulo sin buffers propios ni
+lecturas host. Solo los tests preparan casos constantes y descargan resultados:
+16 B por consulta más guardas, aparte del staging/alineación del backend.
+Aritmética GPU por par rayo–triángulo; coste temporal y pico de memoria abiertos.
+Sin BVH ni integración al visor; umbral absoluto y aristas generales pendientes.
+Ver también docs/INTERSECCIONES-GPU.md y crates/telar-app/tests/rayos_gpu.rs.

@@ -4,6 +4,7 @@
 extern crate alloc;
 mod area;
 mod programa;
+pub mod rayos;
 mod sombras;
 mod superficie;
 mod tipos;

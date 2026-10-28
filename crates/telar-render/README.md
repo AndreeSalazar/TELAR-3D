@@ -49,3 +49,9 @@ El pico de VRAM y otras escenas siguen ABIERTOS.
 
 Las pruebas validan SPIR-V, rechazo de materiales inválidos y cambios reales de
 píxeles por material/exposición en RTX 3060/Windows. Otros dispositivos quedan ABIERTOS.
+
+## Base experimental de rayos
+
+`rayos::intersectar` emite pruebas bilaterales rayo–triángulo; verificadas en GPU
+contra referencia f64, todavía fuera del visor, sin BVH ni acumulación. Contrato,
+costes y límites numéricos en [INTERSECCIONES-GPU.md](../../docs/INTERSECCIONES-GPU.md).

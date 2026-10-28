@@ -27,3 +27,10 @@ pico de VRAM no medido. Estado estable: diez buffers, dos grabaciones, dos
 mapeos y seis pipelines compute en la ruta fusionada (ocho en la histórica).
 La escena de datos v3 ocupa hasta 416 B; E/S solo explícita. Evidencia adicional:
 docs/GRAFO-EDITABLE.md, tests/grafo_gpu.rs y tests/red.rs de sus crates.
+
+Intersecciones experimentales: emisor rayo–triángulo sin buffers propios ni
+lecturas host. Solo los tests preparan casos constantes y descargan resultados:
+16 B por consulta más guardas, aparte del staging/alineación del backend.
+Aritmética GPU por par rayo–triángulo; coste temporal y pico de memoria abiertos.
+Sin BVH ni integración al visor; umbral absoluto y aristas generales pendientes.
+Ver también docs/INTERSECCIONES-GPU.md y crates/telar-app/tests/rayos_gpu.rs.
