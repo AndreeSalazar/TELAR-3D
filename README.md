@@ -127,3 +127,7 @@ La salida permanece en GPU hasta la descarga final;
 
 Visor progresivo GPU: conserva HDR entre fotogramas, reinicia al editar escena
 y mantiene historial al cambiar exposición. [Uso y evidencia](docs/VISOR-PROGRESIVO.md).
+
+## Esfera de fuego procedural
+
+Abre `TELAR Fuego.cmd` después de compilar, o ejecuta `.\target\release\telar.exe --fuego`. Volumen animado en GPU con inspector, vistas de campos y .tlar v6. Es una base visual; el solver físico de Pyro y las restricciones tipo Vellum siguen pendientes. Ver [FUEGO-PROCEDURAL](docs/FUEGO-PROCEDURAL.md) y [plan para artistas](docs/VFX-PARA-ARTISTAS.md).

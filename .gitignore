@@ -3,3 +3,5 @@
 # Proyecto local del usuario; el guardado no forma parte del código fuente.
 /escena.tlar
 /objetos.tlar
+
+/fuego.tlar

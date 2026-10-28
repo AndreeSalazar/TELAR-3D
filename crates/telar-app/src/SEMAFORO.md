@@ -69,3 +69,5 @@ editar y envía constantes; no descarga historial en vivo. Exposición conserva 
 las demás entradas de escena y tamaño reinician. Hay alineación, pipeline y
 adjuntos adicionales; pico físico sin medir. Capturas/inspecciones diagnósticas
 sí esperan y descargan. Pruebas y límites: docs/VISOR-PROGRESIVO.md.
+
+Fuego procedural: --fuego envía constantes y tiempo; GPU integra 16..128 pasos por píxel. .tlar v6 de 48 B, captura PPM explícita. No solver físico. Ver docs/FUEGO-PROCEDURAL.md.

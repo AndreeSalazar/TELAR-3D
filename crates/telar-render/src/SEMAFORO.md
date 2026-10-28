@@ -46,3 +46,5 @@ editar y envía constantes; no descarga historial en vivo. Exposición conserva 
 las demás entradas de escena y tamaño reinician. Hay alineación, pipeline y
 adjuntos adicionales; pico físico sin medir. Capturas/inspecciones diagnósticas
 sí esperan y descargan. Pruebas y límites: docs/VISOR-PROGRESIVO.md.
+
+fuego.rs emite marcha volumétrica procedural 16..128 pasos/píxel, sin buffers de campos ni atomics; coste proporcional a píxeles×pasos. No simula fluidos. Ver docs/FUEGO-PROCEDURAL.md.

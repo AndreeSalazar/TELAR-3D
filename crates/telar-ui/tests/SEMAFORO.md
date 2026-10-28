@@ -38,3 +38,5 @@ texto de hasta 24 caracteres y triángulos/atlas; usa buffers de overlay existen
 E/S solo F5/F9/F6 o comandos explícitos; HDR síncrono 20 B/píxel más staging,
 código y alineación. Capturas diagnósticas esperan y descargan; fuera del visor.
 Pruebas y límites: docs/EDITOR-OBJETOS.md, tests/objetos_editor.rs y ui/tests/objetos.rs.
+
+fuego.rs comprueba dominios de parámetros y confirmación numérica 32 + Enter; pruebas CPU sin reservas GPU.

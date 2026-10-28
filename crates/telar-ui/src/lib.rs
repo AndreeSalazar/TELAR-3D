@@ -4,6 +4,9 @@
 extern crate alloc;
 
 mod calidad;
+mod dibujo_fuego;
+mod fuego;
+pub use fuego::{EditorFuego, Fuego};
 mod escena_objetos;
 pub use escena_objetos::{EscenaObjetos, PALABRAS_OBJETOS};
 mod dibujo_objetos;

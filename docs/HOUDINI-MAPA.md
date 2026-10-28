@@ -62,3 +62,7 @@ Cada nodo guarda su comparación en `referencias/<nodo>.md`.
 - **Sí:** su modelo de datos, el comportamiento de cada nodo según su documentación, y la matemática de los artículos que cita o que son públicos.
 - **No:** copiar su código, sus textos, sus archivos `.hip` ni sus nombres comerciales. TELAR usa sus propios nombres de nodos.
 - **Licencia de Apprentice:** es para aprender y para uso no comercial. Úsala para comparar y aprender, no para producir trabajos pagados.
+
+## Ampliación solicitada en octubre de 2026
+
+El alcance inicial acotado de esta página es histórico. La petición de herramientas VFX más amplias se desarrolla en [VFX-PARA-ARTISTAS.md](VFX-PARA-ARTISTAS.md), con datos, HILO, volúmenes y restricciones. Las funciones antes marcadas Fuera pasan a investigación futura; no están implementadas por ese cambio de alcance.

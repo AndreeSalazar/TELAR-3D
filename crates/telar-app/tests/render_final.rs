@@ -33,11 +33,15 @@ fn plano(muestras: u32) -> Trabajo {
 }
 
 fn validar(codigo: &[u32]) {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    // Los tests de este binario se ejecutan en paralelo: cada validación posee su archivo.
+    static SIGUIENTE: AtomicUsize = AtomicUsize::new(0);
     let validador = std::env::var_os("VULKAN_SDK")
         .map(|v| std::path::PathBuf::from(v).join("Bin/spirv-val.exe"))
         .filter(|p| p.exists())
         .unwrap_or_else(|| "spirv-val".into());
-    let ruta = std::env::temp_dir().join(format!("telar-final-{}.spv", std::process::id()));
+    let indice = SIGUIENTE.fetch_add(1, Ordering::Relaxed);
+    let ruta = std::env::temp_dir().join(format!("telar-final-{}-{indice}.spv", std::process::id()));
     std::fs::write(&ruta, codigo.iter().flat_map(|v| v.to_le_bytes()).collect::<Vec<_>>()).unwrap();
     let salida = std::process::Command::new(validador).args(["--target-env", "vulkan1.3"]).arg(&ruta).output().unwrap();
     std::fs::remove_file(ruta).unwrap();

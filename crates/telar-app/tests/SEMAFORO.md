@@ -70,3 +70,5 @@ editar y envía constantes; no descarga historial en vivo. Exposición conserva 
 las demás entradas de escena y tamaño reinician. Hay alineación, pipeline y
 adjuntos adicionales; pico físico sin medir. Capturas/inspecciones diagnósticas
 sí esperan y descargan. Pruebas y límites: docs/VISOR-PROGRESIVO.md.
+
+fuego_gpu.rs valida SPIR-V y capturas reales 96×96, repetibilidad, campos y cambio de calidad. Solo las pruebas descargan imágenes; no es benchmark contra Pyro.

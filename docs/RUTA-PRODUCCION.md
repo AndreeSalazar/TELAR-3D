@@ -147,3 +147,7 @@ el historial del visor; muestreo adaptativo y transporte completo siguen pendien
 El visor de objetos acumula ahora entre fotogramas y conserva el historial al
 cambiar exposición. Aún faltan BVH, control adaptativo de ruido y transporte con
 rebotes; no se presenta como render de producción terminado.
+
+## Primera base visual de fuego
+
+[Esfera procedural GPU](FUEGO-PROCEDURAL.md): integra un volumen analítico y expone sus controles. Sigue separada del render de objetos y no completa el solver físico ni el render de producción. [VFX-PARA-ARTISTAS.md](VFX-PARA-ARTISTAS.md) concreta los próximos criterios para campos, HILO y restricciones.

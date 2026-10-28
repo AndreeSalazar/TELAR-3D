@@ -91,3 +91,7 @@ Las cifras reales se medirán con temporizadores de la GPU y se publicarán con 
 6. **Ladrillos activos:** estructura dispersa sobre el despacho indirecto demostrado desde la Fase 4.5.
 7. **Final:** 256³ o más con multigrid, y comparación publicada contra Houdini.
 8. **(P2) Chispas:** partículas que nacen donde más arde.
+
+## Estado real: 28 de octubre de 2026
+
+Ya existe una primera [esfera procedural](FUEGO-PROCEDURAL.md) con marcha de rayos GPU, campos analíticos y controles guardables. No completa los hitos físicos de esta página: no tiene advección, presión ni combustión. Las cifras anteriores son objetivos/estimaciones sin benchmark actual; la CPU aún prepara y envía el trabajo Vulkan. El plan para artistas está en [VFX-PARA-ARTISTAS.md](VFX-PARA-ARTISTAS.md).
