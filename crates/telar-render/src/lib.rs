@@ -3,11 +3,16 @@
 #![no_std]
 extern crate alloc;
 mod area;
+mod color_rayos;
+pub mod escena_rayos;
+mod imagen_rayos;
+mod muestra_rayos;
 mod programa;
 pub mod rayos;
 mod sombras;
 mod superficie;
 mod tipos;
+mod trazado;
 pub use programa::vertices;
 pub use superficie::fragmentos;
 

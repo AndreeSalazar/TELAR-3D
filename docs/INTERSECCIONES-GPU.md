@@ -2,6 +2,8 @@
 
 Estado: **28 de octubre de 2026**. Entrega parcial de P3, aislada en
 `telar-render::rayos`. No cambia el visor ni añade todavía un trazador de caminos.
+La aplicación ya ofrece un ensayo por lotes con varios objetos, sombras y HDR:
+ver [RENDER-POR-LOTES.md](RENDER-POR-LOTES.md).
 
 ## Contrato implementado
 
@@ -41,7 +43,8 @@ El llamador debe validar sus accesos a buffers y sus dependencias de memoria.
   baricéntricas mediante matriz de Gram. Tolerancia absoluta 2e-5 en t/u/v,
   identidad exacta del triángulo. Los casos degenerados se rechazan.
 - Valida SPIR-V con `spirv-val --target-env vulkan1.3`, grupos parcialmente
-  activos, tres palabras sobrantes y buffers menores que un registro.
+  activos, tres palabras sobrantes y buffers menores que un registro. Los bytes sin
+  escritura no están inicializados: no se afirma integridad por compararlos con cero.
 
 **IGUAL en esos casos:** NVIDIA GeForce RTX 3060 / Windows, 76 consultas,
 cero avisos de validación TELAR. No demuestra exactitud en toda geometría,

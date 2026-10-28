@@ -15,6 +15,8 @@
 //! cargo run -p telar-app -- --estilo tema.css personaliza la interfaz nativa
 //! cargo run -p telar-app -- --abrir-escena escena.tlar  abre datos de escena v2/v3/v4
 //! cargo run -p telar-app -- --guardar-escena escena.tlar guarda al salir; F5/F9 en vivo
+//! cargo run -p telar-app --release -- --render-rayos target/imagen.pfm --spp 16
+//!                                             Ensayo de mallas, sombras y HDR por lotes
 //! cargo run -p telar-app --release -- --calculo [--elementos N]
 //!                                             Fase 2: el primer kernel en la GPU, bit a bit contra la CPU
 //! ```
@@ -25,10 +27,13 @@ mod calculo;
 mod calidad;
 mod controles;
 mod escena;
+mod escena_final;
 mod grafo;
 mod grafo_compilar;
+mod produccion;
 mod proyecto;
 mod render;
+mod salida_hdr;
 mod sesion;
 mod tipografia;
 mod visor;
@@ -45,6 +50,15 @@ const PUNTOS_DE_PRUEBA: u32 = 40_000;
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
+    if let Some(resultado) = produccion::procesar(&args) {
+        return match resultado {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(error) => {
+                eprintln!("telar: {error}");
+                ExitCode::FAILURE
+            }
+        };
+    }
     if let Some(resultado) = archivo::procesar(&args) {
         return match resultado {
             Ok(()) => ExitCode::SUCCESS,

@@ -1,6 +1,6 @@
 # Ruta hacia el estudio VFX y el render de producción
 
-Estado del **28 de octubre de 2026**: edición numérica, MSAA solicitado hasta 64x, escenas .tlar v2/v3/v4 y primera base de intersecciones GPU probada fuera del visor.
+Estado del **28 de octubre de 2026**: edición numérica, MSAA solicitado hasta 64x, escenas .tlar v2/v3/v4 y render por lotes con varios objetos, sombras y exportación HDR; sigue separado del visor.
 Objetivo personal: TELAR 3D con un flujo procedural inspirado en Houdini y una
 dirección visual cinematográfica inspirada en RenderMan. Código y contratos propios;
 no se afirma compatibilidad ni equivalencia con esos productos.
@@ -24,7 +24,7 @@ de añadir escenas, efectos y millones de rayos con dependencias complejas.
 | Geometría residente | Rejilla y hasta ocho Ondas/Relieves conectables, compilados a HILO | Un único campo de alturas; sin mallas/recursos arbitrarios |
 | HILO | IR tipado, intérprete y SPIR-V; escalares vivos | Sin lenguaje textual ni atributos generales |
 | Interfaz | CSS nativo, números editables, instancias, puertos y omisión | Sin borrado/deshacer ni mezcla de geometrías |
-| Render | Visor GGX/área/autosombra; intersección rayo–triángulo GPU aislada y verificada | Intersecciones aún fuera del visor; sin BVH, GI, trazado de caminos ni acumulación HDR |
+| Render | Visor GGX/área/autosombra; render por lotes de 26 triángulos con sombras y HDR | Sin BVH, GI ni historial progresivo; controles por CLI, fuera del editor |
 | `.tlar` | V1 arranque; V2 cadena histórica; V3 grafo editable; V4 peticiones MSAA altas, cámara y parámetros | Un dominio de rejilla, sin recursos externos de producción |
 | Bordes | MSAA 2x inicial, peticiones numéricas hasta 64x según soporte; ver CALIDAD-RENDER.md | Reduce aliasing de cobertura; no aumenta detalle geométrico |
 
@@ -44,7 +44,7 @@ de añadir escenas, efectos y millones de rayos con dependencias complejas.
 Ondas con valores propios, creación/conexión/omisión y reapertura v3. Ver
 GRAFO-EDITABLE.md. Esto no cierra todavía escenas generales con varios objetos,
 mezcla de geometrías, atributos o recursos externos.
-**P3 iniciado, sin cerrar:** intersección rayo–triángulo emitida en SPIR-V y comprobada en RTX 3060 contra planos/baricéntricas f64. Falta robustez general, recursos de escena, BVH e integración de sombras. Ver [INTERSECCIONES-GPU.md](INTERSECCIONES-GPU.md).
+**P3 avanzado, sin cerrar:** escena de ensayo con 26 triángulos, rayos de cámara y sombras entre objetos. **P4 parcial:** acumula 1..1024 spp dentro de un único despacho, sin historial entre envíos. **P6 parcial:** PFM lineal y PPM sRGB de revisión. Los controles son por CLI; faltan BVH, recursos persistentes, integración UI y transporte completo. Ver [RENDER-POR-LOTES.md](RENDER-POR-LOTES.md).
 
 P2 sigue siendo la prioridad técnica del kernel (H2/H3 en RUMBO-KERNEL.md).
 Ambas vías se coordinan: el compilador prepara un plan válido y el kernel decide
@@ -52,8 +52,8 @@ trabajo dentro de él. No hace falta terminar un administrador GPU general para
 probar P3/P4 con una escena pequeña; tampoco debe posponerse su corrección por
 buscar primero una imagen vistosa.
 
-El hito visible de render posterior será una escena pequeña con geometría general,
-sombras entre objetos y acumulación progresiva. Mantendremos el visor interactivo
+El ensayo por lotes ya muestra sombras entre objetos. El hito visible posterior
+es integrar geometría general en el editor y añadir acumulación progresiva. Mantendremos el visor interactivo
 para editar y un modo final que invierta más muestras en converger. No se promete
 que cualquier escena de producción converja en tiempo real en una RTX 3060.
 
@@ -76,7 +76,7 @@ Vulkan permite consultar las cantidades admitidas para cada configuración de
 imagen; no debe activarse una cantidad que la GPU no anuncie. El backend actual
 de TELAR acepta peticiones 1/2/4/8/16/32/64 y aplica el mayor nivel admitido que
 no las exceda. En la RTX 3060 probada el visor aplica hasta 8; pedir 32 se conserva
-como petición y se muestra junto a los 8 efectivos. No se implementó aún el trazador.
+como petición y se muestra junto a los 8 efectivos. Ya hay un integrador de iluminación directa por lotes separado; no implementa caminos con rebotes ni cambia el MSAA del visor.
 
 Para el nodo Salida del futuro modo de producción se propone exponer:
 
@@ -94,12 +94,12 @@ cámara, luz o material se invalidará el historial correspondiente. Se decidir�
 trabajo adicional por necesidad de convergencia, en lugar de repetir trabajo ya
 suficiente. Los umbrales y tamaños de lote deben verificarse con escenas reales.
 
-**Siguiente entrega de render, después de la base de escena:** una escena pequeña
-con intersecciones y sombras entre objetos, seguida de acumulación HDR con
-recuento de muestras. Comparar 16/64/256 spp con una referencia de mayor muestreo,
-medir error, ruido, tiempo y memoria; esos valores son casos de prueba, no presets
-profesionales prometidos. Después añadir muestreo adaptativo. Nada de esto se
-presenta como integrado en el visor actual.
+**Siguiente entrega:** mantener escena y acumulación HDR entre envíos, con
+invalidación y controles conectados al editor. El ensayo por lotes ya tiene
+intersecciones, sombras y recuentos, pero recompila/reinicia cada trabajo.
+Comparar 16/64/256 spp con una referencia de mayor muestreo y medir error/ruido
+sigue pendiente; ejecutar esos valores no demuestra convergencia por sí solo.
+Después añadir muestreo adaptativo y transporte con rebotes.
 
 Referencias primarias: [capacidades de imágenes Vulkan](https://docs.vulkan.org/refpages/latest/refpages/source/VkImageFormatProperties.html)
 y [muestreo y optimización en RenderMan](https://renderman.pixar.com/debugging-and-optimization).

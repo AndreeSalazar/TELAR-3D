@@ -27,3 +27,12 @@ pico de VRAM no medido. Estado estable: diez buffers, dos grabaciones, dos
 mapeos y seis pipelines compute en la ruta fusionada (ocho en la histórica).
 La escena de datos v3 ocupa hasta 416 B; E/S solo explícita. Evidencia adicional:
 docs/GRAFO-EDITABLE.md, tests/grafo_gpu.rs y tests/red.rs de sus crates.
+
+Render por lotes: preparación de escena/shader en CPU; intersecciones, sombra,
+muestreo, media HDR y revisión sRGB en GPU. Reserva lógica 20 B/píxel de salida
+más 20 B/píxel de staging, alineación/código adicionales; descarga final única.
+Máximo 512 por eje, 1024 spp y 1048576 muestras totales, 32 triángulos.
+RAM para resultados y PFM/PPM; E/S explícita por --render-rayos.
+Sin BVH ni historial entre envíos; nuevas ejecuciones reconstruyen recursos.
+No se afirma pico físico ni rendimiento universal; ver docs/RENDER-POR-LOTES.md
+y crates/telar-app/tests/render_final.rs para evidencia RTX 3060.

@@ -55,3 +55,8 @@ píxeles por material/exposición en RTX 3060/Windows. Otros dispositivos quedan
 `rayos::intersectar` emite pruebas bilaterales rayo–triángulo; verificadas en GPU
 contra referencia f64, todavía fuera del visor, sin BVH ni acumulación. Contrato,
 costes y límites numéricos en [INTERSECCIONES-GPU.md](../../docs/INTERSECCIONES-GPU.md).
+
+`escena_rayos::Trabajo` ya genera un render directo por lotes: hasta 32 triángulos
+constantes, cámara, luz de área, sombras y 1..1024 spp dentro de un despacho.
+Acumula en GPU y entrega HDR lineal, contador y revisión sRGB; sin historial
+progresivo ni BVH. [Uso, matemáticas y coste](../../docs/RENDER-POR-LOTES.md).

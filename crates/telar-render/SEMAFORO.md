@@ -19,3 +19,12 @@ lecturas host. Solo los tests preparan casos constantes y descargan resultados:
 Aritmética GPU por par rayo–triángulo; coste temporal y pico de memoria abiertos.
 Sin BVH ni integración al visor; umbral absoluto y aristas generales pendientes.
 Ver también docs/INTERSECCIONES-GPU.md y crates/telar-app/tests/rayos_gpu.rs.
+
+Render por lotes: preparación de escena/shader en CPU; intersecciones, sombra,
+muestreo, media HDR y revisión sRGB en GPU. Reserva lógica 20 B/píxel de salida
+más 20 B/píxel de staging, alineación/código adicionales; descarga final única.
+Máximo 512 por eje, 1024 spp y 1048576 muestras totales, 32 triángulos.
+RAM para resultados y PFM/PPM; E/S explícita por --render-rayos.
+Sin BVH ni historial entre envíos; nuevas ejecuciones reconstruyen recursos.
+No se afirma pico físico ni rendimiento universal; ver docs/RENDER-POR-LOTES.md
+y crates/telar-app/tests/render_final.rs para evidencia RTX 3060.

@@ -112,3 +112,7 @@ Todas las cifras de rendimiento se miden aquí y se publican con la máquina al 
 MSAA numérico ampliado: peticiones 1/2/4/8/16/32/64, conservadas en .tlar v4
 si superan 4. El inspector separa el pedido del resultado real de la GPU.
 [Ejemplo de 32 solicitado y 8 efectivos](docs/CALIDAD-RENDER.md#solicitud-32-y-soporte-real).
+
+Render experimental con suelo/dos cajas, sombras entre objetos y salida HDR:
+[controles numéricos, 256 spp y límites](docs/RENDER-POR-LOTES.md).
+Se ejecuta por lotes; el editor todavía usa el visor procedural.
