@@ -11,7 +11,7 @@ Se estudian guías públicas; no se dispone del código propietario de Houdini.
 |---|---|---|
 | P1 · Campos 3D | Velocidad MAC, densidad y calor persistentes; advección trilineal, fuerzas, presión, visor orbitable y referencia escalar | Base implementada y probada a 32³; ver HUMO-3D.md |
 | P2 · Tiempo y colisiones | Subpasos temporales, control de estabilidad, obstáculos y velocidades de colisión; error de presión medido | Parcial: subpasos, predictor CFL GPU y esfera estática probados; faltan mallas y colisiones móviles |
-| P3 · Explosión | Fuente animada de corta duración, expansión objetivo, reacción/enfriamiento y humo; parámetros separados de simulación y aspecto | Pendiente |
+| P3 · Explosión | Fuente animada de corta duración, expansión objetivo, reacción/enfriamiento y humo; parámetros separados de simulación y aspecto | Parcial: pulso finito de calor/humo y expansión compensada en GPU; combustible/reacción y fuentes dirigibles pendientes |
 | P4 · Render volumétrico | Absorción, emisión, sombras y dispersión; temperatura con unidades/mapeo y gestión de color | Pendiente; existe fuego analítico separado |
 | P5 · Secundarios | Trayectorias, estelas, chispas y fragmentos con edad/vida; fuentes secundarias controlables | Pendiente |
 | P6 · Caché y salida | Estado versionado por fotograma/semilla, reanudación comprobada, secuencia HDR y pases | Pendiente; guardar parámetros no es cachear campos |
@@ -54,3 +54,5 @@ y denso antes de estudiar regiones activas y mayores resoluciones. La entrega
 
 No se anuncia equivalencia Pyro ni compatibilidad VEX/.hip. La comparación de
 calidad y rendimiento contra Houdini permanece **ABIERTO** hasta medirla.
+
+La primera pieza de P3 queda documentada y probada en [PULSO-EXPANSIVO-3D.md](PULSO-EXPANSIVO-3D.md). Las capturas del pulso no equivalen al plano cinematográfico objetivo.

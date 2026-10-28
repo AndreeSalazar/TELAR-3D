@@ -56,3 +56,5 @@ fragmentos_adaptativo lee control residente del plano 14 para franja de estado, 
 Visor de campos 3D: marcha de rayos de 16..128 muestras con trilineal, emisión/absorción diagnóstica; la app usa 64 y visor máximo 512². Lee los 17 planos del solver; no añade historial ni descargas en vivo. No incluye sombras/dispersión de producción. La velocidad requiere tres muestras por paso; coste GPU no medido. Prueba real: telar-app/tests/volumen_gpu.rs.
 
 El visor 3D dibuja también la máscara esférica voxelizada en azul, evaluada en shader; sin buffer adicional. No implica malla suavizada, sombras ni luz de producción. Aumenta aritmética por muestra; coste no medido. Captura real: docs/capturas/humo-3d-colision.png.
+
+La vista Calor 3D usa paleta artística por magnitud normalizada; no es radiancia de cuerpo negro. Sigue sin sombras/dispersión. Añade pocas operaciones escalares por muestra, sin buffers nuevos; capturas pulso-inicio/tarde en docs/capturas.

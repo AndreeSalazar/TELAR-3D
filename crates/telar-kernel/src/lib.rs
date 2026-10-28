@@ -11,6 +11,7 @@ mod coordinador;
 pub mod humo;
 pub mod humo3d;
 mod humo3d_colision;
+mod humo3d_fuente;
 mod humo3d_muestreo;
 mod humo3d_pasos;
 mod humo3d_tiempo;

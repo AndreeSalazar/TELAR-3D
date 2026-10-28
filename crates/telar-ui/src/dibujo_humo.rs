@@ -61,7 +61,7 @@ impl EditorHumo {
             lienzo.etiqueta(rect.interior(6.0), nombre, &boton);
         }
         let paginas: &[&str] = if self.volumen {
-            &["Emisor", "Presión", "Tiempo / col."]
+            &["Emisor", "Presión", "Tiempo", "Pulso"]
         } else {
             &["Emisor / fuerzas", "Presión / visor"]
         };

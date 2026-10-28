@@ -32,11 +32,14 @@ pub(crate) fn procesar(args: &[String]) -> Option<Result<(), String>> {
                 .take(4_194_453)
                 .read_to_end(&mut bytes)
                 .map_err(|e| format!("leer {ruta}: {e}"))?;
-            if bytes.get(4..8).is_some_and(|v| v == 9u32.to_le_bytes() || v == 10u32.to_le_bytes()) {
-                let (humo, opciones) = crate::volumen_archivo::decodificar(&bytes)?;
+            if bytes
+                .get(4..8)
+                .is_some_and(|v| v == 9u32.to_le_bytes() || v == 10u32.to_le_bytes() || v == 11u32.to_le_bytes())
+            {
+                let (humo, opciones, pulso) = crate::volumen_archivo::decodificar(&bytes)?;
                 println!(
-                    "telar: .tlar v{} · humo 3D 32³ · máximo {} iteraciones · {} subpasos · radio {}",
-                    bytes[4], humo.0[7], opciones.0[0], opciones.0[1]
+                    "telar: .tlar v{} · humo 3D 32³ · máximo {} iteraciones · {} subpasos · radio {} · pulso {}s",
+                    bytes[4], humo.0[7], opciones.0[0], opciones.0[1], pulso.0[0]
                 );
                 return Ok(());
             }

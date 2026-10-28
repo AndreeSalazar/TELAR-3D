@@ -159,3 +159,7 @@ semilla ni caché; abrir inicia estado vacío. Ver [HUMO-3D.md](HUMO-3D.md).
 ## Tiempo y esfera de humo v10
 
 Registro 72 B: cabecera TLAR/version=10/cantidad=14/CRC, diez f32 de humo y cuatro de subpasos, radio, altura y CFL. CRC sobre carga útil; dominios validados antes de aplicar. V9 migra sin esfera, un subpaso y CFL 0.5. No contiene campos/reloj/cámara. Ver [TIEMPO-COLISION-3D.md](TIEMPO-COLISION-3D.md).
+
+## Pulso expansivo v11
+
+Registro de 88 B: cabecera TLAR/version=11/cantidad=18/CRC y 18 f32 (humo 10, tiempo/esfera 4, pulso 4). Duración, expansión y multiplicadores calor/humo se validan antes de aplicar. V9/v10 migran sin pulso; no contiene reloj/campos/cámara. Ver [PULSO-EXPANSIVO-3D.md](PULSO-EXPANSIVO-3D.md).

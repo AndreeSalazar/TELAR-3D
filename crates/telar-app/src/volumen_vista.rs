@@ -71,6 +71,11 @@ pub(crate) fn bloque(editor: &EditorHumo, camara: &nudo::Camara, srgb: bool) -> 
     bloque[14] = radio;
     bloque[15] = altura;
     bloque[19] = cfl;
+    let [duracion, expansion, calor, humo] = editor.explosion.0;
+    bloque[8] = duracion;
+    bloque[23] = expansion;
+    bloque[27] = calor;
+    bloque[31] = humo;
     Ok(bloque)
 }
 

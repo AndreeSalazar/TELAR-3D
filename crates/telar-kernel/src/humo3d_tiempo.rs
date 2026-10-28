@@ -4,6 +4,7 @@ use hilo_spirv::{Funcion, Id, op};
 pub(super) fn emitir(f: &mut Funcion, m: &Memoria, pixel: Id, etapa: u32) {
     if etapa == 15 {
         parciales(f, m, pixel);
+        crate::humo3d_fuente::parciales(f, m, pixel);
     } else {
         decidir(f, m);
     }
@@ -31,7 +32,7 @@ fn parciales(f: &mut Funcion, m: &Memoria, grupo: Id) {
         let valores = f.construir(m.vector, &valores);
         f.glsl(m.vector, op::GLSL_MAXIMO, &[previo, valores])
     });
-    let cuatro = Memoria::u(f, 4);
+    let cuatro = Memoria::u(f, 6);
     let base = f.binaria(op::I_MUL, m.entero, grupo, cuatro);
     for i in 0..4 {
         let indice = Memoria::u(f, i);
@@ -45,7 +46,7 @@ fn decidir(f: &mut Funcion, m: &Memoria) {
     let cero = Memoria::c(f, 0.0);
     let inicial = f.construir(m.vector, &[cero; 4]);
     let maximos = f.repetir(m.celdas().div_ceil(64), m.vector, inicial, |f, grupo, previo| {
-        let cuatro = Memoria::u(f, 4);
+        let cuatro = Memoria::u(f, 6);
         let base = f.binaria(op::I_MUL, m.entero, grupo, cuatro);
         let valores = core::array::from_fn::<_, 4, _>(|i| {
             let indice = Memoria::u(f, u32::try_from(i).unwrap_or(0));
@@ -55,6 +56,13 @@ fn decidir(f: &mut Funcion, m: &Memoria) {
         let valores = f.construir(m.vector, &valores);
         f.glsl(m.vector, op::GLSL_MAXIMO, &[previo, valores])
     });
+    let media = crate::humo3d_fuente::media(f, m);
+    let indice = Memoria::u(f, 15);
+    m.guardar(f, indice, m.control(), media);
+    let indice = Memoria::u(f, 13);
+    let inicio = m.leer(f, indice, m.control());
+    let indice = Memoria::u(f, 16);
+    m.guardar(f, indice, m.control(), inicio);
     let dt = m.parametro(f, 5);
     let subpasos = m.parametro(f, 13);
     let uno = Memoria::c(f, 1.0);

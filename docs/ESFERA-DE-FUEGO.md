@@ -111,3 +111,5 @@ controlada por error con cámara orbitable. El editor comienza en 32³ (emisor
 4..64³); 128³/256³ siguen como objetivos, sin reserva ni rendimiento prometidos.
 No fusiona todavía el fuego analítico con combustión. El plan actualizado está en
 [PLAN-EXPLOSION-PRODUCCION.md](PLAN-EXPLOSION-PRODUCCION.md).
+
+[Pulso expansivo 3D](PULSO-EXPANSIVO-3D.md) inyecta calor/humo durante un intervalo y resuelve divergencia objetivo compensada. No cierra el hito de combustión ni el render de producción.

@@ -98,7 +98,7 @@ pub const CATEGORIAS: &[Categoria] = &[
             Herramienta {
                 nombre: "Humo 3D",
                 resumen: "Campos físicos y visor orbitable",
-                detalle: "Humo MAC 32³ en GPU: advección, fuerzas, presión con tolerancia, subpasos y predictor CFL. Esfera estática editable y visor orbitable. Combustión, mallas móviles, iluminación de producción y cachés pendientes.",
+                detalle: "Humo MAC 32³ en GPU con presión, subpasos, predictor CFL, esfera y pulso expansivo de calor/humo. Pestaña Pulso para emisión finita. Combustible/reacción, mallas móviles, iluminación de producción y cachés pendientes.",
                 espacio: Some(Espacio::Humo3d),
                 estado: "Simulación GPU",
             },

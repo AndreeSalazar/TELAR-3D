@@ -7,18 +7,18 @@ use std::{
 use telar_ui::{EditorHumo, EntradaNumero};
 use telar_ventana::{Boton, Evento, Tecla};
 pub(crate) fn procesar(args: &[String]) -> Option<Result<(), String>> {
-    args.iter().any(|v| v == "--humo" || v == "--humo-3d").then(|| ejecutar(args))
+    args.iter().any(|v| v == "--humo" || v == "--humo-3d" || v == "--explosion").then(|| ejecutar(args))
 }
 fn ejecutar(args: &[String]) -> Result<(), String> {
     validar_modo(args)?;
     let abrir = crate::proyecto::argumento(args, "--abrir-escena")?;
     let guardar = crate::proyecto::argumento(args, "--guardar-escena")?;
-    let volumen = args.iter().any(|v| v == "--humo-3d");
-    let ruta =
-        Path::new(guardar.as_deref().or(abrir.as_deref()).unwrap_or(if volumen { "humo3d.tlar" } else { "humo.tlar" }));
+    let volumen = args.iter().any(|v| v == "--humo-3d" || v == "--explosion");
+    let ruta = Path::new(guardar.as_deref().or(abrir.as_deref()).unwrap_or(predeterminada(args, volumen)));
     let (captura, limite, objetivo) = opciones(args)?;
     let mut editor = EditorHumo::default();
     editor.volumen = volumen;
+    configurar_pulso(args, &mut editor);
     if let Some(ruta) = &abrir {
         leer_editor(Path::new(ruta), &mut editor)?;
     }
@@ -179,7 +179,7 @@ fn opciones(args: &[String]) -> Result<(Option<String>, Option<u64>, u32), Strin
 }
 
 fn validar_modo(args: &[String]) -> Result<(), String> {
-    if args.iter().any(|v| v == "--humo") && args.iter().any(|v| v == "--humo-3d") {
+    if args.iter().any(|v| v == "--humo") && args.iter().any(|v| v == "--humo-3d" || v == "--explosion") {
         return Err("elige humo 2D o 3D".into());
     }
     if args.iter().any(|v| {
@@ -195,16 +195,17 @@ fn validar_modo(args: &[String]) -> Result<(), String> {
 
 fn guardar_editor(ruta: &Path, editor: &EditorHumo) -> Result<(), String> {
     if editor.volumen {
-        crate::volumen_archivo::guardar(ruta, &editor.humo, &editor.volumen_opciones)
+        crate::volumen_archivo::guardar(ruta, &editor.humo, &editor.volumen_opciones, &editor.explosion)
     } else {
         crate::humo_archivo::guardar(ruta, &editor.humo)
     }
 }
 fn leer_editor(ruta: &Path, editor: &mut EditorHumo) -> Result<(), String> {
     if editor.volumen {
-        let (humo, opciones) = crate::volumen_archivo::leer(ruta)?;
+        let (humo, opciones, explosion) = crate::volumen_archivo::leer(ruta)?;
         editor.humo = humo;
         editor.volumen_opciones = opciones;
+        editor.explosion = explosion;
     } else {
         editor.humo = crate::humo_archivo::leer(ruta)?;
     }
@@ -229,4 +230,25 @@ fn actualizar_secuencia(editor: &EditorHumo, estado: &mut Estado, gpu: &mut tela
     }
     estado.controles = controles;
     Ok(())
+}
+
+fn configurar_pulso(args: &[String], editor: &mut EditorHumo) {
+    if args.iter().any(|v| v == "--explosion") {
+        editor.explosion.0[0] = 0.35;
+        editor.humo.0[0] = 0.13;
+        editor.volumen_opciones.0[1] = 0.0;
+        editor.vista = 1;
+        editor.pagina = 3;
+        editor.mensaje = "Pulso expansivo · R reinicia reloj · sin combustión química".into();
+    }
+}
+
+fn predeterminada(args: &[String], volumen: bool) -> &'static str {
+    if args.iter().any(|v| v == "--explosion") {
+        "explosion.tlar"
+    } else if volumen {
+        "humo3d.tlar"
+    } else {
+        "humo.tlar"
+    }
 }

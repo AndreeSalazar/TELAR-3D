@@ -80,3 +80,5 @@ humo_adaptativo_gpu.rs verifica convergencia, límite, datos no finitos, resumen
 volumen_gpu.rs valida catorce kernels SPIR-V y visor, compara 14 planos contra referencia a 9³, comprueba presupuesto, fuente, repetibilidad, cámara/pausa y reinicio con descargas explícitas. No es benchmark. Configuración v9 verifica corrupción y rechazo cruzado 2D/3D.
 
 volumen_gpu.rs amplía referencia a dos subpasos con fuerzas y esfera: caras normales/celdas sólidas nulas, recorte CFL, reloj y repetibilidad. Valida 16 shaders; no benchmark. Formato v10 prueba corrupción y migración de v9.
+
+El ensayo de volumen compara pulso activo, cruce de duración y fin de emisión a 9³ con y sin esfera; suma global de RHS <0.0001, error por valor <0.0003, reloj y repetibilidad. Valida los shaders y mantiene regresiones. V11 verifica CRC y migración v9/v10. Sin benchmark de rendimiento.

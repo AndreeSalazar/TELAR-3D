@@ -157,6 +157,7 @@ fn volumen_coincide_con_referencia_y_orbita_sin_alterar_campos() {
     gpu.limpiar_campos().unwrap();
     assert!(gpu.inspeccionar_campos().unwrap().iter().all(|v| *v == 0));
     tiempo_colision(&mut gpu);
+    pulso(&mut gpu);
     drop(gpu);
     drop(ventana);
     assert_eq!(telar_gpu::avisos_de_validacion(), 0);
@@ -259,4 +260,53 @@ fn tiempo_colision(gpu: &mut Gpu) {
     assert_eq!(cuatro[CONTROL + 8].to_bits(), 4.0f32.to_bits());
     assert!(telar_kernel::humo3d::orden_temporal(128, 5).is_err());
     assert!(telar_kernel::humo3d::orden_temporal(33, 4).is_err());
+}
+
+fn pulso(gpu: &mut Gpu) {
+    gpu.secuencia_campos(&telar_kernel::humo3d::orden_temporal(128, 1).unwrap()).unwrap();
+    let mut p = bloque();
+    p[0] = 0.18;
+    p[1] = 6.0;
+    p[5] = 0.016;
+    p[8] = 0.02;
+    p[10] = 128.0;
+    p[13] = 1.0;
+    p[15] = 0.52;
+    p[19] = 0.5;
+    p[23] = 8.0;
+    p[27] = 5.0;
+    p[31] = 0.75;
+    for radio in [0.0, 0.23] {
+        p[14] = radio;
+        for inicio in [0.0, 0.011, 0.03] {
+            let mut estado = vec![0.0; 17 * CELDAS];
+            estado[CONTROL + 13] = inicio;
+            let resultado = paso(gpu, &estado, &p);
+            let mut esperado = estado.clone();
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss, reason = "contador GPU <=128")]
+            let iteraciones = resultado[CONTROL + 1] as u32;
+            telar_kernel::humo3d::referencia::paso_con_pulso(
+                LADO,
+                iteraciones,
+                &mut esperado,
+                &p[..8].try_into().unwrap(),
+                [radio, 0.52],
+                [0.02, 8.0, 5.0, 0.75],
+                inicio,
+            )
+            .unwrap();
+            for (i, (a, b)) in resultado[..14 * CELDAS].iter().zip(&esperado).enumerate() {
+                assert!(a.is_finite() && (a - b).abs() < 0.0003, "pulso {i}: GPU {a}, referencia {b}");
+            }
+            let suma = resultado[10 * CELDAS..11 * CELDAS].iter().sum::<f32>();
+            assert!(suma.abs() < 0.0001, "RHS incompatible en caja cerrada: {suma}");
+            assert!((resultado[CONTROL + 13] - (inicio + 0.016)).abs() < 1e-6);
+            assert_eq!(resultado, paso(gpu, &estado, &p));
+            if inicio > 0.02 {
+                assert!(resultado[..5 * CELDAS].iter().all(|v| *v == 0.0));
+            } else {
+                assert!(resultado[3 * CELDAS..5 * CELDAS].iter().any(|v| *v > 0.0));
+            }
+        }
+    }
 }

@@ -70,3 +70,27 @@ fn tiempo_y_colision_se_editan_sin_aceptar_estados_invalidos() -> Result<(), &'s
     assert!(editor.control(0).is_none());
     Ok(())
 }
+#[test]
+fn pulso_se_confirma_y_los_dominios_son_transaccionales() -> Result<(), &'static str> {
+    let mut editor = EditorHumo::default();
+    editor.volumen = true;
+    editor.pagina = 3;
+    let d = DisenoObjetos::nuevo((1280, 800));
+    for (fila, texto, esperado) in [(0, "0,35", 0.35f32), (1, "12", 12.0), (2, "7", 7.0), (3, "0.5", 0.5)] {
+        let rect = d.valor(fila);
+        editor.pulsar(d, rect.x + 4.0, rect.y + 4.0);
+        for c in texto.chars() {
+            editor.numero(EntradaNumero::Caracter(c));
+        }
+        editor.numero(EntradaNumero::Confirmar);
+        assert!(!editor.editando());
+        assert_eq!(editor.explosion.0[fila].to_bits(), esperado.to_bits());
+    }
+    for (i, valor) in [(0, -0.1), (0, 3.0), (1, 21.0), (2, 11.0), (3, 5.0), (1, f32::NAN)] {
+        let previo = editor.explosion;
+        assert!(editor.explosion.poner(i, valor).is_err());
+        assert_eq!(editor.explosion, previo);
+    }
+    editor.explosion.poner(0, 0.0)?;
+    editor.explosion.validar()
+}

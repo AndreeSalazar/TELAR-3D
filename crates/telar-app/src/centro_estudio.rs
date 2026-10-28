@@ -201,6 +201,7 @@ fn validar_modo(args: &[String]) -> Result<(), String> {
             v.as_str(),
             "--humo"
                 | "--humo-3d"
+                | "--explosion"
                 | "--fuego"
                 | "--estudio-rayos"
                 | "--render-objetos"

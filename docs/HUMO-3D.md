@@ -18,7 +18,7 @@ presión/visor. Densidad, calor, velocidad y divergencia se inspeccionan por sep
 La franja verde/amarilla/roja indica tolerancia/límite/invalidez del último paso.
 Mover la cámara y cambiar exposición/vista conservan los campos.
 
-F5/F9 guarda/abre parámetros `.tlar` **v10, 72 B**; no guarda campos ni cámara. V9 migra con un subpaso y sin obstáculo.
+F5/F9 guarda/abre parámetros `.tlar` **v11, 88 B**; no guarda campos ni cámara. V9 migra con un subpaso y sin obstáculo; V9/V10 abren sin pulso.
 V8 identifica humo 2D y se rechaza en este modo para evitar reinterpretarlo.
 Abrir o reiniciar limpia el volumen. Fuente y valores se reconstruyen desde cero.
 
@@ -79,7 +79,7 @@ chispas, caché de campos ni secuencia HDR de volumen.
 
 El recorrido completo y sus criterios están en
 [PLAN-EXPLOSION-PRODUCCION.md](PLAN-EXPLOSION-PRODUCCION.md).
-El siguiente hito físico es completar colisiones móviles y preparar reacción. La primera entrega de tiempo/colisión está documentada por separado.
+El siguiente hito físico es completar colisiones móviles y preparar reacción; el pulso expansivo inicial está implementado. La primera entrega de tiempo/colisión está documentada por separado.
 
 ## Evidencia
 
@@ -103,3 +103,5 @@ No es una comparación de rendimiento o calidad contra Houdini: **ABIERTO**.
 Implementación propia apoyada en métodos publicados, sin copiar código:
 [GPU Gems 3, capítulo 30](https://developer.nvidia.com/gpugems/gpugems3/part-v-physics-simulation/chapter-30-real-time-simulation-and-rendering-3d-fluids)
 y [funcionamiento de Pyro de SideFX](https://www.sidefx.com/docs/houdini/pyro/background.html).
+
+[Pulso expansivo 3D](PULSO-EXPANSIVO-3D.md) añade una fuente finita y divergencia objetivo compensada, guardadas en v11. Durante el pulso, Divergencia muestra el error respecto a ese objetivo, no la divergencia física absoluta.

@@ -74,3 +74,5 @@ Catálogo no_std de ocho categorías con destinos tipados y funciones pendientes
 EditorHumo distingue 2D/3D con un indicador de presentación; la física y el render permanecen fuera de UI. El catálogo añade destino Humo3d. No reserva campos; triangulación CPU solo al cambiar UI. Pruebas de catálogo y de geometría del editor en cargo verify.
 
 VolumenHumo añade cuatro parámetros y pestaña Tiempo/col., sin recursos GPU. Enter y sliders validan enteros/rangos antes de aplicar; subpasos predeterminados 2. Prueba: tests/humo.rs.
+
+ExplosionHumo añade cuatro valores y cuarta pestaña Pulso, sin recursos GPU. Dominios/Enter/decimal con coma son transaccionales; duración cero conserva emisión continua. Pruebas en tests/humo.rs.

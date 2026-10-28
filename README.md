@@ -147,3 +147,5 @@ Humo físico 3D inicial: `telar --humo-3d` o **TELAR Humo 3D.cmd**. Campos MAC
 [Uso, pruebas y límites](docs/HUMO-3D.md) · [Plan de explosión de producción](docs/PLAN-EXPLOSION-PRODUCCION.md).
 
 Tiempo y colisión 3D: subpasos 1..4, predictor CFL GPU y esfera estática editable; .tlar v10 migra v9. Uso y límites: [docs/TIEMPO-COLISION-3D.md](docs/TIEMPO-COLISION-3D.md).
+
+Fuente expansiva inicial: `telar --explosion` o **TELAR Explosion 3D.cmd**. Pulso finito de calor/humo, expansión compatible con caja cerrada y controles guardables v11. [Uso, pruebas y límites](docs/PULSO-EXPANSIVO-3D.md).

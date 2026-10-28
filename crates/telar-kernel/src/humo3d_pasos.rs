@@ -6,12 +6,16 @@ pub(super) fn emitir(f: &mut Funcion, m: &Memoria, pixel: Id, etapa: u32, iterac
         0 => advectar(f, m, pixel),
         1 => {
             let div = divergencia(f, m, pixel, 5);
+            let objetivo = crate::humo3d_fuente::objetivo(f, m, pixel);
+            let div = m.sub(f, div, objetivo);
             m.guardar(f, pixel, 10, div);
         }
         2 | 3 => jacobi(f, m, pixel, etapa == 2),
         4 => proyectar(f, m, pixel, if iteraciones.is_multiple_of(2) { 12 } else { 11 }),
         _ => {
             let div = divergencia(f, m, pixel, 0);
+            let objetivo = crate::humo3d_fuente::objetivo(f, m, pixel);
+            let div = m.sub(f, div, objetivo);
             m.guardar(f, pixel, 13, div);
             tiempo(f, m, pixel);
         }
@@ -94,6 +98,8 @@ fn advectar(f: &mut Funcion, m: &Memoria, pixel: Id) {
     let cero = Memoria::c(f, 0.0);
     let medio = Memoria::c(f, 0.5);
     let fuente = mascara(f, m, coords);
+    let (activo, pulso) = crate::humo3d_fuente::pulso(f, m);
+    let fuente = m.mul(f, fuente, pulso);
     for canal in 0..5 {
         let mut punto = coords;
         if canal < 3 {
@@ -133,6 +139,10 @@ fn advectar(f: &mut Funcion, m: &Memoria, pixel: Id) {
             let tasa = m.parametro(f, 1);
             let tasa = m.mul(f, tasa, dt);
             let aporte = m.mul(f, tasa, fuente);
+            let factor = m.parametro(f, if canal == 3 { 31 } else { 27 });
+            let uno = Memoria::c(f, 1.0);
+            let factor = f.elegir(m.real, activo, factor, uno);
+            let aporte = m.mul(f, aporte, factor);
             valor = m.add(f, valor, aporte);
             valor = m.limitar(f, valor, 0.0, 10.0);
         }
@@ -142,7 +152,7 @@ fn advectar(f: &mut Funcion, m: &Memoria, pixel: Id) {
     }
 }
 #[allow(clippy::cast_precision_loss, reason = "lado <=64")]
-fn mascara(f: &mut Funcion, m: &Memoria, coords: [Id; 3]) -> Id {
+pub(super) fn mascara(f: &mut Funcion, m: &Memoria, coords: [Id; 3]) -> Id {
     let centro = [(m.lado as f32 - 1.0) * 0.5, m.lado as f32 * 0.18, (m.lado as f32 - 1.0) * 0.5];
     let mut r2 = Memoria::c(f, 0.0);
     for (coord, centro) in coords.into_iter().zip(centro) {

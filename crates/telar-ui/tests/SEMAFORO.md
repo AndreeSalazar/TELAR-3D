@@ -48,3 +48,5 @@ humo.rs añade dominios de tolerancias y confirmación decimal con Enter.
 catalogo.rs verifica hit testing, capacidades pendientes, acciones de una sola lectura, CSS transaccional y geometría dentro de ventana en cuatro resoluciones.
 
 La prueba de humo añade Enter/decimal con coma para tiempo y esfera, rechazo transaccional de subpasos fraccionarios y dominios; no ejecuta shaders.
+
+Humo prueba los cuatro controles de pulso con Enter y decimal con coma; rechaza valores fuera de rango/NaN sin cambiar configuración. No ejecuta simulación en CPU.

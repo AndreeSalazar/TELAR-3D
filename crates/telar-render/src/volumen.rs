@@ -136,10 +136,10 @@ fn integrar(
 }
 fn color_campo(f: &mut Funcion, mat: &Matematica, vista: Id, valor: Id) -> Id {
     let mut color = mat.vector(f, [0.65, 0.7, 0.78]);
-    for (codigo, rgb) in [(1.0, [1.0, 0.25, 0.03]), (2.0, [0.03, 0.7, 0.8])] {
+    for (indice, (codigo, rgb)) in [(1.0, [1.0, 0.25, 0.03]), (2.0, [0.03, 0.7, 0.8])].into_iter().enumerate() {
+        let alternativa = if indice == 0 { color_calor(f, mat, valor) } else { mat.vector(f, rgb) };
         let codigo = Matematica::escalar(f, codigo);
         let coincide = f.binaria(180, mat.booleano, vista, codigo);
-        let alternativa = mat.vector(f, rgb);
         color = mat.elegir_vector(f, coincide, alternativa, color);
     }
     let tres = Matematica::escalar(f, 3.0);
@@ -150,4 +150,17 @@ fn color_campo(f: &mut Funcion, mat: &Matematica, vista: Id, valor: Id) -> Id {
     let azul = mat.vector(f, [0.02, 0.15, 0.9]);
     let signo = mat.elegir_vector(f, positivo, rojo, azul);
     mat.elegir_vector(f, div, signo, color)
+}
+/// Paleta artística de calor normalizado; no es radiancia de cuerpo negro.
+fn color_calor(f: &mut Funcion, mat: &Matematica, valor: Id) -> Id {
+    let cero = Matematica::escalar(f, 0.0);
+    let uno = Matematica::escalar(f, 1.0);
+    let canales = [(0.0, 2.0), (0.1, 0.4), (1.0, 0.2)].map(|(inicio, escala)| {
+        let inicio = Matematica::escalar(f, inicio);
+        let escala = Matematica::escalar(f, escala);
+        let canal = f.binaria(op::F_SUB, mat.real, valor, inicio);
+        let canal = f.binaria(op::F_MUL, mat.real, canal, escala);
+        f.glsl(mat.real, 43, &[canal, cero, uno])
+    });
+    f.construir(mat.vector, &canales)
 }

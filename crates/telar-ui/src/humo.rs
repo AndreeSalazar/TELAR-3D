@@ -57,7 +57,11 @@ fn dominio(i: usize) -> (&'static str, f32, f32) {
         10 => ("Subpasos por cuadro", 1.0, 4.0),
         11 => ("Radio obstáculo · 0 desactiva", 0.0, 0.3),
         12 => ("Altura obstáculo", 0.31, 0.69),
-        _ => ("CFL predictor · celdas", 0.1, 1.0),
+        13 => ("CFL predictor · celdas", 0.1, 1.0),
+        14 => ("Duración · 0 continuo", 0.0, 2.0),
+        15 => ("Expansión · por segundo", 0.0, 20.0),
+        16 => ("Calor del pulso", 0.0, 10.0),
+        _ => ("Humo del pulso", 0.0, 4.0),
     }
 }
 /// Inspector de los solvers MAC; los campos físicos viven en GPU.
@@ -66,6 +70,8 @@ pub struct EditorHumo {
     pub volumen: bool,
     /// Parámetros específicos 3D, guardados aparte de los diez comunes.
     pub volumen_opciones: crate::VolumenHumo,
+    /// Pulso y divergencia objetivo; se activan con duración positiva.
+    pub explosion: crate::ExplosionHumo,
     /// Avanza el estado físico un paso fijo por fotograma dibujado.
     pub animando: bool,
     /// Valores guardables, independientes de la vista.
@@ -87,6 +93,7 @@ impl Default for EditorHumo {
             animando: true,
             volumen: false,
             volumen_opciones: crate::VolumenHumo::default(),
+            explosion: crate::ExplosionHumo::default(),
             humo: Humo::default(),
             vista: 0,
             pagina: 0,
@@ -102,10 +109,10 @@ impl Default for EditorHumo {
 }
 impl EditorHumo {
     pub(crate) fn campo(&self, i: usize) -> Option<usize> {
-        let campo = if self.volumen && self.pagina == 2 { 10 + i } else { self.pagina * 6 + i };
+        let campo = if self.volumen && self.pagina >= 2 { 10 + (self.pagina - 2) * 4 + i } else { self.pagina * 6 + i };
         let cantidad = if self.pagina == 0 {
             6
-        } else if self.pagina == 1 || (self.volumen && self.pagina == 2) {
+        } else if self.pagina == 1 || (self.volumen && (2..=3).contains(&self.pagina)) {
             4
         } else {
             0
@@ -136,7 +143,13 @@ impl EditorHumo {
             EntradaNumero::Cancelar => self.edicion = None,
             EntradaNumero::Confirmar => {
                 let resultado = texto.parse::<f32>().map_err(|_| "número inválido").and_then(|v| {
-                    if *i < 10 { self.humo.poner(*i, v) } else { self.volumen_opciones.poner(*i - 10, v) }
+                    if *i < 10 {
+                        self.humo.poner(*i, v)
+                    } else if *i < 14 {
+                        self.volumen_opciones.poner(*i - 10, v)
+                    } else {
+                        self.explosion.poner(*i - 14, v)
+                    }
                 });
                 match resultado {
                     Ok(()) => {
@@ -177,7 +190,7 @@ impl EditorHumo {
                 self.vista = i;
             }
         }
-        for i in 0..if self.volumen { 3 } else { 2 } {
+        for i in 0..if self.volumen { 4 } else { 2 } {
             if self.pagina_rect(d, i).contiene(x, y) {
                 self.pagina = i;
             }
@@ -216,9 +229,13 @@ impl EditorHumo {
         } else {
             valor
         };
-        if let Err(e) =
-            if campo < 10 { self.humo.poner(campo, valor) } else { self.volumen_opciones.poner(campo - 10, valor) }
-        {
+        if let Err(e) = if campo < 10 {
+            self.humo.poner(campo, valor)
+        } else if campo < 14 {
+            self.volumen_opciones.poner(campo - 10, valor)
+        } else {
+            self.explosion.poner(campo - 14, valor)
+        } {
             self.mensaje = format!("Error: {e}");
         }
     }
@@ -226,16 +243,22 @@ impl EditorHumo {
 
 impl EditorHumo {
     fn valor(&self, campo: usize) -> f32 {
-        if campo < 10 { self.humo.0[campo] } else { self.volumen_opciones.0[campo - 10] }
+        if campo < 10 {
+            self.humo.0[campo]
+        } else if campo < 14 {
+            self.volumen_opciones.0[campo - 10]
+        } else {
+            self.explosion.0[campo - 14]
+        }
     }
-    #[allow(clippy::cast_precision_loss, reason = "tres pestañas")]
+    #[allow(clippy::cast_precision_loss, reason = "cuatro pestañas")]
     pub(crate) fn pagina_rect(&self, d: DisenoObjetos, i: usize) -> crate::Rectangulo {
         if !self.volumen {
             return d.pagina(i);
         }
         let mut rect = d.pagina(0);
-        rect.x += i as f32 * 98.0;
-        rect.ancho = 92.0;
+        rect.x += i as f32 * 74.0;
+        rect.ancho = 66.0;
         rect
     }
 }

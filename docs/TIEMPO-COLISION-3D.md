@@ -119,3 +119,7 @@ umbral 0.02959, cero avisos Vulkan del producto. No es un benchmark contra Pyro.
 La separación conceptual entre subpasos, CFL y colisiones se estudia en la
 [documentación pública de Pyro Solver Sparse](https://www.sidefx.com/docs/houdini/nodes/dop/pyrosolver_sparse.html).
 TELAR usa implementación y contratos propios; la comparación con Houdini permanece **ABIERTO**.
+
+## Extensión de fuente
+
+El [pulso expansivo](PULSO-EXPANSIVO-3D.md) conserva la reserva y los programas, pero amplía a seis palabras los parciales temporales para calcular media de máscara. Añade control 15 (media) y 16 (reloj congelado), y configura v11; v10 sigue siendo legible. No garantiza que el predictor CFL anticipe la velocidad posterior a la proyección expansiva. La pestaña Tiempo reúne ahora estos controles; Pulso ocupa la cuarta pestaña.

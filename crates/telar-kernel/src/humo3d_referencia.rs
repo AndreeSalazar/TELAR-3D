@@ -16,6 +16,30 @@ pub fn paso_con_obstaculo(
     p: &[f32; 8],
     esfera: [f32; 2],
 ) -> Result<(), &'static str> {
+    paso_con_pulso(lado, iteraciones, estado, p, esfera, [0.0, 0.0, 1.0, 1.0], 0.0)
+}
+/// Referencia escalar de pulso: duración, expansión, calor y humo; reloj inicial del subpaso.
+/// # Errors
+/// Rechaza campos y parámetros fuera del contrato.
+pub fn paso_con_pulso(
+    lado: usize,
+    iteraciones: u32,
+    estado: &mut [f32],
+    p: &[f32; 8],
+    esfera: [f32; 2],
+    pulso: [f32; 4],
+    tiempo: f32,
+) -> Result<(), &'static str> {
+    if !tiempo.is_finite()
+        || tiempo < 0.0
+        || pulso.iter().any(|v| !v.is_finite())
+        || !(0.0..=2.0).contains(&pulso[0])
+        || !(0.0..=20.0).contains(&pulso[1])
+        || !(0.0..=10.0).contains(&pulso[2])
+        || !(0.0..=4.0).contains(&pulso[3])
+    {
+        return Err("pulso inválido");
+    }
     if !(4..=64).contains(&lado)
         || iteraciones > 128
         || estado.len() != 17 * lado * lado * lado
@@ -48,9 +72,21 @@ pub fn paso_con_obstaculo(
             esfera[0] == 0.0 || distancia > esfera[0] * esfera[0]
         })
         .collect();
-    let temporal = advectar(lado, estado, p, &fluidos);
+    let mascara = mascara(lado, p[0]);
+    let suma = mascara.iter().zip(&fluidos).filter(|(_, v)| **v).map(|(v, _)| *v).sum::<f32>();
+    #[allow(clippy::cast_precision_loss, reason = "hasta 64³")]
+    let media = suma / fluidos.iter().filter(|v| **v).count().max(1) as f32;
+    let factor = if pulso[0] > 0.0 { (pulso[0] - tiempo).clamp(0.0, p[5]) / p[5] } else { 1.0 };
+    let multiplicadores = if pulso[0] > 0.0 { [pulso[3], pulso[2]] } else { [1.0, 1.0] };
+    let fuente: Vec<_> = mascara.iter().map(|v| v * factor).collect();
+    let objetivo: Vec<_> = mascara
+        .iter()
+        .zip(&fluidos)
+        .map(|(v, fluido)| if *fluido && pulso[0] > 0.0 { pulso[1] * factor * (v - media) } else { 0.0 })
+        .collect();
+    let temporal = advectar(lado, estado, p, &fluidos, &fuente, multiplicadores);
     estado[5 * n..10 * n].copy_from_slice(&temporal);
-    let div = divergencia(lado, &temporal);
+    let div: Vec<_> = divergencia(lado, &temporal).iter().zip(&objetivo).map(|(d, t)| d - t).collect();
     estado[10 * n..11 * n].copy_from_slice(&div);
     let mut anterior = estado[12 * n..13 * n].to_vec();
     let mut siguiente = anterior.clone();
@@ -62,7 +98,7 @@ pub fn paso_con_obstaculo(
     }
     proyectar(lado, &temporal, &anterior, estado, &fluidos);
     estado[3 * n..5 * n].copy_from_slice(&temporal[3 * n..5 * n]);
-    let posterior = divergencia(lado, estado);
+    let posterior: Vec<_> = divergencia(lado, estado).iter().zip(&objetivo).map(|(d, t)| d - t).collect();
     estado[13 * n..14 * n].copy_from_slice(&posterior);
     Ok(())
 }
@@ -87,7 +123,14 @@ fn abiertos(lado: usize, pixel: usize, fluidos: &[bool]) -> [Option<usize>; 6] {
     vecinos(lado, pixel).map(|v| v.filter(|i| fluidos[pixel] && fluidos[*i]))
 }
 #[allow(clippy::cast_precision_loss, reason = "lado <=64")]
-fn advectar(lado: usize, estado: &[f32], p: &[f32; 8], fluidos: &[bool]) -> Vec<f32> {
+fn advectar(
+    lado: usize,
+    estado: &[f32],
+    p: &[f32; 8],
+    fluidos: &[bool],
+    fuente: &[f32],
+    multiplicadores: [f32; 2],
+) -> Vec<f32> {
     let n = lado * lado * lado;
     let mut salida = alloc::vec![0.0;5*n];
     let escala = lado as f32;
@@ -97,11 +140,6 @@ fn advectar(lado: usize, estado: &[f32], p: &[f32; 8], fluidos: &[bool]) -> Vec<
         if !fluidos[pixel] {
             continue;
         }
-        let centro = [(escala - 1.0) * 0.5, escala * 0.18, (escala - 1.0) * 0.5];
-        let r2 = posicion.into_iter().zip(centro).map(|(v, c)| (v - c) * (v - c)).sum::<f32>();
-        let radio = p[0] * escala;
-        let mascara = (1.0 - r2 / (radio * radio)).clamp(0.0, 1.0);
-        let fuente = mascara * mascara;
         for canal in 0..5 {
             let mut punto = posicion;
             if canal < 3 {
@@ -129,7 +167,8 @@ fn advectar(lado: usize, estado: &[f32], p: &[f32; 8], fluidos: &[bool]) -> Vec<
                 }
             } else {
                 let disipacion = if canal == 3 { p[4] } else { 0.2 };
-                valor = (valor * (1.0 - disipacion * p[5]) + p[1] * p[5] * fuente).clamp(0.0, 10.0);
+                valor = (valor * (1.0 - disipacion * p[5]) + p[1] * p[5] * fuente[pixel] * multiplicadores[canal - 3])
+                    .clamp(0.0, 10.0);
             }
             salida[canal * n + pixel] = valor;
         }
@@ -211,4 +250,24 @@ fn muestra(estado: &[f32], lado: usize, coords: [f32; 3], canal: usize, fluidos:
         }
     }
     valores[0]
+}
+
+#[allow(clippy::cast_precision_loss, reason = "lado <=64")]
+fn mascara(lado: usize, radio: f32) -> Vec<f32> {
+    let escala = lado as f32;
+    (0..lado * lado * lado)
+        .map(|i| {
+            let centro = [(escala - 1.0) * 0.5, escala * 0.18, (escala - 1.0) * 0.5];
+            let r2 = coords(lado, i)
+                .into_iter()
+                .zip(centro)
+                .map(|(v, c)| {
+                    let d = v as f32 - c;
+                    d * d
+                })
+                .sum::<f32>();
+            let peso = (1.0 - r2 / ((radio * escala) * (radio * escala))).clamp(0.0, 1.0);
+            peso * peso
+        })
+        .collect()
 }
