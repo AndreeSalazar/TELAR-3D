@@ -200,7 +200,8 @@ fn validar_modo(args: &[String]) -> Result<(), String> {
     if args.iter().any(|v| {
         matches!(
             v.as_str(),
-            "--humo"
+            "--trazadores"
+                | "--humo"
                 | "--humo-3d"
                 | "--explosion"
                 | "--particulas"

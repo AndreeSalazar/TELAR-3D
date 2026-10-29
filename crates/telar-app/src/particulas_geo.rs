@@ -50,7 +50,27 @@ pub(crate) fn exportar(gpu: &telar_gpu::Gpu, ruta: &Path) -> Result<usize, Strin
     }
     let datos = gpu.inspeccionar_rango_campos(0, 11 * 128)?;
     let puntos = convertir(&datos, f32::from_bits(control[0]))?;
-    let texto = telar_intercambio::codificar_particulas_geo(&puntos)?;
+    escribir(ruta, &puntos)
+}
+pub(crate) fn exportar_trazadores(gpu: &telar_gpu::Gpu, lado: u32, ruta: &Path) -> Result<usize, String> {
+    crate::intercambio_archivo::validar_destino(ruta)?;
+    let n = lado.checked_pow(3).ok_or("dimensión inválida")?;
+    if !(8..=64).contains(&lado) {
+        return Err("dimensión de trazadores inválida".into());
+    }
+    let control = gpu.inspeccionar_rango_campos(16 * n, 17)?;
+    if control.iter().any(|v| !f32::from_bits(*v).is_finite())
+        || f32::from_bits(control[5]) >= 3.0
+        || f32::from_bits(control[14]) >= 2.0
+    {
+        return Err("estado MAC inválido; no exportar trazadores".into());
+    }
+    let datos = gpu.inspeccionar_rango_campos(17 * n, 11 * 128)?;
+    let puntos = convertir(&datos, f32::from_bits(control[13]))?;
+    escribir(ruta, &puntos)
+}
+fn escribir(ruta: &Path, puntos: &[Particula]) -> Result<usize, String> {
+    let texto = telar_intercambio::codificar_particulas_geo(puntos)?;
     let mut f = std::fs::OpenOptions::new().write(true).create_new(true).open(ruta).map_err(|e| e.to_string())?;
     f.write_all(texto.as_bytes()).map_err(|e| e.to_string())?;
     f.sync_all().map_err(|e| e.to_string())?;

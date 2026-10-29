@@ -8,14 +8,15 @@ use telar_ui::{EditorHumo, EntradaNumero};
 use telar_ventana::{Boton, Evento, Tecla};
 pub(crate) fn procesar(args: &[String]) -> Option<Result<(), String>> {
     args.iter()
-        .any(|v| v == "--humo" || v == "--humo-3d" || v == "--explosion" || v == "--particulas")
+        .any(|v| v == "--humo" || v == "--humo-3d" || v == "--explosion" || v == "--particulas" || v == "--trazadores")
         .then(|| ejecutar(args))
 }
 fn ejecutar(args: &[String]) -> Result<(), String> {
     validar_modo(args)?;
     let abrir = crate::proyecto::argumento(args, "--abrir-escena")?;
     let guardar = crate::proyecto::argumento(args, "--guardar-escena")?;
-    let volumen = args.iter().any(|v| v == "--humo-3d" || v == "--explosion" || v == "--particulas");
+    let volumen =
+        args.iter().any(|v| v == "--humo-3d" || v == "--explosion" || v == "--particulas" || v == "--trazadores");
     let ruta = Path::new(guardar.as_deref().or(abrir.as_deref()).unwrap_or(predeterminada(args, volumen)));
     let (captura, limite, objetivo) = opciones(args)?;
     let exportar = crate::intercambio_archivo::destino(args, volumen)?;
@@ -180,6 +181,9 @@ fn opciones(args: &[String]) -> Result<(Option<String>, Option<u64>, u32), Strin
 }
 
 fn validar_modo(args: &[String]) -> Result<(), String> {
+    if args.iter().any(|v| v == "--trazadores") && !args.iter().any(|v| v == "--humo-3d" || v == "--explosion") {
+        return Err("--trazadores requiere --humo-3d o --explosion".into());
+    }
     if args.iter().any(|v| v == "--particulas")
         && args.iter().any(|v| matches!(v.as_str(), "--humo" | "--humo-3d" | "--explosion"))
     {
@@ -260,6 +264,9 @@ fn configurar_pulso(args: &[String], editor: &mut EditorHumo) {
 }
 
 fn predeterminada(args: &[String], volumen: bool) -> &'static str {
+    if args.iter().any(|v| v == "--trazadores") {
+        return "trazadores.tlar";
+    }
     if args.iter().any(|v| v == "--particulas") {
         return "particulas.tlar";
     }
@@ -276,6 +283,11 @@ fn crear_editor(args: &[String], volumen: bool, abrir: Option<&str>) -> Result<E
     let mut editor = EditorHumo::default();
     editor.volumen = volumen;
     configurar_pulso(args, &mut editor);
+    editor.trazadores = args.iter().any(|v| v == "--trazadores");
+    if editor.trazadores {
+        editor.vista = 3;
+        editor.mensaje = "128 trazadores MAC GPU · vida fija 2s · R reinicia · F8 partículas GEO".into();
+    }
     if args.iter().any(|v| v == "--particulas") {
         editor.particulas = Some(telar_ui::Particulas::default());
         editor.mensaje = "Emisor GPU · plazas reutilizables · Espacio / N / R · D datos · F5/F9 · F8 GEO".into();
@@ -287,7 +299,9 @@ fn crear_editor(args: &[String], volumen: bool, abrir: Option<&str>) -> Result<E
 }
 
 fn exportar_editor(gpu: &telar_gpu::Gpu, editor: &EditorHumo, ruta: &Path) -> Result<usize, String> {
-    if editor.particulas.is_some() {
+    if editor.trazadores {
+        crate::particulas_geo::exportar_trazadores(gpu, crate::volumen_vista::LADO, ruta)
+    } else if editor.particulas.is_some() {
         crate::particulas_geo::exportar(gpu, ruta)
     } else if editor.volumen {
         crate::intercambio_archivo::exportar(gpu, crate::volumen_vista::LADO, ruta)
@@ -296,7 +310,7 @@ fn exportar_editor(gpu: &telar_gpu::Gpu, editor: &EditorHumo, ruta: &Path) -> Re
     }
 }
 fn salida_geo(gpu: &telar_gpu::Gpu, editor: &EditorHumo, ruta: Option<&str>) -> Result<(), String> {
-    if editor.particulas.is_none() {
+    if editor.particulas.is_none() && !editor.trazadores {
         return crate::intercambio_archivo::salida(gpu, crate::volumen_vista::LADO, ruta);
     }
     if let Some(ruta) = ruta {
@@ -309,9 +323,35 @@ fn salida_geo(gpu: &telar_gpu::Gpu, editor: &EditorHumo, ruta: Option<&str>) -> 
 fn nombre_editor(editor: &EditorHumo) -> &'static str {
     if editor.particulas.is_some() {
         "partículas GPU"
+    } else if editor.trazadores {
+        "trazadores MAC GPU"
     } else if editor.volumen {
         "humo MAC 3D"
     } else {
         "humo MAC 2D"
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    fn args(v: &[&str]) -> Vec<String> {
+        v.iter().map(|v| (*v).into()).collect()
+    }
+    #[test]
+    fn trazadores_requieren_mac_y_conservan_controles_del_gas() -> Result<(), String> {
+        assert!(validar_modo(&args(&["--trazadores"])).is_err());
+        assert!(validar_modo(&args(&["--humo", "--trazadores"])).is_err());
+        assert!(validar_modo(&args(&["--particulas", "--explosion", "--trazadores"])).is_err());
+        let parametros = args(&["--explosion", "--trazadores"]);
+        validar_modo(&parametros)?;
+        let editor = crear_editor(&parametros, true, None)?;
+        assert!(editor.trazadores && editor.particulas.is_none());
+        assert_eq!(editor.vista, 3);
+        assert_eq!(editor.explosion.0[0].to_bits(), 0.35f32.to_bits());
+        assert_eq!(predeterminada(&parametros, true), "trazadores.tlar");
+        let plan = secuencia(&editor)?;
+        assert_eq!(plan, telar_kernel::humo3d::orden_temporal(64, 2)?);
+        Ok(())
     }
 }

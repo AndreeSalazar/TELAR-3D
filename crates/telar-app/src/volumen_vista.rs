@@ -10,7 +10,12 @@ pub(crate) fn preparar(
     validacion: bool,
 ) -> Result<(Ventana, Gpu), String> {
     let ventana = Ventana::nueva(&Config {
-        titulo: "TELAR · Humo físico 3D · prototipo 32³".into(),
+        titulo: if editor.trazadores {
+            "TELAR · Trazadores MAC GPU"
+        } else {
+            "TELAR · Humo físico 3D · prototipo 32³"
+        }
+        .into(),
         ancho: 1280,
         alto: 800,
         visible,
@@ -21,17 +26,27 @@ pub(crate) fn preparar(
         Superficie { instancia: m.instancia, ventana: m.ventana },
         ventana.tamano(),
     )?;
-    let programas =
-        telar_kernel::humo3d::Configuracion { lado: LADO, iteraciones: crate::humo_vista::iteraciones(editor) }
-            .compilar_temporal(subpasos(editor))?;
+    let config =
+        telar_kernel::humo3d::Configuracion { lado: LADO, iteraciones: crate::humo_vista::iteraciones(editor) };
+    let programas = if editor.trazadores {
+        telar_kernel::trazadores::compilar(config, subpasos(editor))?
+    } else {
+        config.compilar_temporal(subpasos(editor))?
+    };
+    let fragmentos = if editor.trazadores {
+        telar_render::volumen::fragmentos_trazadores(LADO, 64)?
+    } else {
+        telar_render::volumen::fragmentos(LADO, 64)?
+    };
     gpu.preparar_campos(
-        Sombreadores {
-            vertices: &telar_render::visor_rayos::vertices(),
-            fragmentos: &telar_render::volumen::fragmentos(LADO, 64)?,
-        },
+        Sombreadores { vertices: &telar_render::visor_rayos::vertices(), fragmentos: &fragmentos },
         PlanCampos {
             elementos: LADO * LADO * LADO,
-            palabras: telar_kernel::humo3d::CANALES,
+            palabras: if editor.trazadores {
+                telar_kernel::trazadores::canales(LADO)
+            } else {
+                telar_kernel::humo3d::CANALES
+            },
             programas: &programas.codigos,
             secuencia: &programas.orden,
         },

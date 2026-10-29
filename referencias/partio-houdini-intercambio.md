@@ -113,3 +113,8 @@ El estudio de estas fuentes no sustituye los hitos físicos pendientes de
 [combustión, iluminación y salida](../docs/PLAN-EXPLOSION-PRODUCCION.md).
 
 Entrega aplicada: [telar-intercambio y exportación real de campos a GEO](../docs/INTERCAMBIO-GEO.md). No implementa BGEO binario ni PTC. El siguiente paso propio añade un emisor GPU independiente y GEO con edad/vida: [PARTICULAS-GPU.md](../docs/PARTICULAS-GPU.md). No se ha probado con Partio/Houdini.
+
+Nueva aplicación propia: [trazadores MAC](../docs/TRAZADORES-MAC.md), inspirados conceptualmente en
+[POP Advect by Volumes de SideFX](https://www.sidefx.com/docs/houdini/nodes/dop/popadvectbyvolumes.html).
+El campo GPU guía los puntos; GEO conserva atributos de vida. No se ha ejecutado
+ese operador ni Partio para comparar datos, calidad o rendimiento: **ABIERTO**.

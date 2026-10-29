@@ -153,3 +153,5 @@ Fuente expansiva inicial: `telar --explosion` o **TELAR Explosion 3D.cmd**. Puls
 Intercambio inicial inspirado en el estudio de Partio: `telar --explosion --pasos 20 --exportar-geo target/pulso.geo`, F8 en el laboratorio 3D y `--inspeccionar-geo archivo.geo`. Crate propio no_std, sin bibliotecas externas. [Contrato, costes y compatibilidad pendiente](docs/INTERCAMBIO-GEO.md).
 
 Partículas residentes: `telar --particulas` o **TELAR Particulas.cmd**. Nacimiento, edad/vida, reciclaje e identidad en GPU, diez controles, cuatro vistas y exportación GEO. Base independiente del humo; [contrato, pruebas y límites](docs/PARTICULAS-GPU.md).
+
+Trazadores acoplados al humo: `telar --explosion --trazadores` o **TELAR Trazadores.cmd**. 128 puntos leen velocidad MAC y dt directamente en GPU, con vista propia y GEO de vivas. [Contrato y evidencia](docs/TRAZADORES-MAC.md).

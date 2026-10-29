@@ -69,6 +69,15 @@ pub fn orden_adaptativo(maximo: u32) -> Result<Vec<usize>, &'static str> {
     Ok(orden)
 }
 pub(super) fn programa(config: Configuracion, etapa: u32, adaptativo: bool, volumen: bool) -> Vec<u32> {
+    programa_trazadores(config, etapa, adaptativo, volumen, false)
+}
+pub(super) fn programa_trazadores(
+    config: Configuracion,
+    etapa: u32,
+    adaptativo: bool,
+    volumen: bool,
+    trazadores: bool,
+) -> Vec<u32> {
     let mut modulo = Modulo::nuevo();
     let memoria = Memoria::nueva(&mut modulo, config.lado, volumen);
     let v3 = modulo.tipo_vector(memoria.entero, 3);
@@ -113,6 +122,9 @@ pub(super) fn programa(config: Configuracion, etapa: u32, adaptativo: bool, volu
         crate::humo_pasos::emitir(&mut f, &memoria, pixel, etapa, config.iteraciones);
     } else {
         crate::humo_control::emitir(&mut f, &memoria, pixel, etapa);
+    }
+    if trazadores {
+        crate::trazadores_paso::emitir(&mut f, &memoria, pixel);
     }
     f.saltar(fin);
     f.bloque(fin);

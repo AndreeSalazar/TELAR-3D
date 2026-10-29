@@ -129,3 +129,10 @@ heat=clamp(1-age/life), máscara visual sin unidades térmicas.
 Solo se exportan vivas: no constituye caché reanudable. Coste concreto del
 laboratorio y evidencia GPU en [PARTICULAS-GPU.md](PARTICULAS-GPU.md).
 Compatibilidad con lectores Houdini/Partio sigue **ABIERTO**.
+
+## Trazadores MAC
+
+`--explosion --trazadores` o `--humo-3d --trazadores` exporta las plazas vivas en
+el mismo perfil de ocho atributos. F8 cambia a puntos transportados en este modo;
+sin el modificador sigue exportando las muestras del volumen. Descarga explícita
+5700 B, sin caché reanudable ni certificación externa. Véase [TRAZADORES-MAC.md](TRAZADORES-MAC.md).

@@ -17,6 +17,7 @@ mod sombras;
 mod superficie;
 mod tipos;
 mod trazado;
+mod trazadores;
 pub mod visor_rayos;
 pub mod volumen;
 mod volumen_muestreo;

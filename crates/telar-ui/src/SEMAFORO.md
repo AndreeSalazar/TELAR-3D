@@ -88,3 +88,14 @@ medición del pico físico. E/S: v12 de 56 B y GEO de vivas; descarga explícita
 compatibilidad externa certificada; perfil de ocho atributos separado del MAC.
 Pruebas y captura reales: docs/PARTICULAS-GPU.md y telar-app/tests/particulas_gpu.rs.
 El estado de riesgo de esta carpeta se conserva; no significa consumo cero.
+
+Trazadores MAC (28-10-2026): riesgo de transporte/interpolación y accesos a cola
+residentes, con límites comprobados. CPU: UI/constantes y E/S solicitada; referencia
+escalar solo tests. GPU: hasta 128 transportes por subpaso y splats hasta 512²;
+sin descarga estable ni fuerzas sobre gas. VRAM lógica a 32³: 2359300 B para
+campos/cola, más imágenes/pipelines no medidos. RAM: vectores/texto al exportar.
+Lecturas explícitas: D 576 B, GEO 5700 B descargados; configuración física v11, sin caché.
+Ritmo de trabajo: diagnóstico/transporte cada subpaso; E/S solo explícita. Límites:
+vida fija 2s, 128 plazas, sin estelas, colisión solo de destino, no producción.
+Prueba/captura reales y siguiente contrato: docs/TRAZADORES-MAC.md. Se conserva
+el estado de riesgo de la carpeta; no se anuncia consumo cero.

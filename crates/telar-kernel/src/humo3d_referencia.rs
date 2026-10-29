@@ -228,7 +228,7 @@ fn proyectar(lado: usize, provisional: &[f32], presion: &[f32], salida: &mut [f3
     clippy::cast_sign_loss,
     reason = "coordenadas tras clamp al dominio <=64"
 )]
-fn muestra(estado: &[f32], lado: usize, coords: [f32; 3], canal: usize, fluidos: &[bool]) -> f32 {
+pub(crate) fn muestra(estado: &[f32], lado: usize, coords: [f32; 3], canal: usize, fluidos: &[bool]) -> f32 {
     let halo = canal < 3;
     let minimo = if halo { -1.0 } else { 0.0 };
     let coords = coords.map(|v| v.clamp(minimo, (lado - 1) as f32) + 1.0);

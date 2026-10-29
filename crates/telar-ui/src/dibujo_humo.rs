@@ -41,6 +41,8 @@ impl EditorHumo {
             [20.0, 18.0, 145.0, 32.0],
             if self.particulas.is_some() {
                 "TELAR · Chispas"
+            } else if self.trazadores {
+                "TELAR · Flujo"
             } else if self.volumen {
                 "TELAR · 3D"
             } else {
@@ -53,6 +55,8 @@ impl EditorHumo {
             [180.0, 22.0, ancho - 200.0, 30.0],
             if self.particulas.is_some() {
                 "Partículas GPU · arrastrar: órbita · rueda: zoom · Espacio / N / R · F8: GEO"
+            } else if self.trazadores {
+                "MAC 32³ · 128 trazadores GPU · órbita / rueda · Espacio / N / R · F8: partículas GEO"
             } else if self.volumen {
                 "Campos físicos 32³ · arrastrar: órbita · rueda: zoom · Espacio / N / R · F8: GEO"
             } else {
@@ -127,6 +131,8 @@ impl EditorHumo {
     fn vistas(&self) -> [&'static str; 4] {
         if self.particulas.is_some() {
             ["Belleza", "Edad / vida", "Velocidad", "Identidad"]
+        } else if self.trazadores {
+            ["Densidad", "Calor", "Velocidad", "Trazadores"]
         } else {
             ["Densidad", "Calor", "Velocidad", "Divergencia"]
         }

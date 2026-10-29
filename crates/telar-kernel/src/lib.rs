@@ -25,6 +25,8 @@ mod particulas_memoria;
 mod particulas_paso;
 mod particulas_resumen;
 mod servicios;
+pub mod trazadores;
+mod trazadores_paso;
 mod verificacion;
 pub use buzon::Buzon;
 pub use coordinador::{compilar, compilar_con_arranque, compilar_con_cache};

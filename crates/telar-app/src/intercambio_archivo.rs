@@ -26,7 +26,8 @@ pub(crate) fn procesar(args: &[String]) -> Option<Result<(), String>> {
         if args.iter().any(|v| {
             matches!(
                 v.as_str(),
-                "--exportar-geo"
+                "--trazadores"
+                    | "--exportar-geo"
                     | "--humo"
                     | "--humo-3d"
                     | "--explosion"

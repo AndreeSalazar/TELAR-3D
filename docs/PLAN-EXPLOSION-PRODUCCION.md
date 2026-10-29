@@ -13,7 +13,7 @@ Se estudian guías públicas; no se dispone del código propietario de Houdini.
 | P2 · Tiempo y colisiones | Subpasos temporales, control de estabilidad, obstáculos y velocidades de colisión; error de presión medido | Parcial: subpasos, predictor CFL GPU y esfera estática probados; faltan mallas y colisiones móviles |
 | P3 · Explosión | Fuente animada de corta duración, expansión objetivo, reacción/enfriamiento y humo; parámetros separados de simulación y aspecto | Parcial: pulso finito de calor/humo y expansión compensada en GPU; combustible/reacción y fuentes dirigibles pendientes |
 | P4 · Render volumétrico | Absorción, emisión, sombras y dispersión; temperatura con unidades/mapeo y gestión de color | Pendiente; existe fuego analítico separado |
-| P5 · Secundarios | Trayectorias, estelas, chispas y fragmentos con edad/vida; fuentes secundarias controlables | Parcial: emisor independiente de 128 partículas GPU, vida/identidad y GEO; faltan acoplamiento al gas, estelas y fragmentos |
+| P5 · Secundarios | Trayectorias, estelas, chispas y fragmentos con edad/vida; fuentes secundarias controlables | Parcial: emisor independiente y 128 trazadores pasivos acoplados a velocidad MAC GPU, vida/identidad y GEO; faltan emisión por campos, estelas y fragmentos |
 | P6 · Caché y salida | Estado versionado por fotograma/semilla, reanudación comprobada, secuencia HDR y pases | Caché/seq. pendientes; intercambio inicial de muestras GEO implementado, sin reanudación de campos |
 | P7 · Plano final | Cámara, composición, rango dinámico y comparación reproducible de secuencia; coste GPU/VRAM publicado | Pendiente |
 
@@ -64,3 +64,5 @@ El registro distingue partículas de cachés de campos y BGEO clásico de varian
 modernas. [La primera aplicación propia](INTERCAMBIO-GEO.md) exporta/inspecciona muestras GEO; la compatibilidad externa sigue ABIERTA, sin dependencias externas ni cierre de esos hitos.
 
 Primera base de P5: [PARTICULAS-GPU.md](PARTICULAS-GPU.md). No cierra P5/P6; los estados de partículas y humo siguen separados.
+
+Primer acoplamiento de P5 con P1/P3: [TRAZADORES-MAC.md](TRAZADORES-MAC.md). Transporte pasivo y unidireccional; el emisor balístico sigue separado. No cierra P3/P4/P5/P6.

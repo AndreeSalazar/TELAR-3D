@@ -172,3 +172,5 @@ dispersión. Dominios en [PARTICULAS-GPU.md](PARTICULAS-GPU.md); plazas/semilla 
 Lector acotado a 57 B, CRC y validación antes de aplicar. Rechaza otros modos.
 F5/F9 conservan configuración; abrir reinicia plazas y reloj. Sin cámara,
 generaciones, posiciones ni caché reanudable.
+
+El modo `--trazadores` utiliza configuración física MAC v11. El modificador de presentación/transporte no se serializa: reabrir con el mismo modificador. No guarda plazas ni reloj; [TRAZADORES-MAC.md](TRAZADORES-MAC.md).

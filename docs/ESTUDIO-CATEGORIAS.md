@@ -94,3 +94,5 @@ Estas piezas siguen pendientes. El catálogo organiza las capacidades actuales y
 el plan; no sustituye el desarrollo de los solvers, materiales y herramientas.
 
 La tarjeta **Partículas GPU** de Simulación abre `--particulas`: emisor independiente con 128 plazas, diez controles, cuatro vistas, F5/F9 v12 y F8 GEO con edad/vida. No anuncia líquidos ni acoplamiento al gas. Ver [PARTICULAS-GPU.md](PARTICULAS-GPU.md).
+
+Como laboratorio de transporte puede abrirse humo 3D o explosión con `--trazadores` mediante **TELAR Trazadores.cmd**. Sigue usando los parámetros del gas; la cuarta vista inspecciona 128 puntos pasivos. Ver [TRAZADORES-MAC.md](TRAZADORES-MAC.md).

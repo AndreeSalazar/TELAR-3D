@@ -14,6 +14,18 @@ use hilo_spirv::{
 /// # Errors
 /// Rechaza lados fuera de 4..64 o pasos de integración fuera de 16..128.
 pub fn fragmentos(lado: u32, pasos: u32) -> Result<Vec<u32>, &'static str> {
+    fragmentos_internos(lado, pasos, false)
+}
+/// Visor MAC con trazadores pasivos en la cuarta vista.
+/// # Errors
+/// Rechaza lados fuera de 8..64 o pasos fuera de 16..128.
+pub fn fragmentos_trazadores(lado: u32, pasos: u32) -> Result<Vec<u32>, &'static str> {
+    if !(8..=64).contains(&lado) {
+        return Err("visor de trazadores requiere lado 8..64");
+    }
+    fragmentos_internos(lado, pasos, true)
+}
+fn fragmentos_internos(lado: u32, pasos: u32, trazadores: bool) -> Result<Vec<u32>, &'static str> {
     if !(4..=64).contains(&lado) || !(16..=128).contains(&pasos) {
         return Err("visor volumétrico fuera de presupuesto");
     }
@@ -38,7 +50,12 @@ pub fn fragmentos(lado: u32, pasos: u32) -> Result<Vec<u32>, &'static str> {
     let origen4 = t.cargar(&mut f, 7);
     let origen = t.xyz(&mut f, origen4);
     let direccion = direccion(&mut f, &t, &mat, uv);
-    let rgb = integrar(&mut f, &t, &mat, &volumen, origen, direccion, vista, pasos);
+    let integrar_vista = |f: &mut Funcion| integrar(f, &t, &mat, &volumen, origen, direccion, vista, pasos);
+    let rgb = if trazadores {
+        crate::trazadores::sumar(&mut f, &t, &mat, &volumen, [origen, direccion, vista], integrar_vista)
+    } else {
+        integrar_vista(&mut f)
+    };
     let color = crate::superficie::salida(&mut f, &t, rgb, expo, srgb);
     let color =
         crate::humo::indicador(&mut f, &t, &mat, volumen.buffer, volumen.puntero, uv, 16 * lado * lado * lado, color);

@@ -3,6 +3,7 @@
 #[allow(dead_code, reason = "se comprueba exportación; el resto de comandos pertenece a la app")]
 #[path = "../src/intercambio_archivo.rs"]
 mod intercambio_archivo;
+#[allow(dead_code, reason = "exportador MAC se prueba en trazadores_gpu")]
 #[path = "../src/particulas_geo.rs"]
 mod particulas_geo;
 #[allow(dead_code, reason = "adaptador de campos enlazado por la E/S compartida")]

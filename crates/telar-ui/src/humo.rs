@@ -65,9 +65,15 @@ fn dominio(i: usize) -> (&'static str, f32, f32) {
     }
 }
 /// Inspector de los solvers MAC; los campos físicos viven en GPU.
+#[allow(
+    clippy::struct_excessive_bools,
+    reason = "opciones ortogonales de presentación, transporte, animación y edición"
+)]
 pub struct EditorHumo {
     /// Selecciona presentación 3D; la app mantiene los campos y su formato por separado.
     pub volumen: bool,
+    /// Trazadores pasivos MAC en la cuarta vista; configuración física compartida.
+    pub trazadores: bool,
     /// Parámetros específicos 3D, guardados aparte de los diez comunes.
     pub volumen_opciones: crate::VolumenHumo,
     /// Pulso y divergencia objetivo; se activan con duración positiva.
@@ -94,6 +100,7 @@ impl Default for EditorHumo {
         Self {
             animando: true,
             volumen: false,
+            trazadores: false,
             volumen_opciones: crate::VolumenHumo::default(),
             explosion: crate::ExplosionHumo::default(),
             particulas: None,

@@ -108,7 +108,6 @@ vida válida, tipos, aridad, truncamiento y nube vacía; v12 verifica CRC.
 Referencia CPU solo para ensayos, no para simular el producto.
 
 Comparación Houdini/Partio: **ABIERTO**; solo hay roundtrip propio.
-P5 sigue parcial: falta emitir desde humo/combustión, acoplar velocidad del gas,
-estelas, fragmentos, fuentes dirigibles y presupuesto escalable. La siguiente
-entrega debe comprobar advección de partículas por el campo MAC antes de prometer
-secundarios físicamente conectados a la explosión.
+P5 sigue parcial: falta emitir desde humo/combustión, acoplar partículas inerciales al gas,
+estelas, fragmentos, fuentes dirigibles y presupuesto escalable. El primer transporte pasivo por campo MAC ya tiene una entrega separada en
+[TRAZADORES-MAC.md](TRAZADORES-MAC.md), sin fusionar los controles de este emisor.

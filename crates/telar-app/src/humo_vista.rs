@@ -81,7 +81,15 @@ pub(crate) fn datos_editor(gpu: &Gpu, editor: &EditorHumo) -> Result<String, Str
         return crate::particulas_vista::datos(gpu);
     }
     if editor.volumen {
-        resumen(gpu, telar_kernel::humo3d::CONTROL * crate::volumen_vista::LADO.pow(3), true)
+        let resumen = resumen(gpu, telar_kernel::humo3d::CONTROL * crate::volumen_vista::LADO.pow(3), true)?;
+        if editor.trazadores {
+            let flags = gpu.inspeccionar_rango_campos(17 * crate::volumen_vista::LADO.pow(3) + 10 * 128, 128)?;
+            let vivas = flags.iter().filter(|v| f32::from_bits(**v) > 0.0).count();
+            let malas = flags.iter().filter(|v| f32::from_bits(**v) < 0.0).count();
+            Ok(format!("{resumen} · {vivas} trazadores · {malas} cuarentena"))
+        } else {
+            Ok(resumen)
+        }
     } else {
         datos(gpu)
     }
