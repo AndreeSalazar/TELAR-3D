@@ -20,6 +20,7 @@ mod trazado;
 mod trazadores;
 mod vfx_estelas;
 pub mod vfx_final;
+mod vfx_visibilidad;
 mod vfx_volumen;
 pub mod visor_rayos;
 pub mod volumen;

@@ -1,7 +1,16 @@
-//! Estelas gaussianas de cuatro segmentos; contribución emisiva diagnóstica sin oclusión por humo.
+//! Estelas gaussianas de cuatro segmentos; transmisión opcional hacia su punto más próximo al rayo.
 use crate::{tipos::Tipos, trazado::Matematica, volumen_muestreo::Volumen};
 use hilo_spirv::{Funcion, Id, op};
-pub(super) fn sumar(f: &mut Funcion, t: &Tipos, mat: &Matematica, v: &Volumen, id: Id, datos: [Id; 4]) -> Id {
+#[allow(clippy::too_many_arguments, reason = "contexto SPIR-V y política de oclusión del segmento")]
+pub(super) fn sumar(
+    f: &mut Funcion,
+    t: &Tipos,
+    mat: &Matematica,
+    v: &Volumen,
+    id: Id,
+    datos: [Id; 4],
+    ocluir: bool,
+) -> Id {
     let [ojo, direccion, mut inicio, mut rgb] = datos;
     let intensidad = crate::vfx_volumen::ajuste(f, t, v, 27);
     for muestra in 0..4 {
@@ -16,7 +25,10 @@ pub(super) fn sumar(f: &mut Funcion, t: &Tipos, mat: &Matematica, v: &Volumen, i
             f.cargar(t.real, ptr)
         });
         let fin = f.construir(t.v3, &xyz);
-        let peso = segmento(f, t, mat, [ojo, direccion, inicio, fin]);
+        let [mut peso, punto] = segmento(f, t, mat, [ojo, direccion, inicio, fin]);
+        if ocluir {
+            peso = crate::vfx_visibilidad::filtrar(f, t, mat, v, [ojo, punto, peso]);
+        }
         let factor = Matematica::escalar(f, [0.7, 0.5, 0.3, 0.15][muestra as usize]);
         let peso = f.binaria(op::F_MUL, t.real, peso, factor);
         let peso = f.binaria(op::F_MUL, t.real, peso, intensidad);
@@ -27,7 +39,7 @@ pub(super) fn sumar(f: &mut Funcion, t: &Tipos, mat: &Matematica, v: &Volumen, i
     }
     rgb
 }
-fn segmento(f: &mut Funcion, t: &Tipos, mat: &Matematica, c: [Id; 4]) -> Id {
+fn segmento(f: &mut Funcion, t: &Tipos, mat: &Matematica, c: [Id; 4]) -> [Id; 2] {
     let [ojo, dir, inicio, fin] = c;
     let rel_a = f.binaria(op::F_SUB, t.v3, inicio, ojo);
     let rel_b = f.binaria(op::F_SUB, t.v3, fin, ojo);
@@ -58,5 +70,9 @@ fn segmento(f: &mut Funcion, t: &Tipos, mat: &Matematica, c: [Id; 4]) -> Id {
     let dz = f.binaria(op::F_MUL, t.real, dz, fraccion);
     let z = f.binaria(op::F_ADD, t.real, za, dz);
     let delante = f.binaria(op::F_ORD_GREATER_THAN, mat.booleano, z, cero);
-    f.elegir(t.real, delante, peso, cero)
+    let peso = f.elegir(t.real, delante, peso, cero);
+    let delta = f.binaria(op::F_SUB, t.v3, fin, inicio);
+    let delta = f.binaria(op::VECTOR_TIMES_SCALAR, t.v3, delta, fraccion);
+    let punto = f.binaria(op::F_ADD, t.v3, inicio, delta);
+    [peso, punto]
 }

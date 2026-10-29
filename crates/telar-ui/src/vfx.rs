@@ -43,7 +43,7 @@ impl Vfx {
             24 => ("Fuerza de detalle", 0.0, 5.0),
             25 => ("Frecuencia del detalle", 1.0, 20.0),
             26 => ("Disipación de combustible", 0.0, 2.0),
-            27 => ("Intensidad de estelas", 0.0, 10.0),
+            27 => ("Brillo chispas / estelas", 0.0, 10.0),
             _ => return None,
         };
         Some(Control { nombre, minimo, maximo, valor: self.0[i] })

@@ -1,4 +1,4 @@
-//! Vista diagnóstica de puntos gaussianos MAC; no oculta por profundidad del humo.
+//! Puntos MAC: diagnóstico independiente y composición VFX con transmisión en Belleza.
 use crate::{tipos::Tipos, trazado::Matematica, volumen_muestreo::Volumen};
 use hilo_spirv::{Funcion, Id, op};
 pub(super) fn sumar(
@@ -19,7 +19,43 @@ pub(super) fn sumar(
     f.saltar_si(mostrar, si, no);
     f.bloque(si);
     let fondo = mat.vector(f, [0.008, 0.012, 0.018]);
-    let rgb = f.repetir(128, t.v3, fondo, |f, id, antes| {
+    let rgb = puntos(f, t, mat, v, [ojo, direccion], fondo, false);
+    // El bucle termina en otra etiqueta: capturar el predecesor real con bloque puente.
+    let puente = f.etiqueta();
+    f.saltar(puente);
+    f.bloque(puente);
+    f.saltar(fin);
+    f.bloque(no);
+    let mut previo = previo(f);
+    if v.vfx {
+        let codigo = Matematica::escalar(f, 0.0);
+        let belleza = f.binaria(180, mat.booleano, vista, codigo);
+        let componer = f.etiqueta();
+        let conservar = f.etiqueta();
+        let union = f.etiqueta();
+        f.fusion(union);
+        f.saltar_si(belleza, componer, conservar);
+        f.bloque(componer);
+        let suma = puntos(f, t, mat, v, [ojo, direccion], previo, true);
+        let puente = f.etiqueta();
+        f.saltar(puente);
+        f.bloque(puente);
+        f.saltar(union);
+        f.bloque(conservar);
+        f.saltar(union);
+        f.bloque(union);
+        previo = f.phi(t.v3, &[(suma, puente), (previo, conservar)]);
+    }
+    let puente_no = f.etiqueta();
+    f.saltar(puente_no);
+    f.bloque(puente_no);
+    f.saltar(fin);
+    f.bloque(fin);
+    f.phi(t.v3, &[(rgb, puente), (previo, puente_no)])
+}
+#[allow(clippy::too_many_arguments, reason = "cámara, fondo y política explícita de composición")]
+fn puntos(f: &mut Funcion, t: &Tipos, mat: &Matematica, v: &Volumen, camara: [Id; 2], fondo: Id, ocluir: bool) -> Id {
+    f.repetir(128, t.v3, fondo, |f, id, antes| {
         let flag = leer(f, t, v, id, 10);
         let uno = Matematica::escalar(f, 1.0);
         let encendida = f.binaria(180, mat.booleano, flag, uno);
@@ -29,27 +65,17 @@ pub(super) fn sumar(
         f.fusion(union);
         f.saltar_si(encendida, viva, muerta);
         f.bloque(viva);
-        let color = splat(f, t, mat, v, id, [ojo, direccion]);
+        let color = splat(f, t, mat, v, id, camara, ocluir);
         let suma = f.binaria(op::F_ADD, t.v3, antes, color);
+        let puente = f.etiqueta();
+        f.saltar(puente);
+        f.bloque(puente);
         f.saltar(union);
         f.bloque(muerta);
         f.saltar(union);
         f.bloque(union);
-        f.phi(t.v3, &[(suma, viva), (antes, muerta)])
-    });
-    // El bucle termina en otra etiqueta: capturar el predecesor real con bloque puente.
-    let puente = f.etiqueta();
-    f.saltar(puente);
-    f.bloque(puente);
-    f.saltar(fin);
-    f.bloque(no);
-    let previo = previo(f);
-    let puente_no = f.etiqueta();
-    f.saltar(puente_no);
-    f.bloque(puente_no);
-    f.saltar(fin);
-    f.bloque(fin);
-    f.phi(t.v3, &[(rgb, puente), (previo, puente_no)])
+        f.phi(t.v3, &[(suma, puente), (antes, muerta)])
+    })
 }
 fn leer(f: &mut Funcion, t: &Tipos, v: &Volumen, id: Id, canal: u32) -> Id {
     let entero = f.modulo().tipo_u32();
@@ -59,7 +85,8 @@ fn leer(f: &mut Funcion, t: &Tipos, v: &Volumen, id: Id, canal: u32) -> Id {
     let ptr = f.acceso(v.puntero, v.buffer, &[cero, indice]);
     f.cargar(t.real, ptr)
 }
-fn splat(f: &mut Funcion, t: &Tipos, mat: &Matematica, v: &Volumen, id: Id, camara: [Id; 2]) -> Id {
+#[allow(clippy::too_many_arguments, reason = "contexto SPIR-V y política explícita de oclusión")]
+fn splat(f: &mut Funcion, t: &Tipos, mat: &Matematica, v: &Volumen, id: Id, camara: [Id; 2], ocluir: bool) -> Id {
     let [ojo, direccion] = camara;
     let xyz = core::array::from_fn::<_, 3, _>(|i| leer(f, t, v, id, u32::try_from(i).unwrap_or(0)));
     let p = f.construir(t.v3, &xyz);
@@ -74,7 +101,14 @@ fn splat(f: &mut Funcion, t: &Tipos, mat: &Matematica, v: &Volumen, id: Id, cama
     let exponente = f.binaria(op::F_MUL, t.real, distancia, escala);
     let peso = f.glsl(t.real, 27, &[exponente]);
     let delante = f.binaria(op::F_ORD_GREATER_THAN, mat.booleano, proy, cero);
-    let peso = f.elegir(t.real, delante, peso, cero);
+    let mut peso = f.elegir(t.real, delante, peso, cero);
+    if ocluir {
+        peso = crate::vfx_visibilidad::filtrar(f, t, mat, v, [ojo, p, peso]);
+    }
+    if v.vfx {
+        let brillo = crate::vfx_volumen::ajuste(f, t, v, 27);
+        peso = f.binaria(op::F_MUL, t.real, peso, brillo);
+    }
     let edad = leer(f, t, v, id, 6);
     let medio = if v.vfx {
         let vida = crate::vfx_volumen::ajuste(f, t, v, 6);
@@ -89,5 +123,5 @@ fn splat(f: &mut Funcion, t: &Tipos, mat: &Matematica, v: &Volumen, id: Id, cama
     let azul = Matematica::escalar(f, 0.2);
     let rgb = f.construir(t.v3, &[uno, joven, azul]);
     let rgb = f.binaria(op::VECTOR_TIMES_SCALAR, t.v3, rgb, peso);
-    if v.vfx { crate::vfx_estelas::sumar(f, t, mat, v, id, [ojo, direccion, p, rgb]) } else { rgb }
+    if v.vfx { crate::vfx_estelas::sumar(f, t, mat, v, id, [ojo, direccion, p, rgb], ocluir) } else { rgb }
 }

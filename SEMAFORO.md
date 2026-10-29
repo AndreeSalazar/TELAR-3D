@@ -40,3 +40,18 @@ Limites adicionales: 32 cubico, 128 secundarios, cuatro posiciones de historial,
 dispersion simple, sin oclusion de estelas ni color de produccion; cache ligada
 a GPU/driver/Vulkan, requiere enlaces duros. No equivale a coste cero ni a Pyro.
 Contrato, fuentes, evidencia real y pendientes: docs/PLANO-VFX.md.
+
+
+Composicion VFX (29-10-2026): actualiza el limite anterior de estelas separadas.
+Belleza suma puntos/segmentos con transmision aproximada del humo y esfera;
+el diagnostico Particulas mantiene inspeccion sin extincion. CPU conserva
+preparacion/eventos/envios y E/S explicita; no mezcla pixeles ni lee por cuadro.
+GPU evalua hasta 128 puntos y cuatro segmentos por punto/pixel; cobertura
+mayor que 1e-5 activa ocho muestras de transmision por aporte. No hay reserva
+VRAM nueva, se conserva el contrato de 4063236 B logicos mas recursos del
+backend. RAM/E/S adicionales solo compilacion, pruebas y capturas explicitas;
+los ensayos usan target y temporales del sistema. Ritmo: cada pixel en visor
+o muestra HDR; tiempo GPU y pico fisico siguen sin medir. Riesgo: coste por
+pixel, aproximacion de oclusion de ocho pasos y contribucion aditiva sin
+iluminar el gas; no garantiza FPS ni calidad profesional. Se conserva el
+estado declarado de la carpeta. Evidencia y limites: docs/VFX-COMPUESTO.md.

@@ -160,3 +160,6 @@ Plano reactivo integrado: `telar --plano-vfx` o **TELAR Plano VFX.cmd**. Combust
 reacción/enfriamiento, secundarios con historial, luz y sombra volumétricas,
 28 controles adicionales, .tlar v13, caché exacta y secuencias HDR a 1..1024 spp.
 Prototipo 32³; [comandos, costes, pruebas y pendientes](docs/PLANO-VFX.md).
+
+Belleza combina ahora fuego/humo y secundarios: las chispas y sus estelas
+se atenúan por el volumen, con brillo editable. [Captura y pruebas](docs/VFX-COMPUESTO.md).

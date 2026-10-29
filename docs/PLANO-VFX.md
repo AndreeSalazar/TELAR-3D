@@ -23,8 +23,9 @@ cantidad 1..128 y semilla 0..65535 son enteros.
 Órbita con arrastre, zoom con rueda; Espacio pausa, N avanza y R reinicia.
 F5/F9 guarda/abre parámetros .tlar v13, reiniciando los campos al abrir.
 F8 exporta partículas vivas GEO; D solicita diagnóstico. Las vistas son
-Belleza, Calor, Combustible y Partículas. Los dos últimos pases son diagnósticos;
-las estelas aparecen en Partículas, todavía separadas de Belleza.
+Belleza, Calor, Combustible y Partículas. Calor, Combustible y Partículas son
+diagnósticos. Belleza integra ahora chispas y estelas atenuadas por el humo;
+Partículas permite inspeccionarlas sin esa atenuación.
 
 ## Render y reanudación
 
@@ -74,7 +75,9 @@ Hasta 128 secundarios nacen según umbral de calor, siguen velocidad del gas
 con respuesta exponencial y gravedad, guardan edad/vida/identidad e historial
 de cuatro posiciones. Semilla permuta una retícula fija de nacimiento; no es
 un emisor aleatorio continuo. El acoplamiento es unidireccional. Faltan
-fragmentos, detección continua de colisión y estelas profundas con oclusión.
+fragmentos, detección continua de colisión y estelas volumétricas físicas.
+La [composición de secundarios](VFX-COMPUESTO.md) añade transmisión aproximada
+hacia cada punto/segmento; no ilumina el gas desde las chispas.
 
 Render integra Beer–Lambert, emisión artística, una luz puntual con sombra y
 dispersión simple Henyey–Greenstein. La esfera aporta opacidad a la sombra,
@@ -121,7 +124,8 @@ Las pruebas son `telar-app/tests/vfx_gpu.rs`, `cache_reanudable.rs` y
 
 P3–P6 avanzan parcialmente; P7 sigue abierto. Prioridad: medir tiempos GPU,
 resolver errores a mayor resolución, regiones activas y colisiones generales;
-después integrar secundarios/volumen/superficies en un mismo render. El flujo
+después integrar superficies generales y emisión de secundarios que ilumine
+el volumen. El flujo
 artístico necesita grafo VFX editable, atributos, curvas, deshacer y proyecto
 unificado. EXR/OpenVDB, gestión de color, reanudación portátil y validación
 externa quedan pendientes. No basta elevar spp para cerrar estos hitos.
