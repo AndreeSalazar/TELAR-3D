@@ -36,6 +36,10 @@ pub(crate) struct Visor {
 }
 
 impl Visor {
+    pub(crate) fn configurar_cache_campos(&self, activa: bool, mascara: u32) -> Result<(), String> {
+        self.campos.as_ref().ok_or("falta el estado de campos")?.configurar_cache(activa, mascara);
+        Ok(())
+    }
     pub(crate) fn carga_campos(&self) -> crate::CargaCampos {
         self.campos.as_ref().map_or_else(crate::CargaCampos::default, super::campos::Campos::carga)
     }

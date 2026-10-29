@@ -1,0 +1,87 @@
+TELAR · monitor vivo
+Validación Vulkan: true
+Formato/tamaño: (50, (1280, 800))
+Perfil (límites; no velocidad): PerfilGpu {
+    fabricante: 4318,
+    dispositivo: 9476,
+    tipo: 2,
+    controlador: 2559737856,
+    vulkan: 4211029,
+    grupos_x: 2147483647,
+    invocaciones: 1024,
+    hilos_x: 1024,
+    compartida: 49152,
+    rango_almacen: 4294967295,
+    almacenes: 1048576,
+    memoria_local: 12927893504,
+}
+Heaps (estimaciones de proceso): [
+    MemoriaHeap {
+        capacidad: 12703498240,
+        local: true,
+        uso: Some(
+            63926272,
+        ),
+        presupuesto: Some(
+            11898191872,
+        ),
+    },
+    MemoriaHeap {
+        capacidad: 8550924288,
+        local: false,
+        uso: Some(
+            51625984,
+        ),
+        presupuesto: Some(
+            7854942618,
+        ),
+    },
+    MemoriaHeap {
+        capacidad: 224395264,
+        local: true,
+        uso: Some(
+            6295552,
+        ),
+        presupuesto: Some(
+            218099712,
+        ),
+    },
+]
+Control GPU: Some([0.0, 2.0, 0.16941714, 0.0048541287, 0.005, 1.0, 0.035270587, 0.05207222, 396.0, 0.009581111, 0.008, 0.593826, 0.15201946, 2.8959706, 0.0, 0.0018713215])
+Humo: [0.13, 3.0, 2.0, 0.08, 0.15, 0.016, 1.0, 64.0, 0.02, 0.005]
+Tiempo/esfera: [2.0, 0.18, 0.42, 0.5]
+Pulso: [0.35, 8.0, 5.0, 1.0]
+VFX: Some(Vfx([8.0, 4.0, 0.25, 4.0, 0.8, 0.4, 2.0, 128.0, 7.0, 1.0, 5.0, 0.3, -1.0, 2.0, 1.0, 12.0, 8.0, 0.7, 3.0, 0.2, 0.5, 0.2, 0.5, 0.1, 1.5, 8.0, 0.02, 1.0]))
+Partículas: None
+MONITOR VIVO · M: ocultar
+NVIDIA GeForce RTX 3060
+75.0 fps · cuadro 13.32 ms
+P95 cuadro 23.40 ms
+Host total medio 13.32 ms
+Host prep/obs 0.000/0.005 ms
+Valla/adq 13.010/0.012 ms
+Grabar/env 0.181/0.070 ms
+Presentar 0.041 ms
+GPU cálculo 0.867 ms
+GPU escena 2.598 ms
+GPU UI/final 0.045 ms
+Heap 0 local · 12115 MiB
+Uso~ 60 / 11347 MiB~
+Heap 1 host · 8154 MiB
+Uso~ 49 / 7491 MiB~
+Heap 2 local · 214 MiB
+Uso~ 6 / 207 MiB~
+Campos lógicos 3968 KiB
+338 ranuras · 512 grupos
+18 pipes · caché 2g/198r
+Límite 1024 hilos/grupo
+Compartida 48 KiB/grupo
+Presión OK · 2 iter
+Residual 0.0049 / 0.0050
+Dens 0.04 · calor 0.05
+dt 0.00800 · CFL 0.152
+Reloj GPU 2.896 s
+Temperatura/vatios/reloj: N/D
+Ocupación global GPU: N/D
+~ estimación · ventana 120 cuadros
+No mide temperatura, potencia, frecuencia ni ocupación global.

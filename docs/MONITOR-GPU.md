@@ -45,6 +45,9 @@ El [desglose host](HOST-ENVIO.md) añade medias de preparación, valla, recogida
 adquisición, grabación, envío y presentación. El CSV conserva ahora 18 columnas;
 hay que leer su cabecera. Se evita reconstruir propiedades al mover la cámara.
 
+Actualización: [reutilización compute](COMPUTE-REUTILIZABLE.md) añade tres
+contadores de grabación/reuso/ruta directa; el CSV vigente tiene 21 columnas.
+
 La semilla/escena/resolución, validación, VSync, calentamiento de pipelines y otras
 aplicaciones afectan una comparación. La primera ventana de estadísticas puede
 incluir compilación inicial. Para comparar, espera al menos 120 cuadros y conserva

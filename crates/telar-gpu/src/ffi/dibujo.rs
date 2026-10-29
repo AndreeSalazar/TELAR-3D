@@ -68,7 +68,7 @@ pub(crate) unsafe fn grabar(
 ) {
     // SAFETY: conserva íntegro el contrato de grabar, sin recursos de medición.
     unsafe {
-        grabar_medido(fd, cmd, destino, limpiar, escena, interfaz, None);
+        grabar_medido(fd, cmd, destino, limpiar, escena, interfaz, None, None);
     }
 }
 /// # Safety
@@ -82,6 +82,7 @@ pub(crate) unsafe fn grabar_medido(
     escena: Option<&Escena>,
     interfaz: Option<&DibujoInterfaz>,
     marcas: Option<(&super::reloj_vivo::RelojVivo, usize)>,
+    secundario: Option<Comandos>,
 ) {
     // SAFETY: el llamador completó la valla del juego antes de grabar sus consultas.
     unsafe {
@@ -89,19 +90,9 @@ pub(crate) unsafe fn grabar_medido(
             reloj.marcar(cmd, juego, 0);
         }
     }
-    if let Some(historial) = escena.and_then(|e| e.historial) {
-        // SAFETY: contrato de grabar; escena e historial viven hasta la valla del envío.
-        unsafe {
-            historial.grabar(fd, cmd);
-        }
-    }
-    if let Some(escena) = escena
-        && let Some(campos) = escena.campos
-    {
-        // SAFETY: contrato de grabar; campos y constantes viven hasta su valla.
-        unsafe {
-            campos.grabar(fd, cmd, escena.constantes);
-        }
+    // SAFETY: escena y secundario viven hasta la valla; fuera de rendering.
+    unsafe {
+        calcular(fd, cmd, escena, secundario);
     }
     // SAFETY: el snapshot solo copia un rango comprobado del estado de esta escena.
     unsafe {
@@ -308,5 +299,28 @@ unsafe fn dibujar_interfaz(fd: &FnDispositivo, cmd: Comandos, ui: &DibujoInterfa
         let desde = 0;
         (fg.usar_vertices)(cmd, 0, 1, &raw const ui.buffer.buffer.objeto, &raw const desde);
         (fg.dibujar)(cmd, ui.cantidad, 1, 0, 0);
+    }
+}
+
+/// # Safety
+/// Comando primario grabándose fuera de rendering; escena y secundario viven hasta su valla.
+unsafe fn calcular(fd: &FnDispositivo, cmd: Comandos, escena: Option<&Escena>, secundario: Option<Comandos>) {
+    if let Some(historial) = escena.and_then(|e| e.historial) {
+        // SAFETY: contrato de grabar; escena e historial viven hasta la valla del envío.
+        unsafe {
+            historial.grabar(fd, cmd);
+        }
+    }
+    if let Some(escena) = escena
+        && let Some(campos) = escena.campos
+    {
+        // SAFETY: contrato de grabar; campos y constantes viven hasta su valla.
+        unsafe {
+            if let Some(secundario) = secundario {
+                (fd.ejecutar_secundarios)(cmd, 1, &raw const secundario);
+            } else {
+                campos.grabar(fd, cmd, escena.constantes);
+            }
+        }
     }
 }

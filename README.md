@@ -174,3 +174,7 @@ guarda CSV y perfil TXT al cerrar. [Qué mide y qué cuesta](docs/MONITOR-GPU.md
 El [desglose host](docs/HOST-ENVIO.md) separa preparación, grabación/envío y
 esperas de presentación. Órbita y movimiento libre ya conservan los triángulos
 de propiedades; el visor sigue actualizando la cámara.
+
+El [plan compute reutilizable](docs/COMPUTE-REUTILIZABLE.md) evita registrar de
+nuevo sus despachos cada cuadro. El monitor cuenta grabaciones/reusos y se
+conserva `--sin-cache-compute` para comparar resultados y coste.

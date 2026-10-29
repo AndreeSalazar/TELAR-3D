@@ -23,6 +23,7 @@ type ReservarComandos = unsafe extern "system" fn(Disp, *const InfoReservaComand
 type ReiniciarComandos = unsafe extern "system" fn(Comandos, u32) -> i32;
 type Empezar = unsafe extern "system" fn(Comandos, *const InfoInicioComandos) -> i32;
 type Terminar = unsafe extern "system" fn(Comandos) -> i32;
+type EjecutarSecundarios = unsafe extern "system" fn(Comandos, u32, *const Comandos);
 type Barrera = unsafe extern "system" fn(
     Comandos,
     u32,
@@ -58,6 +59,7 @@ pub(crate) struct FnDispositivo {
     pub(crate) reiniciar_comandos: ReiniciarComandos,
     pub(crate) empezar: Empezar,
     pub(crate) terminar: Terminar,
+    pub(crate) ejecutar_secundarios: EjecutarSecundarios,
     pub(crate) barrera: Barrera,
     pub(crate) enviar: Enviar,
     /// Solo si el dispositivo activó `VK_KHR_swapchain` (hay ventana).
@@ -109,6 +111,7 @@ impl FnDispositivo {
             reiniciar_comandos: cargar!(buscar, "vkResetCommandBuffer", ReiniciarComandos),
             empezar: cargar!(buscar, "vkBeginCommandBuffer", Empezar),
             terminar: cargar!(buscar, "vkEndCommandBuffer", Terminar),
+            ejecutar_secundarios: cargar!(buscar, "vkCmdExecuteCommands", EjecutarSecundarios),
             barrera: cargar!(buscar, "vkCmdPipelineBarrier", Barrera),
             enviar: cargar!(buscar, "vkQueueSubmit", Enviar),
             swapchain,

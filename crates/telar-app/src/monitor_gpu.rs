@@ -25,6 +25,9 @@ pub(crate) struct Observador {
 }
 impl Observador {
     pub(crate) fn nuevo(args: &[String], editor: &EditorHumo, gpu: &mut Gpu) -> Result<Self, String> {
+        // ABI MAC 3D: física en 0..15 y los componentes W 19/23/27/31; cámara XYZ solo gráfica.
+        let mascara = if editor.volumen && editor.particulas.is_none() { 0x8888_ffff } else { u32::MAX };
+        gpu.configurar_cache_campos(!args.iter().any(|v| v == "--sin-cache-compute"), mascara)?;
         let archivo = crate::estudio_humo::valor(args, "--benchmark-gpu")?.map(PathBuf::from);
         if archivo.as_ref().is_some_and(|p| p.exists() || p.with_extension("txt").exists()) {
             return Err("el informe GPU ya existe".into());
@@ -145,7 +148,7 @@ impl Observador {
         let carga = gpu.carga_campos();
         lineas.push(format!("Campos lógicos {} KiB", carga.bytes / 1024));
         lineas.push(format!("{} ranuras · {} grupos", carga.ranuras, carga.grupos));
-        lineas.push(format!("{} pipelines · 64 hilos/grupo", carga.programas));
+        lineas.push(format!("{} pipes · caché {}g/{}r", carga.programas, carga.grabaciones, carga.reusos));
         let perfil = gpu.perfil();
         lineas.push(format!("Límite {} hilos/grupo", perfil.invocaciones));
         lineas.push(format!("Compartida {} KiB/grupo", perfil.compartida / 1024));
@@ -176,7 +179,7 @@ impl Observador {
         lineas.push("Temperatura/vatios/reloj: N/D".into());
         lineas.push("Ocupación global GPU: N/D".into());
         lineas.push("~ estimación · ventana 120 cuadros".into());
-        self.registrar(fps, frame, tiempos, &heaps, muestra.control, fases_host);
+        self.registrar(fps, frame, tiempos, &heaps, gpu);
         self.detalle = format!(
             "TELAR · monitor vivo\nValidación Vulkan: {}\nFormato/tamaño: {:?}\nPerfil (límites; no velocidad): {perfil:#?}\nHeaps (estimaciones de proceso): {heaps:#?}\nControl GPU: {:?}\nHumo: {:?}\nTiempo/esfera: {:?}\nPulso: {:?}\nVFX: {:?}\nPartículas: {:?}\n{}\nNo mide temperatura, potencia, frecuencia ni ocupación global.\n",
             gpu.validacion(),
@@ -194,22 +197,17 @@ impl Observador {
         editor.monitor = Some(Monitor { lineas, estado, historial });
         true
     }
-    fn registrar(
-        &mut self,
-        fps: f64,
-        frame: f64,
-        ms: Option<[f64; 3]>,
-        heaps: &[telar_gpu::MemoriaHeap],
-        control: Option<[f32; 16]>,
-        host: Option<telar_gpu::TelemetriaHost>,
-    ) {
+    fn registrar(&mut self, fps: f64, frame: f64, ms: Option<[f64; 3]>, heaps: &[telar_gpu::MemoriaHeap], gpu: &Gpu) {
         if self.archivo.is_none() || self.csv.len() >= 4096 {
             return;
         }
+        let control = gpu.telemetria().control;
+        let host = crate::monitor_host::media(&self.fases_host);
+        let carga = gpu.carga_campos();
         let numero = |v: Option<f64>| v.map_or_else(String::new, |v| format!("{v:.6}"));
         let heap = heaps.iter().find(|h| h.local);
         self.csv.push(format!(
-            "{:.6},{},{},{},{},{},{},{},{},{},{},{}\n",
+            "{:.6},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
             self.inicio.elapsed().as_secs_f64(),
             numero((frame > 0.0).then_some(fps)),
             numero((frame > 0.0).then_some(frame)),
@@ -221,7 +219,10 @@ impl Observador {
             numero(control.map(|c| f64::from(c[3]))),
             numero(control.filter(|_| self.temporal).map(|c| f64::from(c[13]))),
             crate::monitor_host::csv(host),
-            numero(crate::monitor_host::promedio(&self.host))
+            numero(crate::monitor_host::promedio(&self.host)),
+            carga.grabaciones,
+            carga.reusos,
+            carga.directas
         ));
     }
     pub(crate) fn finalizar(&self) -> Result<(), String> {
@@ -234,7 +235,7 @@ impl Observador {
             detalle.write_all(self.detalle.as_bytes()).map_err(|e| e.to_string())?;
             let mut archivo =
                 std::fs::OpenOptions::new().write(true).create_new(true).open(path).map_err(|e| e.to_string())?;
-            archivo.write_all(b"segundos,fps,cuadro_ms,gpu_calculo_ms,gpu_escena_ms,gpu_ui_ms,uso_local_estimado_B,presupuesto_local_estimado_B,residual,reloj_sim_s,host_prep_ms,host_valla_ms,host_obs_ms,host_adquirir_ms,host_grabar_ms,host_enviar_ms,host_presentar_ms,host_total_medio_ms\n").map_err(|e| e.to_string())?;
+            archivo.write_all(b"segundos,fps,cuadro_ms,gpu_calculo_ms,gpu_escena_ms,gpu_ui_ms,uso_local_estimado_B,presupuesto_local_estimado_B,residual,reloj_sim_s,host_prep_ms,host_valla_ms,host_obs_ms,host_adquirir_ms,host_grabar_ms,host_enviar_ms,host_presentar_ms,host_total_medio_ms,compute_grabaciones,compute_reusos,compute_directas\n").map_err(|e| e.to_string())?;
             for fila in &self.csv {
                 archivo.write_all(fila.as_bytes()).map_err(|e| e.to_string())?;
             }

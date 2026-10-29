@@ -53,6 +53,12 @@ pub struct CargaCampos {
     pub ranuras: usize,
     /// Pipelines preparados.
     pub programas: usize,
+    /// Grabaciones de secundarios compute del visor.
+    pub grabaciones: u64,
+    /// Ejecuciones del visor que reutilizaron un secundario.
+    pub reusos: u64,
+    /// Cuadros compute grabados directamente al desactivar caché.
+    pub directas: u64,
 }
 impl Gpu {
     /// Último desglose host; no espera y no añade consultas Vulkan.

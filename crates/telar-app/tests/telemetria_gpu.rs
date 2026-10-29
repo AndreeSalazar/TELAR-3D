@@ -137,7 +137,7 @@ fn ejecutable_exporta_csv_y_rechaza_reemplazo() {
     let csv = String::from_utf8(bytes.clone()).unwrap();
     assert!(csv.lines().count() >= 3);
     let fila: Vec<_> = csv.lines().last().unwrap().split(',').collect();
-    assert_eq!(fila.len(), 18);
+    assert_eq!(fila.len(), 21);
     for celda in &fila[10..] {
         assert!(celda.parse::<f64>().unwrap() >= 0.0);
     }
@@ -148,4 +148,68 @@ fn ejecutable_exporta_csv_y_rechaza_reemplazo() {
     std::fs::remove_file(&ruta).unwrap();
     std::fs::remove_file(ruta.with_extension("txt")).unwrap();
     std::fs::remove_dir(carpeta).unwrap();
+}
+
+#[test]
+fn secundarios_reutilizados_conservan_bytes_y_respetan_cambios() {
+    let (ventana, mut gpu, mut bloque) = preparar();
+    bloque[..6].copy_from_slice(&[0.15, 3.0, 2.0, 0.08, 0.15, 0.016]);
+    bloque[10..14].copy_from_slice(&[8.0, 0.02, 0.005, 1.0]);
+    gpu.activar_campos(true).unwrap();
+    gpu.configurar_cache_campos(true, 0x8888_ffff).unwrap();
+    let cero = gpu.inspeccionar_campos().unwrap();
+    for _ in 0..8 {
+        gpu.ejecutar_campos(&bloque).unwrap();
+    }
+    let referencia = gpu.inspeccionar_campos().unwrap();
+    assert_ne!(cero, referencia);
+    gpu.cargar_campos(&cero).unwrap();
+    cuadros(&mut gpu, &bloque, 8);
+    assert_eq!(gpu.inspeccionar_campos().unwrap(), referencia);
+    assert_eq!((gpu.carga_campos().grabaciones, gpu.carga_campos().reusos), (2, 6));
+    // Cámara XYZ no forma parte del ABI compute MAC declarado por la app.
+    bloque[28] += 0.1;
+    let estado = gpu.inspeccionar_campos().unwrap();
+    comparar_rutas(&mut gpu, &bloque, &estado, 4);
+    assert_eq!(gpu.carga_campos().grabaciones, 2);
+    // Una propiedad física obliga a reconstruir ambos juegos, conservando resultados.
+    bloque[1] = 4.0;
+    let estado = gpu.inspeccionar_campos().unwrap();
+    comparar_rutas(&mut gpu, &bloque, &estado, 4);
+    assert_eq!(gpu.carga_campos().grabaciones, 4);
+    // Presupuesto/orden distinto cambia la versión del plan.
+    bloque[13] = 2.0;
+    let orden = telar_kernel::humo3d::orden_temporal(8, 2).unwrap();
+    gpu.secuencia_campos(&orden).unwrap();
+    let estado = gpu.inspeccionar_campos().unwrap();
+    comparar_rutas(&mut gpu, &bloque, &estado, 4);
+    assert_eq!(gpu.carga_campos().grabaciones, 6);
+    gpu.secuencia_campos(&orden).unwrap();
+    gpu.activar_campos(false).unwrap();
+    let pausado = gpu.inspeccionar_campos().unwrap();
+    cuadros(&mut gpu, &bloque, 4);
+    assert_eq!(gpu.inspeccionar_campos().unwrap(), pausado);
+    assert_eq!(gpu.carga_campos().grabaciones, 6);
+    gpu.activar_campos(true).unwrap();
+    gpu.redimensionar(120, 80);
+    cuadros(&mut gpu, &bloque, 4);
+    assert_eq!(gpu.carga_campos().grabaciones, 6);
+    gpu.configurar_cache_campos(false, u32::MAX).unwrap();
+    cuadros(&mut gpu, &bloque, 2);
+    assert_eq!(gpu.carga_campos().directas, 2);
+    gpu.configurar_cache_campos(true, u32::MAX).unwrap();
+    cuadros(&mut gpu, &bloque, 2);
+    assert_eq!(gpu.carga_campos().grabaciones, 8);
+    drop(gpu);
+    drop(ventana);
+    assert_eq!(telar_gpu::avisos_de_validacion(), 0);
+}
+fn comparar_rutas(gpu: &mut Gpu, bloque: &[f32; 32], estado: &[u32], pasos: u32) {
+    for _ in 0..pasos {
+        gpu.ejecutar_campos(bloque).unwrap();
+    }
+    let esperado = gpu.inspeccionar_campos().unwrap();
+    gpu.cargar_campos(estado).unwrap();
+    cuadros(gpu, bloque, pasos);
+    assert_eq!(gpu.inspeccionar_campos().unwrap(), esperado);
 }

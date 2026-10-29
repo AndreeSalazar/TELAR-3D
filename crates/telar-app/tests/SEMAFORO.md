@@ -182,3 +182,17 @@ sin disco por cuadro. Ritmo de medicion: cada cuadro con monitor; refresco 2 Hz.
 Limitacion adicional: aun se registra el plan compute por cuadro; no se afirma
 soberania total ni velocidad universal. Estados anteriores, incluido FFI ROJO,
 se conservan. Contrato, pruebas y siguiente paso: docs/HOST-ENVIO.md.
+
+
+Compute reutilizable (29-10-2026): dos secundarios, un pool y dos claves de
+32 palabras/version en RAM; memoria interna y residencia del driver sin medir.
+CPU compara clave/plan y ejecuta el secundario; reconstruye solo al invalidar.
+GPU conserva orden/despachos/barreras y estado de simulacion, sin buffers ni
+transferencias adicionales por cuadro. No espera global nueva; reutiliza la
+valla de cada juego. E/S solo informe solicitado y evidencias de desarrollo;
+CSV vigente de 21 columnas. Ritmo: comprobacion por cuadro, grabacion inicial
+o al cambiar fisica/plan/mascara; camara MAC 3D no invalida compute.
+Precaucion: capturas/lotes siguen directos; cambios fisicos continuos aun
+pagan grabacion, y el driver puede cobrar por ejecutar secundarios. FFI
+conserva ROJO y los otros estados previos se mantienen. Pruebas de bytes,
+contadores y sincronizacion: docs/COMPUTE-REUTILIZABLE.md.

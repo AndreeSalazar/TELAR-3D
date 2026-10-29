@@ -33,6 +33,14 @@ impl PlanCampos<'_> {
     }
 }
 impl Gpu {
+    /// Reutiliza compute en el visor; la máscara declara palabras push usadas por los kernels.
+    /// Las palabras omitidas se envían como cero a compute. Por defecto se conservan las 32.
+    /// Capturas y `ejecutar_campos` siguen la ruta directa con todas las constantes.
+    /// # Errors
+    /// Rechaza ausencia de campos. El llamador conserva todos los bits que lean sus kernels.
+    pub fn configurar_cache_campos(&self, activa: bool, mascara: u32) -> Result<(), String> {
+        self.visor.as_ref().ok_or("falta visor")?.configurar_cache_campos(activa, mascara)
+    }
     /// Inicializa a cero un estado persistente y prepara pasadas compute antes del dibujo.
     /// El buffer reside en GPU; las constantes gráficas de 128 B se comparten con compute.
     /// # Errors

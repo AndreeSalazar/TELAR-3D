@@ -76,6 +76,9 @@ aproximadamente 2.525 ms en esa ventana. La meta de 2 ms permanece **ABIERTO**.
 
 ## Qué falta para reducir más la intervención host
 
+Actualización: [COMPUTE-REUTILIZABLE.md](COMPUTE-REUTILIZABLE.md) implementa el
+primer punto siguiente. La medición anterior se conserva como evidencia histórica.
+
 1. Reutilizar comandos de simulación pregrabados, invalidando por cambios de plan
    o parámetros relevantes. Hoy aún se graba la secuencia acotada por cuadro.
 2. Ampliar trabajo indirecto decidido en GPU y compactación de regiones activas,

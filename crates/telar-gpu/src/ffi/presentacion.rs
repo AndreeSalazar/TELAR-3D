@@ -179,9 +179,8 @@ impl Presentacion {
             }
         }
         let Some(sc) = self.swapchain.as_ref() else { return Ok(false) };
-        let f = self.cuadro;
+        let (f, mut indice) = (self.cuadro, 0u32);
         let mut tiempo = super::host_vivo::Cronometro::nuevo(self.medicion_host_activa());
-        let mut indice = 0u32;
         // SAFETY: la valla y el semáforo son de este fotograma; tras esperar la valla,
         // la GPU ya no usa sus comandos ni su semáforo de adquisición.
         let r = unsafe {
@@ -203,6 +202,7 @@ impl Presentacion {
             ok(r, "adquirir una imagen")?;
         }
         let interfaz = interfaz.map(|interfaz| interfaz.juego(f)).transpose()?;
+        let secundario = preparar_calculo(escena, &self.fd, f)?;
         let i = indice as usize;
         let destino = Destino {
             imagen: sc.imagenes[i],
@@ -255,6 +255,7 @@ impl Presentacion {
                 escena,
                 interfaz.as_ref(),
                 self.reloj.as_ref().filter(|r| r.activa).map(|r| (r, f)),
+                secundario,
             );
             ok((self.fd.terminar)(cmd), "terminar los comandos")?;
             ok((self.fd.reiniciar_vallas)(self.dispositivo, 1, &raw const self.vallas[f]), "reiniciar la valla")?;
@@ -313,5 +314,13 @@ fn info_envio(espera: &Objeto, listo: &Objeto, comandos: &[Comandos; 2], cantida
         comandos: comandos.as_ptr(),
         n_senales: 1,
         senales: listo,
+    }
+}
+
+// Solo se llama tras la valla del juego; prepara un secundario con su propia clave y versión.
+fn preparar_calculo(escena: Option<&Escena>, fd: &FnDispositivo, juego: usize) -> Result<Option<Comandos>, String> {
+    match escena.and_then(|e| e.campos.map(|c| (c, e.constantes))) {
+        Some((campos, constantes)) => campos.preparar_cache(fd, juego, constantes),
+        None => Ok(None),
     }
 }

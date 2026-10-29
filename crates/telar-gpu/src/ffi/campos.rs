@@ -17,20 +17,46 @@ use crate::{
     eleccion::{MEMORIA_COHERENTE, MEMORIA_GPU, MEMORIA_VISIBLE},
 };
 pub(crate) struct Campos {
+    cache: std::cell::RefCell<super::cache_campos::Cache>,
     pub(super) programas: Vec<Recursos>,
     secuencia: Vec<usize>,
     grupos: u32,
     bytes: u64,
     pub(super) activo: bool,
+    version: u64,
 }
 impl Campos {
     pub(super) fn carga(&self) -> crate::CargaCampos {
+        let cache = self.cache.borrow();
         crate::CargaCampos {
             bytes: self.bytes + 4,
             grupos: self.grupos,
             ranuras: self.secuencia.len(),
             programas: self.programas.len(),
+            grabaciones: cache.grabaciones,
+            reusos: cache.reusos,
+            directas: cache.directas,
         }
+    }
+    pub(super) fn configurar_cache(&self, activa: bool, mascara: u32) {
+        self.cache.borrow_mut().configurar(activa, mascara);
+    }
+    /// El juego está libre tras completar su valla; nunca se usa en capturas/offline.
+    pub(super) fn preparar_cache(
+        &self,
+        fd: &FnDispositivo,
+        juego: usize,
+        bloque: &[f32; 32],
+    ) -> Result<Option<Comandos>, String> {
+        if !self.activo {
+            return Ok(None);
+        }
+        self.cache.borrow_mut().preparar(juego, self.version, bloque, |cmd, constantes| {
+            // SAFETY: secundario del juego libre grabándose; mantiene recursos propios del plan.
+            unsafe {
+                self.grabar(fd, cmd, constantes);
+            }
+        })
     }
     pub(super) fn control(&self, offset: u32) -> Option<(super::tipos::Objeto, u64)> {
         let desde = u64::from(offset) * 4;
@@ -40,7 +66,10 @@ impl Campos {
         if nueva.is_empty() || nueva.len() > 2048 || nueva.iter().any(|v| *v >= self.programas.len()) {
             return Err("secuencia de campos inválida".into());
         }
-        self.secuencia = nueva.to_vec();
+        if self.secuencia != nueva {
+            self.version = self.version.checked_add(1).ok_or("versiones del plan agotadas")?;
+            self.secuencia = nueva.to_vec();
+        }
         Ok(())
     }
     pub(super) fn limpiar(&self, ctx: &Contexto) -> Result<(), String> {
@@ -94,7 +123,15 @@ impl Campos {
             recursos.descriptores_buffers(&[(buffers[0], 4), (buffers[1], bytes)])?;
             programas.push(recursos);
         }
-        let campos = Self { programas, secuencia: plan.secuencia.to_vec(), grupos, bytes, activo: true };
+        let campos = Self {
+            cache: std::cell::RefCell::new(super::cache_campos::Cache::nueva(ctx)?),
+            programas,
+            secuencia: plan.secuencia.to_vec(),
+            grupos,
+            bytes,
+            activo: true,
+            version: 0,
+        };
         una_vez(ctx, |fd, cmd| {
             // SAFETY: estado recién creado con TRANSFER_DST, rango completo alineado.
             // GPU: inicializa todos los campos antes de la primera lectura.
