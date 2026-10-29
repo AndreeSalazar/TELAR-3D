@@ -43,9 +43,21 @@ pub(crate) struct Presentacion {
     /// Cuántas veces se ha creado la swapchain (la primera incluida).
     pub(crate) creaciones: u32,
     reloj: Option<super::reloj_vivo::RelojVivo>,
+    host: Option<crate::TelemetriaHost>,
 }
 
 impl Presentacion {
+    pub(crate) fn medicion_host_activa(&self) -> bool {
+        self.reloj.as_ref().is_some_and(|r| r.activa)
+    }
+    pub(crate) fn observacion_host(&self) -> Option<crate::TelemetriaHost> {
+        self.host
+    }
+    pub(crate) fn preparacion_host(&mut self, ms: Option<f64>) {
+        if let Some(host) = &mut self.host {
+            host.preparacion_ms = ms;
+        }
+    }
     pub(crate) fn telemetria(&mut self, ctx: &Contexto, activa: bool, control: Option<u32>) -> Result<(), String> {
         if activa && self.reloj.is_none() {
             self.reloj = Some(super::reloj_vivo::RelojVivo::nuevo(ctx)?);
@@ -83,6 +95,7 @@ impl Presentacion {
             rehacer: false,
             creaciones: 0,
             reloj: None,
+            host: None,
         };
         let nulo = core::ptr::null();
         let pool = InfoSimple {
@@ -167,17 +180,21 @@ impl Presentacion {
         }
         let Some(sc) = self.swapchain.as_ref() else { return Ok(false) };
         let f = self.cuadro;
+        let mut tiempo = super::host_vivo::Cronometro::nuevo(self.medicion_host_activa());
         let mut indice = 0u32;
         // SAFETY: la valla y el semáforo son de este fotograma; tras esperar la valla,
         // la GPU ya no usa sus comandos ni su semáforo de adquisición.
         let r = unsafe {
             let r = (self.fd.esperar_vallas)(self.dispositivo, 1, &raw const self.vallas[f], 1, u64::MAX);
             ok(r, "esperar la valla")?;
+            tiempo.marcar(0);
             if let Some(reloj) = &mut self.reloj {
                 reloj.recoger(f)?;
             }
+            tiempo.marcar(1);
             (self.fs.adquirir)(self.dispositivo, sc.objeto, u64::MAX, self.adquiridas[f], 0, &raw mut indice)
         };
+        tiempo.marcar(2);
         if r == VK_ERROR_OUT_OF_DATE_KHR {
             self.rehacer = true;
             return Ok(false);
@@ -211,19 +228,7 @@ impl Presentacion {
             flags: USO_UNA_VEZ,
             herencia: nulo,
         };
-        // La imagen se escribe al sacar el color: ahí es donde hay que esperar a tenerla.
-        let etapa = ETAPA_SALIDA_COLOR;
-        let envio = InfoEnvio {
-            s_type: ST_SUBMIT_INFO,
-            p_next: nulo,
-            n_esperas: 1,
-            esperas: &raw const self.adquiridas[f],
-            etapas_espera: &raw const etapa,
-            n_comandos,
-            comandos: comandos.as_ptr(),
-            n_senales: 1,
-            senales: &raw const listo,
-        };
+        let envio = info_envio(&self.adquiridas[f], &listo, &comandos, n_comandos);
         let presentacion = InfoPresentacion {
             s_type: ST_PRESENT_INFO_KHR,
             p_next: nulo,
@@ -253,7 +258,9 @@ impl Presentacion {
             );
             ok((self.fd.terminar)(cmd), "terminar los comandos")?;
             ok((self.fd.reiniciar_vallas)(self.dispositivo, 1, &raw const self.vallas[f]), "reiniciar la valla")?;
+            tiempo.marcar(3);
             ok((self.fd.enviar)(self.cola, 1, &raw const envio, self.vallas[f]), "enviar a la GPU")?;
+            tiempo.marcar(4);
             if let Some(reloj) = self.reloj.as_mut().filter(|r| r.activa) {
                 let copiado =
                     escena.and_then(|e| e.campos).and_then(|c| reloj.control.and_then(|o| c.control(o))).is_some();
@@ -261,6 +268,10 @@ impl Presentacion {
             }
             (self.fs.presentar)(self.cola, &raw const presentacion)
         };
+        tiempo.marcar(5);
+        if let Some(host) = tiempo.resultado(self.host.map_or(1, |h| h.cuadros + 1)) {
+            self.host = Some(host);
+        }
         self.cuadro = (f + 1) % EN_VUELO;
         if r == VK_ERROR_OUT_OF_DATE_KHR || r == VK_SUBOPTIMAL_KHR {
             self.rehacer = true;
@@ -287,5 +298,20 @@ impl Drop for Presentacion {
                 (self.fd.destruir_pool)(self.dispositivo, self.pool, core::ptr::null());
             }
         }
+    }
+}
+
+// Los objetos referenciados viven hasta terminar vkQueueSubmit; etapa es una constante promovida.
+fn info_envio(espera: &Objeto, listo: &Objeto, comandos: &[Comandos; 2], cantidad: u32) -> InfoEnvio {
+    InfoEnvio {
+        s_type: ST_SUBMIT_INFO,
+        p_next: core::ptr::null(),
+        n_esperas: 1,
+        esperas: espera,
+        etapas_espera: &ETAPA_SALIDA_COLOR,
+        n_comandos: cantidad,
+        comandos: comandos.as_ptr(),
+        n_senales: 1,
+        senales: listo,
     }
 }

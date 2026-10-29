@@ -161,6 +161,11 @@ impl EditorHumo {
     pub fn editando(&self) -> bool {
         self.edicion.is_some()
     }
+    /// Hay un deslizador activo que puede modificar propiedades al mover el ratón.
+    #[must_use]
+    pub fn arrastrando_control(&self) -> bool {
+        self.desliz.is_some()
+    }
     /// Termina un arrastre.
     pub fn soltar(&mut self) {
         self.desliz = None;

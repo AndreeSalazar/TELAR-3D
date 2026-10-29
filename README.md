@@ -170,3 +170,7 @@ y recibe sombra del humo. [Escena de ejemplo y límites](docs/VFX-ESFERA.md).
 Monitor vivo en VFX, tecla **M**: intervalos GPU, FPS/P95, heaps y presupuesto
 del driver, presión/CFL y carga del plan. `--benchmark-gpu target/medicion.csv`
 guarda CSV y perfil TXT al cerrar. [Qué mide y qué cuesta](docs/MONITOR-GPU.md).
+
+El [desglose host](docs/HOST-ENVIO.md) separa preparación, grabación/envío y
+esperas de presentación. Órbita y movimiento libre ya conservan los triángulos
+de propiedades; el visor sigue actualizando la cámara.

@@ -12,23 +12,23 @@ pub struct Monitor {
     /// Historial de tiempo GPU total por cuadro, en milisegundos.
     pub historial: Vec<f32>,
 }
-#[allow(clippy::cast_precision_loss, reason = "panel acotado a 28 líneas y 60 muestras")]
+#[allow(clippy::cast_precision_loss, reason = "panel acotado a 32 líneas y 60 muestras")]
 pub(crate) fn dibujar(lienzo: &mut Lienzo, monitor: Option<&Monitor>, alto: f32, panel: &Estilo, texto: &Estilo) {
     let Some(m) = monitor else {
         return;
     };
-    let filas = m.lineas.len().min(28);
-    let altura = (filas as f32 * 19.0 + 72.0).min(alto - 140.0);
+    let filas = m.lineas.len().min(32);
+    let altura = (filas as f32 * 17.0 + 72.0).min(alto - 140.0);
     let caja = Rectangulo { x: 20.0, y: 84.0, ancho: 244.0, alto: altura };
     lienzo.caja(caja, panel);
     let color = [[0.3, 0.8, 0.65], [0.95, 0.7, 0.25], [0.95, 0.25, 0.25]][m.estado.min(2)];
     lienzo.rect(caja.x, caja.y, caja.ancho, 3.0, color);
     for (i, linea) in m.lineas.iter().take(filas).enumerate() {
-        if i as f32 * 19.0 + 60.0 > altura {
+        if i as f32 * 17.0 + 60.0 > altura {
             break;
         }
         lienzo.etiqueta(
-            Rectangulo { x: caja.x + 10.0, y: caja.y + 10.0 + i as f32 * 19.0, ancho: 224.0, alto: 18.0 },
+            Rectangulo { x: caja.x + 10.0, y: caja.y + 10.0 + i as f32 * 17.0, ancho: 224.0, alto: 18.0 },
             linea,
             texto,
         );

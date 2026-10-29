@@ -110,3 +110,15 @@ global no disponibles. Observar tiene coste y puede alterar tiempos; no se
 anuncia velocidad universal ni consumo cero. Semaforo de memoria 70/90% y
 estado numerico; FFI conserva ROJO y los demas estados previos se mantienen.
 Comprobacion de esta entrega: docs/MONITOR-GPU.md y telar-app/tests/telemetria_gpu.rs.
+
+
+Desglose host (29-10-2026): reloj monotono opcional en preparacion, valla,
+recogida, adquisicion, grabacion, envio y presentacion; medias de hasta 120
+registros en RAM. Son tiempos de pared, no porcentaje CPU. Movimiento libre,
+orbita y rueda conservan triangulos UI; un deslizador activo si los invalida.
+GPU/VRAM: no hay buffers, transferencias ni esperas nuevas; permanece el coste
+del monitor anterior. E/S solo informe CSV/TXT solicitado (18 columnas CSV),
+sin disco por cuadro. Ritmo de medicion: cada cuadro con monitor; refresco 2 Hz.
+Limitacion adicional: aun se registra el plan compute por cuadro; no se afirma
+soberania total ni velocidad universal. Estados anteriores, incluido FFI ROJO,
+se conservan. Contrato, pruebas y siguiente paso: docs/HOST-ENVIO.md.

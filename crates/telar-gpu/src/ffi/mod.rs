@@ -45,6 +45,7 @@ mod funciones;
 mod funciones_calculo;
 mod funciones_grafico;
 mod historial;
+mod host_vivo;
 mod imagen;
 mod interfaz;
 mod malla_gpu;

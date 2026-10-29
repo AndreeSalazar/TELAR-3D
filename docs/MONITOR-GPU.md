@@ -23,7 +23,7 @@ oculto de 120 cuadros con cambios de tamaño. Una captura también es oculta.
 | Dato | Origen y alcance |
 |---|---|
 | FPS, cuadro medio y P95 | Tiempo de pared entre cuadros dibujados; ventana móvil de hasta 120, incluye presentación/VSync y preparación |
-| Host envío/espera | Duración de la llamada de dibujo en host, incluidas sus esperas; no porcentaje de CPU |
+| Host total medio | Duración de la llamada de dibujo en host, incluidas sus esperas; no porcentaje de CPU |
 | GPU cálculo | Timestamp inicial hasta terminar cálculo, barreras y snapshot de control dentro del comando de dibujo |
 | GPU escena | Intervalo hasta acabar el dibujo de escena, incluidas transiciones y posibles esperas de imagen |
 | GPU UI/final | Overlay y finalización/transición del destino |
@@ -40,6 +40,10 @@ El caso procedural que envía cómputo en un comando separado queda fuera de ese
 intervalo de cálculo; esta entrega integra el monitor en los laboratorios MAC/VFX.
 Los envíos del render HDR por lotes tampoco se incorporan a las muestras del
 visor. El gráfico representa suma de tres intervalos GPU, escala 0..50 ms.
+
+El [desglose host](HOST-ENVIO.md) añade medias de preparación, valla, recogida,
+adquisición, grabación, envío y presentación. El CSV conserva ahora 18 columnas;
+hay que leer su cabecera. Se evita reconstruir propiedades al mover la cámara.
 
 La semilla/escena/resolución, validación, VSync, calentamiento de pipelines y otras
 aplicaciones afectan una comparación. La primera ventana de estadísticas puede

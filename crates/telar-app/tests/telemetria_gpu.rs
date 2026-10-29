@@ -71,6 +71,19 @@ fn observa_sin_modificar_y_reutiliza_juegos_al_redimensionar() {
     gpu.activar_telemetria(true, Some(16 * 512)).unwrap();
     cuadros(&mut gpu, &bloque, 8);
     let muestra = gpu.telemetria();
+    let host = gpu.telemetria_host().unwrap();
+    assert!(host.cuadros >= 8);
+    let fases = [
+        host.preparacion_ms.unwrap(),
+        host.valla_ms,
+        host.observacion_ms,
+        host.adquirir_ms,
+        host.grabar_ms,
+        host.enviar_ms,
+        host.presentar_ms,
+    ];
+    assert!(fases.iter().all(|v| v.is_finite() && *v >= 0.0));
+    assert!(fases.iter().sum::<f64>() > 0.0);
     assert!(muestra.muestras >= 6);
     assert_eq!(muestra.control.unwrap().map(f32::to_bits), control.map(f32::to_bits));
     if let Some(ms) = muestra.milisegundos {
@@ -91,11 +104,13 @@ fn observa_sin_modificar_y_reutiliza_juegos_al_redimensionar() {
     gpu.redimensionar(120, 80);
     cuadros(&mut gpu, &bloque, 8);
     assert_eq!(gpu.telemetria().control.unwrap().map(f32::to_bits), control.map(f32::to_bits));
+    let host_detenido = gpu.telemetria_host();
     gpu.activar_telemetria(false, None).unwrap();
     cuadros(&mut gpu, &bloque, 4);
     let detenida = gpu.telemetria().muestras;
     cuadros(&mut gpu, &bloque, 4);
     assert_eq!(gpu.telemetria().muestras, detenida);
+    assert_eq!(gpu.telemetria_host(), host_detenido);
     gpu.activar_telemetria(true, Some(16 * 512)).unwrap();
     cuadros(&mut gpu, &bloque, 6);
     assert!(gpu.telemetria().muestras > detenida);
@@ -122,7 +137,10 @@ fn ejecutable_exporta_csv_y_rechaza_reemplazo() {
     let csv = String::from_utf8(bytes.clone()).unwrap();
     assert!(csv.lines().count() >= 3);
     let fila: Vec<_> = csv.lines().last().unwrap().split(',').collect();
-    assert_eq!(fila.len(), 10);
+    assert_eq!(fila.len(), 18);
+    for celda in &fila[10..] {
+        assert!(celda.parse::<f64>().unwrap() >= 0.0);
+    }
     assert!(fila[1].parse::<f64>().unwrap() > 0.0);
     assert!(ruta.with_extension("txt").exists());
     assert!(!ejecutar().status.success());

@@ -22,6 +22,26 @@ pub struct TelemetriaGpu {
     /// Copia de dieciséis palabras de control, interpretadas por la aplicación.
     pub control: Option<[f32; 16]>,
 }
+/// Tiempos de pared del último cuadro enviado; no son porcentaje de CPU ocupada.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct TelemetriaHost {
+    /// Cuadros con medición host completada.
+    pub cuadros: u64,
+    /// Preparación del visor/pipeline, disponible en `dibujar_bloque_interfaz`.
+    pub preparacion_ms: Option<f64>,
+    /// Espera de la valla del juego.
+    pub valla_ms: f64,
+    /// Recogida del snapshot y consultas de la ranura terminada.
+    pub observacion_ms: f64,
+    /// Adquisición de una imagen de presentación.
+    pub adquirir_ms: f64,
+    /// Actualización de ranura, registro de comandos y reinicio de valla.
+    pub grabar_ms: f64,
+    /// Duración de vkQueueSubmit en host, puede incluir bloqueo del driver.
+    pub enviar_ms: f64,
+    /// Duración de vkQueuePresentKHR en host, puede incluir espera.
+    pub presentar_ms: f64,
+}
 /// Plan de campos grabado: presupuesto de envíos, no despachos que hicieron trabajo útil.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct CargaCampos {
@@ -35,6 +55,11 @@ pub struct CargaCampos {
     pub programas: usize,
 }
 impl Gpu {
+    /// Último desglose host; no espera y no añade consultas Vulkan.
+    #[must_use]
+    pub fn telemetria_host(&self) -> Option<TelemetriaHost> {
+        self.presentacion.observacion_host()
+    }
     /// Activa medición y copia opcional de 16 palabras a partir del offset dado.
     /// Reutiliza las vallas del presentador; no espera otros cuadros al consultar.
     /// # Errors

@@ -15,6 +15,7 @@ pub(crate) struct Observador {
     anterior: Option<Instant>,
     cuadros: VecDeque<f64>,
     host: VecDeque<f64>,
+    fases_host: VecDeque<telar_gpu::TelemetriaHost>,
     gpu: VecDeque<[f64; 3]>,
     muestra: u64,
     archivo: Option<PathBuf>,
@@ -53,6 +54,7 @@ impl Observador {
             anterior: None,
             cuadros: VecDeque::new(),
             host: VecDeque::new(),
+            fases_host: VecDeque::new(),
             gpu: VecDeque::new(),
             muestra: 0,
             archivo,
@@ -68,6 +70,7 @@ impl Observador {
         self.anterior = None;
         self.cuadros.clear();
         self.host.clear();
+        self.fases_host.clear();
         self.gpu.clear();
         Ok(())
     }
@@ -81,6 +84,9 @@ impl Observador {
         }
         self.anterior = Some(ahora);
         agregar(&mut self.host, costo_host.as_secs_f64() * 1000.0);
+        if let Some(host) = gpu.telemetria_host() {
+            agregar(&mut self.fases_host, host);
+        }
         let muestra = gpu.telemetria();
         if muestra.muestras != self.muestra {
             self.muestra = muestra.muestras;
@@ -107,11 +113,9 @@ impl Observador {
             lineas.push(format!("{fps:.1} fps · cuadro {frame:.2} ms"));
             lineas.push(format!("P95 cuadro {p95:.2} ms"));
         }
-        lineas.push(if self.host.is_empty() {
-            "Host envío/espera: pendiente".into()
-        } else {
-            format!("Host envío/espera {:.2} ms", estadisticas(&self.host).0)
-        });
+        lineas.push(crate::monitor_host::resumen(&self.host));
+        let fases_host = crate::monitor_host::media(&self.fases_host);
+        lineas.extend(crate::monitor_host::lineas(fases_host));
         let tiempos = self.gpu.back().copied();
         if let Some([calculo, escena, interfaz]) = tiempos {
             lineas.push(format!("GPU cálculo {calculo:.3} ms"));
@@ -172,7 +176,7 @@ impl Observador {
         lineas.push("Temperatura/vatios/reloj: N/D".into());
         lineas.push("Ocupación global GPU: N/D".into());
         lineas.push("~ estimación · ventana 120 cuadros".into());
-        self.registrar(fps, frame, tiempos, &heaps, muestra.control);
+        self.registrar(fps, frame, tiempos, &heaps, muestra.control, fases_host);
         self.detalle = format!(
             "TELAR · monitor vivo\nValidación Vulkan: {}\nFormato/tamaño: {:?}\nPerfil (límites; no velocidad): {perfil:#?}\nHeaps (estimaciones de proceso): {heaps:#?}\nControl GPU: {:?}\nHumo: {:?}\nTiempo/esfera: {:?}\nPulso: {:?}\nVFX: {:?}\nPartículas: {:?}\n{}\nNo mide temperatura, potencia, frecuencia ni ocupación global.\n",
             gpu.validacion(),
@@ -197,6 +201,7 @@ impl Observador {
         ms: Option<[f64; 3]>,
         heaps: &[telar_gpu::MemoriaHeap],
         control: Option<[f32; 16]>,
+        host: Option<telar_gpu::TelemetriaHost>,
     ) {
         if self.archivo.is_none() || self.csv.len() >= 4096 {
             return;
@@ -204,7 +209,7 @@ impl Observador {
         let numero = |v: Option<f64>| v.map_or_else(String::new, |v| format!("{v:.6}"));
         let heap = heaps.iter().find(|h| h.local);
         self.csv.push(format!(
-            "{:.6},{},{},{},{},{},{},{},{},{}\n",
+            "{:.6},{},{},{},{},{},{},{},{},{},{},{}\n",
             self.inicio.elapsed().as_secs_f64(),
             numero((frame > 0.0).then_some(fps)),
             numero((frame > 0.0).then_some(frame)),
@@ -214,7 +219,9 @@ impl Observador {
             heap.and_then(|h| h.uso).map_or_else(String::new, |v| v.to_string()),
             heap.and_then(|h| h.presupuesto).map_or_else(String::new, |v| v.to_string()),
             numero(control.map(|c| f64::from(c[3]))),
-            numero(control.filter(|_| self.temporal).map(|c| f64::from(c[13])))
+            numero(control.filter(|_| self.temporal).map(|c| f64::from(c[13]))),
+            crate::monitor_host::csv(host),
+            numero(crate::monitor_host::promedio(&self.host))
         ));
     }
     pub(crate) fn finalizar(&self) -> Result<(), String> {
@@ -227,7 +234,7 @@ impl Observador {
             detalle.write_all(self.detalle.as_bytes()).map_err(|e| e.to_string())?;
             let mut archivo =
                 std::fs::OpenOptions::new().write(true).create_new(true).open(path).map_err(|e| e.to_string())?;
-            archivo.write_all(b"segundos,fps,cuadro_ms,gpu_calculo_ms,gpu_escena_ms,gpu_ui_ms,uso_local_estimado_B,presupuesto_local_estimado_B,residual,reloj_sim_s\n").map_err(|e| e.to_string())?;
+            archivo.write_all(b"segundos,fps,cuadro_ms,gpu_calculo_ms,gpu_escena_ms,gpu_ui_ms,uso_local_estimado_B,presupuesto_local_estimado_B,residual,reloj_sim_s,host_prep_ms,host_valla_ms,host_obs_ms,host_adquirir_ms,host_grabar_ms,host_enviar_ms,host_presentar_ms,host_total_medio_ms\n").map_err(|e| e.to_string())?;
             for fila in &self.csv {
                 archivo.write_all(fila.as_bytes()).map_err(|e| e.to_string())?;
             }

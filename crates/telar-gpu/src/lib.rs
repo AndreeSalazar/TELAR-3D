@@ -28,7 +28,7 @@ mod perfil;
 mod plan;
 mod procedural;
 mod telemetria;
-pub use telemetria::{CargaCampos, MemoriaHeap, TelemetriaGpu};
+pub use telemetria::{CargaCampos, MemoriaHeap, TelemetriaGpu, TelemetriaHost};
 
 use core::sync::atomic::Ordering;
 
@@ -201,6 +201,7 @@ impl Gpu {
     /// # Errors
     /// Rechaza constantes no finitas, visor ausente o errores del backend.
     pub fn dibujar_bloque_interfaz(&mut self, fondo: [f32; 4], bloque: &[f32; 32]) -> Result<bool, String> {
+        let inicio = self.presentacion.medicion_host_activa().then(std::time::Instant::now);
         if !bloque.iter().all(|v| v.is_finite()) {
             return Err("constantes no finitas".into());
         }
@@ -210,12 +211,17 @@ impl Gpu {
         }
         let visor = self.visor.as_mut().ok_or("falta el visor")?;
         let escena = visor.escena(&self.contexto, formato, bloque)?;
-        self.presentacion.dibujar(
+        let preparacion = inicio.map(|i| i.elapsed().as_secs_f64() * 1000.0);
+        let dibujado = self.presentacion.dibujar(
             &self.contexto,
             eleccion::color_para(formato, fondo),
             escena.as_ref(),
             self.interfaz.as_mut(),
-        )
+        )?;
+        if dibujado && preparacion.is_some() {
+            self.presentacion.preparacion_host(preparacion);
+        }
+        Ok(dibujado)
     }
 }
 

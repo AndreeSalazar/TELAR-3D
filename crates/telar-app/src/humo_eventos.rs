@@ -16,7 +16,7 @@ pub(crate) fn procesar(
     let mut accion = None;
     let mut sucio = false;
     for evento in eventos {
-        sucio = true;
+        sucio |= !matches!(evento, Evento::Raton { .. } | Evento::Rueda(_));
         if editor.editando()
             && let Some(numero) = numero(evento)
         {
@@ -27,7 +27,9 @@ pub(crate) fn procesar(
             Evento::Cerrar | Evento::Tecla(Tecla::Escape) => return Resultado { sucio, accion, cerrar: true },
             Evento::Tamano { ancho, alto } => gpu.redimensionar(ancho, alto),
             Evento::Tecla(Tecla::Otra(v @ (116 | 119 | 120 | 82 | 68 | 78 | 77 | 32))) => accion = Some(v),
-            Evento::Raton { x, y } => entrada.mover(editor, d, x, y),
+            Evento::Raton { x, y } => {
+                sucio |= entrada.mover(editor, d, x, y);
+            }
             Evento::Boton { boton: Boton::Izquierdo, pulsado: true } => entrada.pulsar(editor, d),
             Evento::Boton { boton: Boton::Izquierdo, pulsado: false } => entrada.soltar(editor),
             Evento::Rueda(pasos) => entrada.rueda(editor, d, pasos),
