@@ -23,8 +23,9 @@ próximo al rayo; es una aproximación, no integración volumétrica de un cilin
 La integral usa ocho puntos medios sobre hasta 1.8 unidades desde el secundario
 hacia el ojo. La diagonal del cubo unitario es menor que 1.8 y los secundarios
 válidos están en ese dominio. Las muestras exteriores son cero. Se incluye la
-esfera voxelizada del laboratorio como extinción 40; no equivale a intersección
-exacta con superficies. Su aparición como geometría opaca primaria sigue abierta.
+esfera del laboratorio. Actualización: [VFX-ESFERA.md](VFX-ESFERA.md) sustituye
+su antigua extinción voxelizada por corte analítico de rayos y segmentos,
+incluido el rayo primario. La integración del humo sigue usando ocho muestras.
 
 Se omiten coberturas gaussianas <=1e-5 antes de integrar transmisión. La CPU
 no calcula coberturas ni mezcla píxeles: sigue enviando trabajo/constantes e

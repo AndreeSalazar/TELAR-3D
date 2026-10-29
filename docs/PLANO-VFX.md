@@ -80,8 +80,9 @@ La [composición de secundarios](VFX-COMPUESTO.md) añade transmisión aproximad
 hacia cada punto/segmento; no ilumina el gas desde las chispas.
 
 Render integra Beer–Lambert, emisión artística, una luz puntual con sombra y
-dispersión simple Henyey–Greenstein. La esfera aporta opacidad a la sombra,
-pero no está integrada como superficie opaca en el rayo primario de esta rama.
+dispersión simple Henyey–Greenstein. La esfera de colisión ya se representa
+como superficie opaca analítica y bloquea luz/secundarios; ver
+[esfera y volumen](VFX-ESFERA.md). El solver conserva su máscara voxelizada.
 Faltan dispersión múltiple, luces de área, temperatura espectral calibrada,
 integración con geometría general y gestión de color de producción.
 

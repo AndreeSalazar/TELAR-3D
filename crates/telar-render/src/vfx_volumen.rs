@@ -19,7 +19,9 @@ pub(super) fn integrar(f: &mut Funcion, t: &Tipos, mat: &Matematica, v: &Volumen
     let radio = Matematica::escalar(f, 0.9);
     let inicio = f.binaria(op::F_SUB, t.real, distancia, radio);
     let inicio = f.glsl(t.real, op::GLSL_MAXIMO, &[inicio, cero]);
-    let largo = Matematica::escalar(f, 1.8 / pasos as f32);
+    let [largo, fondo] = crate::vfx_esfera::limitar(f, t, mat, v, camara, inicio);
+    let factor = Matematica::escalar(f, 1.0 / pasos as f32);
+    let largo = f.binaria(op::F_MUL, t.real, largo, factor);
     let inicial = f.construir(t.v4, &[cero, cero, cero, uno]);
     let resultado = f.repetir(pasos, t.v4, inicial, |f, indice, antes| {
         let indice = f.unaria(op::U_A_F, t.real, indice);
@@ -56,7 +58,6 @@ pub(super) fn integrar(f: &mut Funcion, t: &Tipos, mat: &Matematica, v: &Volumen
         f.construir(t.v4, &[canales_rgb[0], canales_rgb[1], canales_rgb[2], nueva])
     });
     let rgb = t.xyz(f, resultado);
-    let fondo = mat.vector(f, [0.008, 0.012, 0.018]);
     let transparencia = f.extraer(t.real, resultado, 3);
     let fondo = f.binaria(op::VECTOR_TIMES_SCALAR, t.v3, fondo, transparencia);
     f.binaria(op::F_ADD, t.v3, rgb, fondo)
@@ -127,7 +128,15 @@ fn fuente(
     let emision = f.binaria(op::VECTOR_TIMES_SCALAR, t.v3, emision, intensidad);
     f.binaria(op::F_ADD, t.v3, gris, emision)
 }
-fn sombra(f: &mut Funcion, t: &Tipos, mat: &Matematica, v: &Volumen, posicion: Id, hacia: Id, largo: Id) -> Id {
+pub(super) fn sombra(
+    f: &mut Funcion,
+    t: &Tipos,
+    mat: &Matematica,
+    v: &Volumen,
+    posicion: Id,
+    hacia: Id,
+    largo: Id,
+) -> Id {
     let cero = Matematica::escalar(f, 0.0);
     let octavo = Matematica::escalar(f, 0.125);
     let paso = f.binaria(op::F_MUL, t.real, largo, octavo);
@@ -141,15 +150,15 @@ fn sombra(f: &mut Funcion, t: &Tipos, mat: &Matematica, v: &Volumen, posicion: I
         let density = muestra(f, t, mat, v, punto, 3);
         let ext = ajuste(f, t, v, 16);
         let density = f.binaria(op::F_MUL, t.real, density, ext);
-        let solido = v.solido(f, t, mat, punto);
-        let opaco = Matematica::escalar(f, 40.0);
-        let density = f.elegir(t.real, solido, opaco, density);
         let delta = f.binaria(op::F_MUL, t.real, density, paso);
         f.binaria(op::F_ADD, t.real, anterior, delta)
     });
     let menos = Matematica::escalar(f, -1.0);
     let espesor = f.binaria(op::F_MUL, t.real, espesor, menos);
-    f.glsl(t.real, 27, &[espesor])
+    let transmision = f.glsl(t.real, 27, &[espesor]);
+    let destino = f.binaria(op::F_ADD, t.v3, posicion, hacia);
+    let libre = crate::vfx_esfera::libre(f, t, mat, posicion, destino);
+    f.elegir(t.real, libre, transmision, cero)
 }
 #[allow(clippy::too_many_arguments, reason = "estado explícito del diagnóstico volumétrico")]
 fn diagnostico(

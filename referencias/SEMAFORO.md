@@ -57,3 +57,18 @@ Limites adicionales: 32 cubico, 128 secundarios, cuatro posiciones de historial,
 dispersion simple, sin oclusion de estelas ni color de produccion; cache ligada
 a GPU/driver/Vulkan, requiere enlaces duros. No equivale a coste cero ni a Pyro.
 Contrato, fuentes, evidencia real y pendientes: docs/PLANO-VFX.md.
+
+
+Esfera VFX (29-10-2026): la superficie y las sombras de esfera usan cuadraticas
+analiticas GPU; la fisica conserva la mascara voxelizada de 32 cubico. CPU
+conserva eventos/parametros/envios y no intersecta pixeles en el producto.
+GPU recorta el volumen, sombrea la superficie y bloquea segmentos hacia luz
+y secundarios; sustituye las pruebas voxelizadas de sombra por interseccion.
+No hay buffers ni transferencias por cuadro adicionales; reserva logica VFX
+4063236 B mas staging/imagenes/alineacion/pipelines, sin pico ni tiempos medidos.
+RAM y E/S: escena propia de 200 B, pruebas y capturas explicitas; sin disco
+por cuadro estable. Ritmo: cada rayo primario y segmento de visibilidad.
+Restricciones de esta entrega: esfera unica, material mate fijo, ambiente artistico, sesgos numericos,
+diferencia entre superficie continua y mascara fisica de una celda de orden;
+sin mallas generales ni GI. Estado de riesgo anterior conservado.
+Evidencia y contrato: docs/VFX-ESFERA.md, pruebas vfx_compuesto_gpu.rs y vfx_gpu.rs.

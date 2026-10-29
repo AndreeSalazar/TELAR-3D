@@ -6,6 +6,8 @@ pub(super) fn filtrar(f: &mut Funcion, t: &Tipos, mat: &Matematica, v: &Volumen,
     let [ojo, punto, peso] = datos;
     let umbral = Matematica::escalar(f, 1e-5);
     let visible = f.binaria(op::F_ORD_GREATER_THAN, mat.booleano, peso, umbral);
+    let libre = crate::vfx_esfera::libre(f, t, mat, ojo, punto);
+    let visible = f.binaria(op::LOGICAL_AND, mat.booleano, visible, libre);
     let integrar = f.etiqueta();
     let omitir = f.etiqueta();
     let fin = f.etiqueta();
@@ -49,9 +51,6 @@ fn transmitir(f: &mut Funcion, t: &Tipos, mat: &Matematica, v: &Volumen, ojo: Id
         let posicion = f.binaria(op::F_ADD, t.v3, punto, offset);
         let densidad = v.muestra(f, t, mat, posicion, canal);
         let sigma = f.binaria(op::F_MUL, t.real, densidad, ext);
-        let solido = v.solido(f, t, mat, posicion);
-        let opaco = Matematica::escalar(f, 40.0);
-        let sigma = f.elegir(t.real, solido, opaco, sigma);
         let aporte = f.binaria(op::F_MUL, t.real, sigma, paso);
         f.binaria(op::F_ADD, t.real, anterior, aporte)
     });

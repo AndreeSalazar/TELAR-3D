@@ -10,10 +10,25 @@ struct Escena {
     viva: bool,
     estela: bool,
     diagnostico: bool,
+    radio: f32,
+    altura: f32,
+    calor_detras: f32,
+    ojo: [f32; 3],
 }
 impl Default for Escena {
     fn default() -> Self {
-        Self { densidad: 0.0, brillo: 1.0, posicion: [0.5, 0.5, 0.8], viva: true, estela: false, diagnostico: false }
+        Self {
+            densidad: 0.0,
+            brillo: 1.0,
+            posicion: [0.5, 0.5, 0.8],
+            viva: true,
+            estela: false,
+            diagnostico: false,
+            radio: 0.0,
+            altura: 0.5,
+            calor_detras: 0.0,
+            ojo: [0.5, 0.5, 2.0],
+        }
     }
 }
 fn preparar() -> (telar_ventana::Ventana, Gpu) {
@@ -49,9 +64,12 @@ fn mostrar(gpu: &mut Gpu, escena: Escena) -> f32 {
     let mut ajustes = telar_ui::Vfx::default();
     ajustes.0[15] = 0.0;
     ajustes.0[16] = 1.0;
-    ajustes.0[18] = 0.0;
+    ajustes.0[18] = if escena.calor_detras > 0.0 { 3.0 } else { 0.0 };
     ajustes.0[27] = escena.brillo;
     estado[3 * CELDAS..4 * CELDAS].fill(escena.densidad);
+    if escena.calor_detras > 0.0 {
+        estado[4 * CELDAS..4 * CELDAS + 8 * 32 * 32].fill(escena.calor_detras);
+    }
     estado[19 * CELDAS..19 * CELDAS + 28].copy_from_slice(&ajustes.0);
     for eje in 0..3 {
         estado[20 * CELDAS + eje * 128] = escena.posicion[eje];
@@ -65,10 +83,12 @@ fn mostrar(gpu: &mut Gpu, escena: Escena) -> f32 {
     let mut bloque = [0.0; 32];
     bloque[6] = 1.0;
     bloque[7] = if escena.diagnostico { 3.0 } else { 0.0 };
+    bloque[14] = escena.radio;
+    bloque[15] = escena.altura;
     bloque[16..19].copy_from_slice(&[0.0, 0.0, -1.0]);
     bloque[20..23].copy_from_slice(&[0.5, 0.0, 0.0]);
     bloque[24..27].copy_from_slice(&[0.0, 0.5, 0.0]);
-    bloque[28..31].copy_from_slice(&[0.5, 0.5, 2.0]);
+    bloque[28..31].copy_from_slice(&escena.ojo);
     gpu.ejecutar_campos(&bloque).unwrap();
     let centro = telar_render::vfx_final::base(32) + (128 * 256 + 128) * 5;
     f32::from_bits(gpu.inspeccionar_rango_campos(centro, 1).unwrap()[0])
@@ -101,6 +121,34 @@ fn chispas_y_estelas_se_integran_en_belleza_con_extincion() {
     let diagnostico = Escena { diagnostico: true, ..estela };
     assert!(contribucion(&mut gpu, Escena { brillo: 0.0, ..diagnostico }).abs() < 1e-6);
     assert_eq!(mostrar(&mut gpu, diagnostico), mostrar(&mut gpu, Escena { densidad: 2.0, ..diagnostico }));
+    drop(gpu);
+    drop(ventana);
+    assert_eq!(telar_gpu::avisos_de_validacion(), 0);
+}
+
+#[test]
+fn esfera_corta_el_volumen_y_bloquea_secundarios_detras() {
+    let (ventana, mut gpu) = preparar();
+    let esfera = Escena { radio: 0.2, ..Default::default() };
+    let superficie = mostrar(&mut gpu, Escena { viva: false, ..esfera });
+    assert!((superficie - 0.18 * 0.04).abs() < 1e-6);
+    assert!(contribucion(&mut gpu, esfera) > 0.1);
+    for profundidad in [0.2, 0.5] {
+        let oculta = Escena { posicion: [0.5, 0.5, profundidad], ..esfera };
+        assert!(contribucion(&mut gpu, oculta).abs() < 1e-6);
+    }
+    let pequena = Escena { radio: 0.001, posicion: [0.5, 0.5, 0.2], ..esfera };
+    assert!(contribucion(&mut gpu, pequena).abs() < 1e-6);
+    let estela = Escena { posicion: [0.54, 0.5, 0.2], estela: true, ..esfera };
+    assert!(contribucion(&mut gpu, estela).abs() < 1e-6);
+    assert!(contribucion(&mut gpu, Escena { diagnostico: true, ..estela }) > 0.1);
+    let calor = Escena { viva: false, calor_detras: 1.0, ..esfera };
+    assert!((mostrar(&mut gpu, calor) - superficie).abs() < 1e-6);
+    assert!(mostrar(&mut gpu, Escena { radio: 0.0, ..calor }) > superficie + 0.1);
+    let vacio = Escena { viva: false, radio: 0.0, ..esfera };
+    assert_eq!(mostrar(&mut gpu, vacio), mostrar(&mut gpu, Escena { radio: 0.2, altura: 0.1, ..vacio }));
+    let dentro = mostrar(&mut gpu, Escena { ojo: [0.5; 3], viva: false, ..esfera });
+    assert!(dentro.is_finite());
     drop(gpu);
     drop(ventana);
     assert_eq!(telar_gpu::avisos_de_validacion(), 0);

@@ -163,3 +163,6 @@ Prototipo 32³; [comandos, costes, pruebas y pendientes](docs/PLANO-VFX.md).
 
 Belleza combina ahora fuego/humo y secundarios: las chispas y sus estelas
 se atenúan por el volumen, con brillo editable. [Captura y pruebas](docs/VFX-COMPUESTO.md).
+
+La esfera de colisión aparece como superficie opaca, bloquea luz y secundarios,
+y recibe sombra del humo. [Escena de ejemplo y límites](docs/VFX-ESFERA.md).

@@ -77,3 +77,18 @@ o muestra HDR; tiempo GPU y pico fisico siguen sin medir. Riesgo: coste por
 pixel, aproximacion de oclusion de ocho pasos y contribucion aditiva sin
 iluminar el gas; no garantiza FPS ni calidad profesional. Se conserva el
 estado declarado de la carpeta. Evidencia y limites: docs/VFX-COMPUESTO.md.
+
+
+Esfera VFX (29-10-2026): la superficie y las sombras de esfera usan cuadraticas
+analiticas GPU; la fisica conserva la mascara voxelizada de 32 cubico. CPU
+conserva eventos/parametros/envios y no intersecta pixeles en el producto.
+GPU recorta el volumen, sombrea la superficie y bloquea segmentos hacia luz
+y secundarios; sustituye las pruebas voxelizadas de sombra por interseccion.
+No hay buffers ni transferencias por cuadro adicionales; reserva logica VFX
+4063236 B mas staging/imagenes/alineacion/pipelines, sin pico ni tiempos medidos.
+RAM y E/S: escena propia de 200 B, pruebas y capturas explicitas; sin disco
+por cuadro estable. Ritmo: cada rayo primario y segmento de visibilidad.
+Restricciones de esta entrega: esfera unica, material mate fijo, ambiente artistico, sesgos numericos,
+diferencia entre superficie continua y mascara fisica de una celda de orden;
+sin mallas generales ni GI. Estado de riesgo anterior conservado.
+Evidencia y contrato: docs/VFX-ESFERA.md, pruebas vfx_compuesto_gpu.rs y vfx_gpu.rs.

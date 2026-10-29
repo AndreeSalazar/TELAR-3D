@@ -18,6 +18,7 @@ mod superficie;
 mod tipos;
 mod trazado;
 mod trazadores;
+mod vfx_esfera;
 mod vfx_estelas;
 pub mod vfx_final;
 mod vfx_visibilidad;
