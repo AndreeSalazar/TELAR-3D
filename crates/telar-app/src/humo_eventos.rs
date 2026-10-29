@@ -26,7 +26,7 @@ pub(crate) fn procesar(
         match evento {
             Evento::Cerrar | Evento::Tecla(Tecla::Escape) => return Resultado { sucio, accion, cerrar: true },
             Evento::Tamano { ancho, alto } => gpu.redimensionar(ancho, alto),
-            Evento::Tecla(Tecla::Otra(v @ (116 | 119 | 120 | 82 | 68 | 78 | 32))) => accion = Some(v),
+            Evento::Tecla(Tecla::Otra(v @ (116 | 119 | 120 | 82 | 68 | 78 | 77 | 32))) => accion = Some(v),
             Evento::Raton { x, y } => entrada.mover(editor, d, x, y),
             Evento::Boton { boton: Boton::Izquierdo, pulsado: true } => entrada.pulsar(editor, d),
             Evento::Boton { boton: Boton::Izquierdo, pulsado: false } => entrada.soltar(editor),

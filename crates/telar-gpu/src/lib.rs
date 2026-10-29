@@ -27,6 +27,8 @@ pub use lotes::{PlanLotes, ProgresoLotes};
 mod perfil;
 mod plan;
 mod procedural;
+mod telemetria;
+pub use telemetria::{CargaCampos, MemoriaHeap, TelemetriaGpu};
 
 use core::sync::atomic::Ordering;
 

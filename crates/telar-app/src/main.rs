@@ -46,6 +46,7 @@ mod humo_eventos;
 mod humo_modos;
 mod humo_vista;
 mod intercambio_archivo;
+mod monitor_gpu;
 mod objetos;
 mod particulas_archivo;
 mod particulas_geo;

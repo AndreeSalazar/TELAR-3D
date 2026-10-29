@@ -36,6 +36,12 @@ pub(crate) struct Visor {
 }
 
 impl Visor {
+    pub(crate) fn carga_campos(&self) -> crate::CargaCampos {
+        self.campos.as_ref().map_or_else(crate::CargaCampos::default, super::campos::Campos::carga)
+    }
+    pub(crate) fn validar_control(&self, offset: u32) -> Result<(), String> {
+        self.campos.as_ref().and_then(|c| c.control(offset)).map(|_| ()).ok_or("rango de telemetría inválido".into())
+    }
     pub(crate) fn nuevo(ctx: &Contexto, (vertices, fragmentos): Sombreadores) -> Result<Self, String> {
         let fd = ctx.fd.ok_or("el contexto no tiene dispositivo")?;
         let (vertices, fragmentos) = (vertices.to_vec(), fragmentos.to_vec());

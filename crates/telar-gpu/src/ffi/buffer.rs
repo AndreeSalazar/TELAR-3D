@@ -37,6 +37,16 @@ pub(crate) struct BufferMapeado {
 }
 
 impl BufferMapeado {
+    /// El propietario solo lee después de completar la valla de la ranura.
+    pub(crate) fn leer_control(&self) -> Result<[f32; 16], String> {
+        if self.buffer.tamano < 64 {
+            return Err("mapeo de control insuficiente".into());
+        }
+        let mut bytes = [0u8; 64];
+        // SAFETY: mapeo coherente de al menos 64 B; RelojVivo espera la valla antes de leer.
+        unsafe { core::ptr::copy_nonoverlapping(self.puntero, bytes.as_mut_ptr(), 64) };
+        Ok(core::array::from_fn(|i| f32::from_le_bytes(bytes[i * 4..i * 4 + 4].try_into().unwrap_or([0; 4]))))
+    }
     /// Escribe bytes sin llamadas Vulkan; el buffer es coherente para el host.
     pub(crate) fn escribir(&self, datos: &[u8]) -> Result<(), String> {
         if datos.len() as u64 > self.buffer.tamano {

@@ -53,6 +53,7 @@ fn ejecutar(args: &[String]) -> Result<(), String> {
         entrada.encuadrar_vfx();
     }
     cache.cargar(&gpu, &mut entrada)?;
+    let mut monitor = crate::monitor_gpu::Observador::nuevo(args, &editor, &mut gpu)?;
     let mut estado = Estado {
         ajustes: None,
         paso: false,
@@ -71,26 +72,28 @@ fn ejecutar(args: &[String]) -> Result<(), String> {
         if eventos.cerrar {
             break 'vivo;
         }
-        if let Some(accion) = eventos.accion {
+        if eventos.accion == Some(77) {
+            monitor.alternar(&mut editor, &mut gpu)?;
+        } else if let Some(accion) = eventos.accion {
             editor.numero(EntradaNumero::Confirmar);
             if !editor.editando() {
                 atender(accion, &mut editor, &mut estado, &gpu, ruta);
             }
         }
         actualizar_secuencia(&editor, &mut estado, &mut gpu)?;
+        sucio |= monitor.actualizar(&mut editor, &gpu, false);
         if sucio {
             gpu.actualizar_interfaz(&editor.dibujar(d, &fuente)?, d.area())?;
             tamano = d.tamano;
         }
         gpu.activar_campos(editor.animando || estado.paso)?;
         let srgb = gpu.imagenes().0 != telar_gpu::eleccion::FORMATO_SRGB;
+        let envio = Instant::now();
         if gpu.dibujar_bloque_interfaz([0.03, 0.04, 0.05, 1.0], &entrada.bloque(&editor, srgb)?)? {
+            monitor.cuadro(&gpu, envio.elapsed());
             cuadros += 1;
-            if prueba && cuadros == 40 {
-                ventana.cambiar_tamano(500, 300);
-            }
-            if prueba && cuadros == 80 {
-                ventana.cambiar_tamano(1280, 800);
+            if prueba {
+                probar_tamano(&ventana, cuadros);
             }
             if editor.animando || estado.paso {
                 estado.pasos += 1;
@@ -109,6 +112,7 @@ fn ejecutar(args: &[String]) -> Result<(), String> {
         }
     }
     if let Some(destino) = captura {
+        monitor.actualizar(&mut editor, &gpu, true);
         editor.mensaje = humo_vista::datos_editor(&gpu, &editor)?;
         println!("telar: {} · {} pasos", editor.mensaje, estado.pasos);
         humo_vista::capturar_bloque(&mut gpu, &editor, &fuente, Path::new(&destino), &entrada.bloque(&editor, true)?)?;
@@ -117,6 +121,8 @@ fn ejecutar(args: &[String]) -> Result<(), String> {
     salida.finalizar(&mut gpu, &editor, entrada.bloque(&editor, true)?)?;
     cache.finalizar(&gpu, &editor, &entrada, estado.pasos)?;
     guardar_al_salir(guardar.is_some(), ruta, &editor)?;
+    monitor.actualizar(&mut editor, &gpu, true);
+    monitor.finalizar()?;
     finalizar(gpu, ventana)?;
     let dimension = nombre_editor(&editor);
     println!("telar: {dimension} · {cuadros} fotogramas · {} pasos · 0 avisos de validación", estado.pasos);
@@ -253,6 +259,16 @@ fn es_volumen(args: &[String], cache: bool) -> bool {
             matches!(v.as_str(), "--humo-3d" | "--explosion" | "--particulas" | "--trazadores" | "--plano-vfx")
         })
 }
+
+fn probar_tamano(ventana: &telar_ventana::Ventana, cuadros: u32) {
+    if cuadros == 40 {
+        ventana.cambiar_tamano(500, 300);
+    }
+    if cuadros == 80 {
+        ventana.cambiar_tamano(1280, 800);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

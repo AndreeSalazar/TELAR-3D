@@ -66,6 +66,29 @@ pub(crate) unsafe fn grabar(
     escena: Option<&Escena>,
     interfaz: Option<&DibujoInterfaz>,
 ) {
+    // SAFETY: conserva íntegro el contrato de grabar, sin recursos de medición.
+    unsafe {
+        grabar_medido(fd, cmd, destino, limpiar, escena, interfaz, None);
+    }
+}
+/// # Safety
+/// Mismo contrato de grabar; el reloj vive hasta la valla y el juego no está en vuelo.
+#[allow(clippy::too_many_arguments, reason = "contexto de grabación más observador opcional")]
+pub(crate) unsafe fn grabar_medido(
+    fd: &FnDispositivo,
+    cmd: Comandos,
+    destino: &Destino,
+    limpiar: [f32; 4],
+    escena: Option<&Escena>,
+    interfaz: Option<&DibujoInterfaz>,
+    marcas: Option<(&super::reloj_vivo::RelojVivo, usize)>,
+) {
+    // SAFETY: el llamador completó la valla del juego antes de grabar sus consultas.
+    unsafe {
+        if let Some((reloj, juego)) = marcas {
+            reloj.marcar(cmd, juego, 0);
+        }
+    }
     if let Some(historial) = escena.and_then(|e| e.historial) {
         // SAFETY: contrato de grabar; escena e historial viven hasta la valla del envío.
         unsafe {
@@ -78,6 +101,14 @@ pub(crate) unsafe fn grabar(
         // SAFETY: contrato de grabar; campos y constantes viven hasta su valla.
         unsafe {
             campos.grabar(fd, cmd, escena.constantes);
+        }
+    }
+    // SAFETY: el snapshot solo copia un rango comprobado del estado de esta escena.
+    unsafe {
+        if let Some((reloj, juego)) = marcas {
+            let fuente = escena.and_then(|e| e.campos).and_then(|c| reloj.control.and_then(|o| c.control(o)));
+            reloj.copiar(cmd, juego, fuente);
+            reloj.marcar(cmd, juego, 1);
         }
     }
     let color = Rango { aspecto: ASPECTO_COLOR, mip_base: 0, n_mips: 1, capa_base: 0, n_capas: 1 };
@@ -150,26 +181,17 @@ pub(crate) unsafe fn grabar(
                 interfaz.map_or_else(|| region([0, 0, ancho, alto]), |ui| region(ui.area));
             dibujar_escena(fd, cmd, e, &viewport_escena, tijera_escena);
         }
+        if let Some((reloj, juego)) = marcas {
+            reloj.marcar(cmd, juego, 2);
+        }
         if let Some(ui) = interfaz {
-            (fd.calculo.usar_pipeline)(cmd, PUNTO_GRAFICOS, ui.pipeline.pipeline);
-            (fd.calculo.usar_conjuntos)(
-                cmd,
-                PUNTO_GRAFICOS,
-                ui.pipeline.disposicion,
-                0,
-                1,
-                &raw const ui.conjunto,
-                0,
-                NULO.cast(),
-            );
-            (fg.poner_viewport)(cmd, 0, 1, &raw const viewport);
-            (fg.poner_tijera)(cmd, 0, 1, &raw const area);
-            let desde = 0;
-            (fg.usar_vertices)(cmd, 0, 1, &raw const ui.buffer.buffer.objeto, &raw const desde);
-            (fg.dibujar)(cmd, ui.cantidad, 1, 0, 0);
+            dibujar_interfaz(fd, cmd, ui, &viewport, &area);
         }
         (fg.terminar_renderizado)(cmd);
         (fd.barrera)(cmd, ETAPA_SALIDA_COLOR, etapa, 0, 0, NULO, 0, NULO, 1, &raw const despues);
+        if let Some((reloj, juego)) = marcas {
+            reloj.marcar(cmd, juego, 3);
+        }
     }
 }
 
@@ -261,5 +283,30 @@ fn adjunto(vista: Objeto, layout: u32, guardar: u32, limpiar: [f32; 4]) -> Adjun
         cargar: CARGAR_LIMPIAR,
         guardar,
         limpiar,
+    }
+}
+
+/// # Safety
+/// Recursos de interfaz y comando válidos durante el renderizado dinámico.
+unsafe fn dibujar_interfaz(fd: &FnDispositivo, cmd: Comandos, ui: &DibujoInterfaz, viewport: &Viewport, area: &Rect2D) {
+    let fg = fd.grafico;
+    // SAFETY: contrato del llamador; todos los punteros viven durante la llamada.
+    unsafe {
+        (fd.calculo.usar_pipeline)(cmd, PUNTO_GRAFICOS, ui.pipeline.pipeline);
+        (fd.calculo.usar_conjuntos)(
+            cmd,
+            PUNTO_GRAFICOS,
+            ui.pipeline.disposicion,
+            0,
+            1,
+            &raw const ui.conjunto,
+            0,
+            NULO.cast(),
+        );
+        (fg.poner_viewport)(cmd, 0, 1, viewport);
+        (fg.poner_tijera)(cmd, 0, 1, area);
+        let desde = 0;
+        (fg.usar_vertices)(cmd, 0, 1, &raw const ui.buffer.buffer.objeto, &raw const desde);
+        (fg.dibujar)(cmd, ui.cantidad, 1, 0, 0);
     }
 }

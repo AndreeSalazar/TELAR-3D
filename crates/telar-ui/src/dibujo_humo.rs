@@ -56,7 +56,7 @@ impl EditorHumo {
             &mut lienzo,
             [180.0, 22.0, ancho - 200.0, 30.0],
             if self.vfx.is_some() {
-                "Combustión GPU · órbita / rueda · Espacio / N / R · F5 / F9: escena · F8: GEO"
+                "Combustión GPU · órbita / rueda · Espacio / N / R · M: monitor · F5 / F9 · F8: GEO"
             } else if self.particulas.is_some() {
                 "Partículas GPU · arrastrar: órbita · rueda: zoom · Espacio / N / R · F8: GEO"
             } else if self.trazadores {
@@ -104,6 +104,7 @@ impl EditorHumo {
                 barra.color,
             );
         }
+        crate::monitor::dibujar(&mut lienzo, self.monitor.as_ref(), alto, &panel, &etiqueta);
         let estado = if self.edicion.is_some() {
             format!("{} · Enter: aplicar · Esc: cancelar", self.mensaje)
         } else {

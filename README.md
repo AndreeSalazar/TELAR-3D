@@ -166,3 +166,7 @@ se atenúan por el volumen, con brillo editable. [Captura y pruebas](docs/VFX-CO
 
 La esfera de colisión aparece como superficie opaca, bloquea luz y secundarios,
 y recibe sombra del humo. [Escena de ejemplo y límites](docs/VFX-ESFERA.md).
+
+Monitor vivo en VFX, tecla **M**: intervalos GPU, FPS/P95, heaps y presupuesto
+del driver, presión/CFL y carga del plan. `--benchmark-gpu target/medicion.csv`
+guarda CSV y perfil TXT al cerrar. [Qué mide y qué cuesta](docs/MONITOR-GPU.md).

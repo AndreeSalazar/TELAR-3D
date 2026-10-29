@@ -14,6 +14,8 @@ mod dibujo_humo;
 mod explosion_humo;
 mod fuego;
 mod humo;
+mod monitor;
+pub use monitor::Monitor;
 mod vfx;
 pub use vfx::Vfx;
 mod particulas;

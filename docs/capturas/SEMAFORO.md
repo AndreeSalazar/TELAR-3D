@@ -92,3 +92,21 @@ Restricciones de esta entrega: esfera unica, material mate fijo, ambiente artist
 diferencia entre superficie continua y mascara fisica de una celda de orden;
 sin mallas generales ni GI. Estado de riesgo anterior conservado.
 Evidencia y contrato: docs/VFX-ESFERA.md, pruebas vfx_compuesto_gpu.rs y vfx_gpu.rs.
+
+
+Monitor GPU vivo (29-10-2026): actualiza el contrato anterior de cero lecturas
+vivas solo cuando el monitor esta activo. CPU recoge cuatro timestamps y 16
+palabras de control tras la valla habitual del juego, compone panel a 2 Hz,
+consulta heaps al driver y conserva hasta 120 cuadros/4096 filas CSV en RAM.
+GPU graba marcas y copia 64 B por cuadro observado de humo/VFX; usa barreras
+explicitas, sin envio separado ni espera global nueva por cuadro. VRAM/RAM:
+dos buffers coherentes de 64 B (128 B logicos) y ocho queries, mas alineacion
+y memoria interna del driver no medidas; buffers se conservan al ocultar.
+El uso/presupuesto de heap son estimaciones de proceso, no toda la VRAM libre.
+No hay E/S de disco por cuadro; CSV/TXT exclusivos al cerrar si se solicitan.
+Ritmo: marcas/snapshot por cuadro; texto y presupuesto cada 500 ms; datos
+GPU diferidos hasta dos cuadros. Temperatura, potencia, frecuencia y ocupacion
+global no disponibles. Observar tiene coste y puede alterar tiempos; no se
+anuncia velocidad universal ni consumo cero. Semaforo de memoria 70/90% y
+estado numerico; FFI conserva ROJO y los demas estados previos se mantienen.
+Comprobacion de esta entrega: docs/MONITOR-GPU.md y telar-app/tests/telemetria_gpu.rs.

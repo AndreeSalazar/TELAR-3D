@@ -92,6 +92,8 @@ pub struct EditorHumo {
     pub pagina: usize,
     /// Estado de archivo/edición.
     pub mensaje: String,
+    /// Observación en vivo opcional; M la muestra u oculta en el laboratorio.
+    pub monitor: Option<crate::Monitor>,
     pub(crate) hoja: telar_estilo::Hoja,
     pub(crate) edicion: Option<(usize, String)>,
     reemplazar: bool,
@@ -115,6 +117,7 @@ impl Default for EditorHumo {
                     .into(),
             hoja: telar_estilo::Hoja::analizar(telar_estilo::TEMA_TELAR).unwrap_or_default(),
             edicion: None,
+            monitor: None,
             reemplazar: false,
             desliz: None,
         }

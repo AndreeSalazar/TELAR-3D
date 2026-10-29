@@ -24,6 +24,18 @@ pub(crate) struct Campos {
     pub(super) activo: bool,
 }
 impl Campos {
+    pub(super) fn carga(&self) -> crate::CargaCampos {
+        crate::CargaCampos {
+            bytes: self.bytes + 4,
+            grupos: self.grupos,
+            ranuras: self.secuencia.len(),
+            programas: self.programas.len(),
+        }
+    }
+    pub(super) fn control(&self, offset: u32) -> Option<(super::tipos::Objeto, u64)> {
+        let desde = u64::from(offset) * 4;
+        (desde + 64 <= self.bytes).then_some((self.programas[0].buffers[1], desde))
+    }
     pub(super) fn secuencia(&mut self, nueva: &[usize]) -> Result<(), String> {
         if nueva.is_empty() || nueva.len() > 2048 || nueva.iter().any(|v| *v >= self.programas.len()) {
             return Err("secuencia de campos inválida".into());
@@ -237,7 +249,14 @@ impl Campos {
 }
 /// # Safety
 /// Mismos requisitos de vida y grabación que el comando que protege.
-unsafe fn barrera(fd: &FnDispositivo, cmd: Comandos, origen: u32, destino: u32, lectura: u32, escritura: u32) {
+pub(super) unsafe fn barrera(
+    fd: &FnDispositivo,
+    cmd: Comandos,
+    origen: u32,
+    destino: u32,
+    lectura: u32,
+    escritura: u32,
+) {
     let nulo = core::ptr::null();
     let memoria =
         BarreraMemoria { s_type: ST_MEMORY_BARRIER, p_next: nulo, acceso_origen: lectura, acceso_destino: escritura };

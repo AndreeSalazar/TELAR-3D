@@ -77,6 +77,7 @@ pub(crate) struct Contexto {
     pub(crate) perfil: crate::PerfilGpu,
     /// Las propiedades de cada tipo de memoria (`VkMemoryType::propertyFlags`).
     pub(crate) tipos_memoria: Vec<u32>,
+    pub(crate) presupuesto_memoria: bool,
 }
 
 /// Lo que se recuerda de la mejor GPU mientras se buscan.
@@ -120,6 +121,7 @@ impl Contexto {
             grupos_max_x: 0,
             perfil: crate::PerfilGpu::default(),
             tipos_memoria: Vec::new(),
+            presupuesto_memoria: false,
         };
         if let Some((crear, _)) = fi.mensajero {
             let info = info_mensajero();
@@ -249,8 +251,15 @@ impl Contexto {
             n_colas: 1,
             prioridades: &raw const prioridad,
         };
-        let extensiones = [EXT_SWAPCHAIN.as_ptr()];
-        let n_ext = u32::from(self.superficie != 0); // sin ventana no hace falta swapchain
+        self.presupuesto_memoria = super::memoria_viva::soporta(self)?;
+        let mut extensiones = Vec::new();
+        if self.superficie != 0 {
+            extensiones.push(EXT_SWAPCHAIN.as_ptr());
+        }
+        if self.presupuesto_memoria {
+            extensiones.push(c"VK_EXT_memory_budget".as_ptr().cast::<u8>());
+        }
+        let n_ext = u32::try_from(extensiones.len()).map_err(|_| "demasiadas extensiones")?;
         // Vulkan 1.3: renderizado dinámico (dibujar sin pases de render ni framebuffers).
         let mut funciones13 =
             Funciones13 { s_type: ST_VULKAN_1_3_FEATURES, p_next: core::ptr::null_mut(), activas: [0; 15] };

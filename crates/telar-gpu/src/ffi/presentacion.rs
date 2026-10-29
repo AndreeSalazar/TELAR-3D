@@ -9,7 +9,7 @@
 //!   reutilizarlo por fotograma provocaría avisos (y carreras de verdad).
 
 use super::contexto::{Contexto, ok};
-use super::dibujo::{Destino, Escena, grabar};
+use super::dibujo::{Destino, Escena};
 use super::funciones::{FnDispositivo, FnSwapchain};
 use super::swapchain::Swapchain;
 use super::tipos::{
@@ -42,9 +42,23 @@ pub(crate) struct Presentacion {
     rehacer: bool,
     /// Cuántas veces se ha creado la swapchain (la primera incluida).
     pub(crate) creaciones: u32,
+    reloj: Option<super::reloj_vivo::RelojVivo>,
 }
 
 impl Presentacion {
+    pub(crate) fn telemetria(&mut self, ctx: &Contexto, activa: bool, control: Option<u32>) -> Result<(), String> {
+        if activa && self.reloj.is_none() {
+            self.reloj = Some(super::reloj_vivo::RelojVivo::nuevo(ctx)?);
+        }
+        if let Some(reloj) = &mut self.reloj {
+            reloj.activa = activa;
+            reloj.control = control;
+        }
+        Ok(())
+    }
+    pub(crate) fn observacion(&self) -> crate::TelemetriaGpu {
+        self.reloj.as_ref().map_or_else(crate::TelemetriaGpu::default, |r| r.ultima)
+    }
     pub(crate) fn cuadro(&self) -> usize {
         self.cuadro
     }
@@ -68,6 +82,7 @@ impl Presentacion {
             ventana,
             rehacer: false,
             creaciones: 0,
+            reloj: None,
         };
         let nulo = core::ptr::null();
         let pool = InfoSimple {
@@ -158,6 +173,9 @@ impl Presentacion {
         let r = unsafe {
             let r = (self.fd.esperar_vallas)(self.dispositivo, 1, &raw const self.vallas[f], 1, u64::MAX);
             ok(r, "esperar la valla")?;
+            if let Some(reloj) = &mut self.reloj {
+                reloj.recoger(f)?;
+            }
             (self.fs.adquirir)(self.dispositivo, sc.objeto, u64::MAX, self.adquiridas[f], 0, &raw mut indice)
         };
         if r == VK_ERROR_OUT_OF_DATE_KHR {
@@ -224,10 +242,23 @@ impl Presentacion {
         let r = unsafe {
             ok((self.fd.reiniciar_comandos)(cmd, 0), "reiniciar los comandos")?;
             ok((self.fd.empezar)(cmd, &raw const inicio), "empezar los comandos")?;
-            grabar(&self.fd, cmd, &destino, limpiar, escena, interfaz.as_ref());
+            super::dibujo::grabar_medido(
+                &self.fd,
+                cmd,
+                &destino,
+                limpiar,
+                escena,
+                interfaz.as_ref(),
+                self.reloj.as_ref().filter(|r| r.activa).map(|r| (r, f)),
+            );
             ok((self.fd.terminar)(cmd), "terminar los comandos")?;
             ok((self.fd.reiniciar_vallas)(self.dispositivo, 1, &raw const self.vallas[f]), "reiniciar la valla")?;
             ok((self.fd.enviar)(self.cola, 1, &raw const envio, self.vallas[f]), "enviar a la GPU")?;
+            if let Some(reloj) = self.reloj.as_mut().filter(|r| r.activa) {
+                let copiado =
+                    escena.and_then(|e| e.campos).and_then(|c| reloj.control.and_then(|o| c.control(o))).is_some();
+                reloj.enviado(f, copiado);
+            }
             (self.fs.presentar)(self.cola, &raw const presentacion)
         };
         self.cuadro = (f + 1) % EN_VUELO;

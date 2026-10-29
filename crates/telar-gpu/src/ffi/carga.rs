@@ -97,6 +97,8 @@ pub(crate) struct FnInstancia {
     pub(crate) capacidades: LeerCapacidades,
     pub(crate) formatos: ListarFormatos,
     pub(crate) memoria: LeerMemoria,
+    pub(crate) memoria2: super::memoria_viva::Leer,
+    pub(crate) extensiones: super::memoria_viva::Listar,
     /// Solo con validación (`VK_EXT_debug_utils`).
     pub(crate) mensajero: Option<(CrearMensajero, DestruirDeInstancia)>,
 }
@@ -130,6 +132,8 @@ impl FnInstancia {
             capacidades: cargar!(buscar, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR", LeerCapacidades),
             formatos: cargar!(buscar, "vkGetPhysicalDeviceSurfaceFormatsKHR", ListarFormatos),
             memoria: cargar!(buscar, "vkGetPhysicalDeviceMemoryProperties", LeerMemoria),
+            memoria2: cargar!(buscar, "vkGetPhysicalDeviceMemoryProperties2", super::memoria_viva::Leer),
+            extensiones: cargar!(buscar, "vkEnumerateDeviceExtensionProperties", super::memoria_viva::Listar),
             mensajero,
         })
     }
