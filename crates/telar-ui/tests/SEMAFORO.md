@@ -60,3 +60,20 @@ medición del pico físico. E/S: v12 de 56 B y GEO de vivas; descarga explícita
 compatibilidad externa certificada; perfil de ocho atributos separado del MAC.
 Pruebas y captura reales: docs/PARTICULAS-GPU.md y telar-app/tests/particulas_gpu.rs.
 El estado de riesgo de esta carpeta se conserva; no significa consumo cero.
+
+
+Plano VFX (29-10-2026): se conserva el estado de riesgo anterior; FFI sigue ROJO.
+CPU prepara SPIR-V, interfaz, constantes, envios y E/S explicita; GPU ejecuta
+MAC/reaccion, secundarios y pixeles. Actualizar parametros VFX sube 112 B;
+no descarga campos por cuadro estable. Reserva logica compartida 4063236 B
+a 32 cubico con salida final; staging, imagenes, alineacion y pipelines aparte,
+sin pico fisico ni tiempos GPU medidos. RAM: copias/serializacion de cache y HDR
+solo por solicitud. Render lee 1310720 B; cache reactiva copia 1015808 palabras,
+archivo 4063512 B. Tests usan GPU real y crean archivos temporales en target.
+Frecuencia de trabajo: simulacion por subpaso, visor 384 cuadrado; HDR 256 cuadrado,
+1..1024 muestras en envios acotados. E/S de cache/escena/secuencia es optativa,
+sin reemplazar resultados; salida VFX por lotes sin trabajador asincrono.
+Limites adicionales: 32 cubico, 128 secundarios, cuatro posiciones de historial,
+dispersion simple, sin oclusion de estelas ni color de produccion; cache ligada
+a GPU/driver/Vulkan, requiere enlaces duros. No equivale a coste cero ni a Pyro.
+Contrato, fuentes, evidencia real y pendientes: docs/PLANO-VFX.md.

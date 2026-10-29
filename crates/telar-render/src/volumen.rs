@@ -14,7 +14,7 @@ use hilo_spirv::{
 /// # Errors
 /// Rechaza lados fuera de 4..64 o pasos de integración fuera de 16..128.
 pub fn fragmentos(lado: u32, pasos: u32) -> Result<Vec<u32>, &'static str> {
-    fragmentos_internos(lado, pasos, false)
+    fragmentos_internos(lado, pasos, false, false)
 }
 /// Visor MAC con trazadores pasivos en la cuarta vista.
 /// # Errors
@@ -23,16 +23,26 @@ pub fn fragmentos_trazadores(lado: u32, pasos: u32) -> Result<Vec<u32>, &'static
     if !(8..=64).contains(&lado) {
         return Err("visor de trazadores requiere lado 8..64");
     }
-    fragmentos_internos(lado, pasos, true)
+    fragmentos_internos(lado, pasos, true, false)
 }
-fn fragmentos_internos(lado: u32, pasos: u32, trazadores: bool) -> Result<Vec<u32>, &'static str> {
+/// Plano reactivo con luz puntual, sombras volumétricas y secundarios.
+/// # Errors
+/// Rechaza lado fuera de 8..64 o pasos fuera de 16..128.
+pub fn fragmentos_vfx(lado: u32, pasos: u32) -> Result<Vec<u32>, &'static str> {
+    if !(8..=64).contains(&lado) {
+        return Err("plano VFX requiere lado 8..64");
+    }
+    fragmentos_internos(lado, pasos, true, true)
+}
+fn fragmentos_internos(lado: u32, pasos: u32, trazadores: bool, vfx: bool) -> Result<Vec<u32>, &'static str> {
     if !(4..=64).contains(&lado) || !(16..=128).contains(&pasos) {
         return Err("visor volumétrico fuera de presupuesto");
     }
     let mut m = Modulo::nuevo();
     let t = Tipos::nuevos(&mut m);
     let mat = Matematica::nueva(&mut m);
-    let volumen = Volumen::nuevo(&mut m, &t, lado);
+    let mut volumen = Volumen::nuevo(&mut m, &t, lado);
+    volumen.vfx = vfx;
     let v2 = m.tipo_vector(t.real, 2);
     let entrada = variable(&mut m, v2, Clase::Entrada, 0);
     let salida = variable(&mut m, t.v4, Clase::Salida, 0);
@@ -50,7 +60,13 @@ fn fragmentos_internos(lado: u32, pasos: u32, trazadores: bool) -> Result<Vec<u3
     let origen4 = t.cargar(&mut f, 7);
     let origen = t.xyz(&mut f, origen4);
     let direccion = direccion(&mut f, &t, &mat, uv);
-    let integrar_vista = |f: &mut Funcion| integrar(f, &t, &mat, &volumen, origen, direccion, vista, pasos);
+    let integrar_vista = |f: &mut Funcion| {
+        if vfx {
+            crate::vfx_volumen::integrar(f, &t, &mat, &volumen, [origen, direccion, vista], pasos)
+        } else {
+            integrar(f, &t, &mat, &volumen, origen, direccion, vista, pasos)
+        }
+    };
     let rgb = if trazadores {
         crate::trazadores::sumar(&mut f, &t, &mat, &volumen, [origen, direccion, vista], integrar_vista)
     } else {

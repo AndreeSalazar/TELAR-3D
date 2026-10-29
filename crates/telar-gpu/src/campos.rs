@@ -5,9 +5,9 @@ use crate::{Gpu, Sombreadores};
 pub struct PlanCampos<'a> {
     /// Invocaciones por pasada; local X=64.
     pub elementos: u32,
-    /// Palabras u32/f32 por elemento, 1..20; estado total hasta 64 MiB.
+    /// Palabras u32/f32 por elemento, 1..32; estado total hasta 64 MiB.
     pub palabras: u32,
-    /// SPIR-V distintos, hasta 16; set 0/binding 1 es el estado.
+    /// SPIR-V distintos, hasta 32; set 0/binding 1 es el estado.
     pub programas: &'a [Vec<u32>],
     /// Índices de programas en orden, hasta 2048 pasadas por cuadro.
     pub secuencia: &'a [usize],
@@ -15,9 +15,9 @@ pub struct PlanCampos<'a> {
 impl PlanCampos<'_> {
     pub(crate) fn validar(&self) -> Result<u64, String> {
         if !(1..=1_048_576).contains(&self.elementos)
-            || !(1..=20).contains(&self.palabras)
+            || !(1..=32).contains(&self.palabras)
             || self.programas.is_empty()
-            || self.programas.len() > 16
+            || self.programas.len() > 32
             || self.secuencia.is_empty()
             || self.secuencia.len() > 2048
             || self.secuencia.iter().any(|v| *v >= self.programas.len())
@@ -71,6 +71,21 @@ impl Gpu {
     /// Rechaza tamaño distinto al estado o errores Vulkan.
     pub fn cargar_campos(&self, datos: &[u32]) -> Result<(), String> {
         self.visor.as_ref().ok_or("falta visor")?.transferir_campos(&self.contexto, Some(datos)).map(|_| ())
+    }
+    /// Ejecuta el plan compute actual y espera su valla; sin presentación ni lecturas de píxeles.
+    /// # Errors
+    /// Rechaza constantes no finitas, falta de estado o errores Vulkan.
+    pub fn ejecutar_campos(&self, bloque: &[f32; 32]) -> Result<(), String> {
+        if bloque.iter().any(|v| !v.is_finite()) {
+            return Err("constantes compute no finitas".into());
+        }
+        self.visor.as_ref().ok_or("falta visor")?.ejecutar_campos(&self.contexto, bloque)
+    }
+    /// Carga explícita acotada para parámetros editados; no descarga ni modifica el resto del estado.
+    /// # Errors
+    /// Rechaza rangos inválidos, ausencia de campos o errores Vulkan.
+    pub fn cargar_rango_campos(&self, desde: u32, datos: &[u32]) -> Result<(), String> {
+        self.visor.as_ref().ok_or("falta visor")?.escribir_campos(&self.contexto, desde, datos)
     }
     /// Descarga de diagnóstico bajo petición; no gobierna la simulación.
     /// # Errors

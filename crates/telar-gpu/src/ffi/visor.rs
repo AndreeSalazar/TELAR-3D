@@ -264,6 +264,12 @@ impl Visor {
     pub(crate) fn leer_campos(&self, ctx: &Contexto, desde: u32, cantidad: u32) -> Result<Vec<u32>, String> {
         self.campos.as_ref().ok_or("faltan campos")?.leer_rango(ctx, desde, cantidad)
     }
+    pub(crate) fn ejecutar_campos(&self, ctx: &Contexto, bloque: &[f32; 32]) -> Result<(), String> {
+        self.campos.as_ref().ok_or("faltan campos")?.ejecutar(ctx, bloque)
+    }
+    pub(crate) fn escribir_campos(&self, ctx: &Contexto, desde: u32, datos: &[u32]) -> Result<(), String> {
+        self.campos.as_ref().ok_or("faltan campos")?.escribir_rango(ctx, desde, datos)
+    }
     pub(crate) fn transferir_campos(&self, ctx: &Contexto, datos: Option<&[u32]>) -> Result<Vec<u32>, String> {
         self.campos.as_ref().ok_or("faltan campos")?.transferir(ctx, datos)
     }

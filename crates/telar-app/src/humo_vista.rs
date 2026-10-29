@@ -83,7 +83,10 @@ pub(crate) fn datos_editor(gpu: &Gpu, editor: &EditorHumo) -> Result<String, Str
     if editor.volumen {
         let resumen = resumen(gpu, telar_kernel::humo3d::CONTROL * crate::volumen_vista::LADO.pow(3), true)?;
         if editor.trazadores {
-            let flags = gpu.inspeccionar_rango_campos(17 * crate::volumen_vista::LADO.pow(3) + 10 * 128, 128)?;
+            let flags = gpu.inspeccionar_rango_campos(
+                (if editor.vfx.is_some() { 20 } else { 17 }) * crate::volumen_vista::LADO.pow(3) + 10 * 128,
+                128,
+            )?;
             let vivas = flags.iter().filter(|v| f32::from_bits(**v) > 0.0).count();
             let malas = flags.iter().filter(|v| f32::from_bits(**v) < 0.0).count();
             Ok(format!("{resumen} · {vivas} trazadores · {malas} cuarentena"))
@@ -178,5 +181,17 @@ pub(crate) fn diseno_editor(editor: &EditorHumo, tamano: (u32, u32)) -> DisenoOb
     if editor.particulas.is_some() {
         return crate::particulas_vista::diseno(tamano);
     }
-    if editor.volumen { crate::volumen_vista::diseno(tamano) } else { diseno(tamano) }
+    if editor.vfx.is_some() {
+        let mut d = crate::volumen_vista::diseno(tamano);
+        let lado = d.visor.ancho.min(384.0);
+        d.visor.x += (d.visor.ancho - lado) * 0.5;
+        d.visor.y += (d.visor.alto - lado) * 0.5;
+        d.visor.ancho = lado;
+        d.visor.alto = lado;
+        d
+    } else if editor.volumen {
+        crate::volumen_vista::diseno(tamano)
+    } else {
+        diseno(tamano)
+    }
 }

@@ -1,36 +1,60 @@
 //! Laboratorios nativos de humo 2D/3D; física residente, inspección solo por solicitud.
-use crate::humo_vista;
+use crate::humo_modos::{crear_editor, nombre_editor, predeterminada, validar_modo};
+use crate::{
+    humo_archivos::{guardar_editor, leer_editor},
+    humo_vista,
+};
 use std::{
     path::Path,
     time::{Duration, Instant},
 };
 use telar_ui::{EditorHumo, EntradaNumero};
-use telar_ventana::{Boton, Evento, Tecla};
+
 pub(crate) fn procesar(args: &[String]) -> Option<Result<(), String>> {
     args.iter()
-        .any(|v| v == "--humo" || v == "--humo-3d" || v == "--explosion" || v == "--particulas" || v == "--trazadores")
+        .any(|v| {
+            v == "--humo"
+                || v == "--humo-3d"
+                || v == "--explosion"
+                || v == "--particulas"
+                || v == "--trazadores"
+                || v == "--plano-vfx"
+                || v == "--abrir-cache"
+                || v == "--guardar-cache"
+                || v == "--render-vfx"
+                || v == "--secuencia-vfx"
+        })
         .then(|| ejecutar(args))
 }
 fn ejecutar(args: &[String]) -> Result<(), String> {
     validar_modo(args)?;
+    let cache = crate::humo_cache::Sesion::nueva(args)?;
     let abrir = crate::proyecto::argumento(args, "--abrir-escena")?;
     let guardar = crate::proyecto::argumento(args, "--guardar-escena")?;
-    let volumen =
-        args.iter().any(|v| v == "--humo-3d" || v == "--explosion" || v == "--particulas" || v == "--trazadores");
+    let volumen = es_volumen(args, cache.abrir.is_some());
     let ruta = Path::new(guardar.as_deref().or(abrir.as_deref()).unwrap_or(predeterminada(args, volumen)));
     let (captura, limite, objetivo) = opciones(args)?;
     let exportar = crate::intercambio_archivo::destino(args, volumen)?;
     let mut editor = crear_editor(args, volumen, abrir.as_deref())?;
+    cache.configurar(&mut editor)?;
+    let mut salida = crate::vfx_salida::Salida::nueva(args)?;
+    salida.iniciar(&editor)?;
+    let objetivo = salida.objetivo.unwrap_or(objetivo);
     let prueba = args.iter().any(|v| v == "--prueba");
     let fuente = crate::tipografia::crear()?;
     let (mut ventana, mut gpu) = humo_vista::preparar(
         &editor,
         &fuente,
-        !prueba && captura.is_none() && exportar.is_none(),
+        !prueba && captura.is_none() && exportar.is_none() && cache.guardar.is_none() && !salida.activa(),
         !args.iter().any(|v| v == "--sin-validacion"),
     )?;
     let mut entrada = crate::humo_entrada::Entrada::default();
+    if editor.vfx.is_some() {
+        entrada.encuadrar_vfx();
+    }
+    cache.cargar(&gpu, &mut entrada)?;
     let mut estado = Estado {
+        ajustes: None,
         paso: false,
         secuencia: secuencia(&editor)?,
         controles: [editor.humo.0[7], editor.volumen_opciones.0[0]].map(f32::to_bits),
@@ -42,27 +66,12 @@ fn ejecutar(args: &[String]) -> Result<(), String> {
     'vivo: loop {
         let d = humo_vista::diseno_editor(&editor, gpu.imagenes().1);
         let mut sucio = tamano != d.tamano;
-        let mut accion = None;
-        for evento in ventana.eventos() {
-            sucio = true;
-            if editor.editando()
-                && let Some(numero) = numero(evento)
-            {
-                editor.numero(numero);
-                continue;
-            }
-            match evento {
-                Evento::Cerrar | Evento::Tecla(Tecla::Escape) => break 'vivo,
-                Evento::Tamano { ancho, alto } => gpu.redimensionar(ancho, alto),
-                Evento::Tecla(Tecla::Otra(v @ (116 | 119 | 120 | 82 | 68 | 78 | 32))) => accion = Some(v),
-                Evento::Raton { x, y } => entrada.mover(&mut editor, d, x, y),
-                Evento::Boton { boton: Boton::Izquierdo, pulsado: true } => entrada.pulsar(&mut editor, d),
-                Evento::Boton { boton: Boton::Izquierdo, pulsado: false } => entrada.soltar(&mut editor),
-                Evento::Rueda(pasos) => entrada.rueda(&editor, d, pasos),
-                _ => {}
-            }
+        let eventos = crate::humo_eventos::procesar(ventana.eventos(), &mut editor, &mut entrada, &mut gpu, d);
+        sucio |= eventos.sucio;
+        if eventos.cerrar {
+            break 'vivo;
         }
-        if let Some(accion) = accion {
+        if let Some(accion) = eventos.accion {
             editor.numero(EntradaNumero::Confirmar);
             if !editor.editando() {
                 atender(accion, &mut editor, &mut estado, &gpu, ruta);
@@ -85,13 +94,15 @@ fn ejecutar(args: &[String]) -> Result<(), String> {
             }
             if editor.animando || estado.paso {
                 estado.pasos += 1;
+                salida.cuadro(&mut gpu, &editor, entrada.bloque(&editor, true)?, estado.pasos)?;
                 estado.paso = false;
             }
         } else {
             std::thread::sleep(Duration::from_millis(16));
         }
         if (prueba && cuadros >= 120)
-            || ((captura.is_some() || exportar.is_some()) && estado.pasos >= objetivo)
+            || ((captura.is_some() || exportar.is_some() || cache.guardar.is_some() || salida.activa())
+                && estado.pasos >= objetivo)
             || limite.is_some_and(|s| inicio.elapsed() >= Duration::from_secs(s))
         {
             break;
@@ -103,9 +114,9 @@ fn ejecutar(args: &[String]) -> Result<(), String> {
         humo_vista::capturar_bloque(&mut gpu, &editor, &fuente, Path::new(&destino), &entrada.bloque(&editor, true)?)?;
     }
     salida_geo(&gpu, &editor, exportar.as_deref())?;
-    if guardar.is_some() {
-        guardar_editor(ruta, &editor)?;
-    }
+    salida.finalizar(&mut gpu, &editor, entrada.bloque(&editor, true)?)?;
+    cache.finalizar(&gpu, &editor, &entrada, estado.pasos)?;
+    guardar_al_salir(guardar.is_some(), ruta, &editor)?;
     finalizar(gpu, ventana)?;
     let dimension = nombre_editor(&editor);
     println!("telar: {dimension} · {cuadros} fotogramas · {} pasos · 0 avisos de validación", estado.pasos);
@@ -120,6 +131,7 @@ fn finalizar(gpu: telar_gpu::Gpu, ventana: telar_ventana::Ventana) -> Result<(),
     Ok(())
 }
 struct Estado {
+    ajustes: Option<[u32; 28]>,
     paso: bool,
     secuencia: Vec<usize>,
     controles: [u32; 2],
@@ -133,10 +145,12 @@ fn atender(tecla: u32, editor: &mut EditorHumo, estado: &mut Estado, gpu: &telar
         120 => leer_editor(ruta, editor).and_then(|()| {
             gpu.limpiar_campos()?;
             estado.pasos = 0;
+            estado.ajustes = None;
             Ok("Configuración abierta; campos reiniciados".into())
         }),
         82 => gpu.limpiar_campos().map(|()| {
             estado.pasos = 0;
+            estado.ajustes = None;
             "Campos reiniciados en GPU".into()
         }),
         68 => humo_vista::datos_editor(gpu, editor),
@@ -152,7 +166,7 @@ fn atender(tecla: u32, editor: &mut EditorHumo, estado: &mut Estado, gpu: &telar
     };
     editor.mensaje = resultado.unwrap_or_else(|e| format!("Error: {e}"));
 }
-fn valor(args: &[String], nombre: &str) -> Result<Option<String>, String> {
+pub(crate) fn valor(args: &[String], nombre: &str) -> Result<Option<String>, String> {
     let mut indices = args.iter().enumerate().filter(|(_, v)| v.as_str() == nombre);
     let Some((i, _)) = indices.next() else { return Ok(None) };
     if indices.next().is_some() {
@@ -160,16 +174,7 @@ fn valor(args: &[String], nombre: &str) -> Result<Option<String>, String> {
     }
     Ok(Some(args.get(i + 1).filter(|v| !v.starts_with("--")).ok_or_else(|| format!("falta {nombre}"))?.clone()))
 }
-fn numero(evento: Evento) -> Option<EntradaNumero> {
-    match evento {
-        Evento::Texto('\r' | '\n') => Some(EntradaNumero::Confirmar),
-        Evento::Texto('\u{8}') => Some(EntradaNumero::Retroceso),
-        Evento::Texto(c) => Some(EntradaNumero::Caracter(c)),
-        Evento::Tecla(Tecla::Escape) => Some(EntradaNumero::Cancelar),
-        Evento::Tecla(Tecla::Otra(46)) => Some(EntradaNumero::Borrar),
-        _ => None,
-    }
-}
+
 fn opciones(args: &[String]) -> Result<(Option<String>, Option<u64>, u32), String> {
     let captura = valor(args, "--captura-humo")?;
     let limite = valor(args, "--segundos")?.map(|v| v.parse::<u64>().map_err(|_| "segundos inválidos")).transpose()?;
@@ -180,54 +185,6 @@ fn opciones(args: &[String]) -> Result<(Option<String>, Option<u64>, u32), Strin
     Ok((captura, limite, objetivo))
 }
 
-fn validar_modo(args: &[String]) -> Result<(), String> {
-    if args.iter().any(|v| v == "--trazadores") && !args.iter().any(|v| v == "--humo-3d" || v == "--explosion") {
-        return Err("--trazadores requiere --humo-3d o --explosion".into());
-    }
-    if args.iter().any(|v| v == "--particulas")
-        && args.iter().any(|v| matches!(v.as_str(), "--humo" | "--humo-3d" | "--explosion"))
-    {
-        return Err("elige partículas o humo/explosión".into());
-    }
-    if args.iter().any(|v| v == "--humo") && args.iter().any(|v| v == "--humo-3d" || v == "--explosion") {
-        return Err("elige humo 2D o 3D".into());
-    }
-    if args.iter().any(|v| {
-        matches!(
-            v.as_str(),
-            "--fuego" | "--estudio-rayos" | "--render-objetos" | "--render-rayos" | "--calculo" | "--esfera-cpu"
-        )
-    }) {
-        return Err("--humo requiere su propio laboratorio".into());
-    }
-    Ok(())
-}
-
-fn guardar_editor(ruta: &Path, editor: &EditorHumo) -> Result<(), String> {
-    if let Some(p) = editor.particulas {
-        return crate::particulas_archivo::guardar(ruta, &p);
-    }
-    if editor.volumen {
-        crate::volumen_archivo::guardar(ruta, &editor.humo, &editor.volumen_opciones, &editor.explosion)
-    } else {
-        crate::humo_archivo::guardar(ruta, &editor.humo)
-    }
-}
-fn leer_editor(ruta: &Path, editor: &mut EditorHumo) -> Result<(), String> {
-    if editor.particulas.is_some() {
-        editor.particulas = Some(crate::particulas_archivo::leer(ruta)?);
-        return Ok(());
-    }
-    if editor.volumen {
-        let (humo, opciones, explosion) = crate::volumen_archivo::leer(ruta)?;
-        editor.humo = humo;
-        editor.volumen_opciones = opciones;
-        editor.explosion = explosion;
-    } else {
-        editor.humo = crate::humo_archivo::leer(ruta)?;
-    }
-    Ok(())
-}
 fn secuencia(editor: &EditorHumo) -> Result<Vec<usize>, String> {
     if editor.particulas.is_some() {
         return Ok(vec![0, 1]);
@@ -239,6 +196,13 @@ fn secuencia(editor: &EditorHumo) -> Result<Vec<usize>, String> {
     }
 }
 fn actualizar_secuencia(editor: &EditorHumo, estado: &mut Estado, gpu: &mut telar_gpu::Gpu) -> Result<(), String> {
+    let ajustes = editor.vfx.map(|v| v.0.map(f32::to_bits));
+    if ajustes != estado.ajustes {
+        if let Some(v) = ajustes {
+            gpu.cargar_rango_campos(19 * 32u32.pow(3), &v)?;
+        }
+        estado.ajustes = ajustes;
+    }
     let controles = [editor.humo.0[7], editor.volumen_opciones.0[0]].map(f32::to_bits);
     if controles == estado.controles {
         return Ok(());
@@ -252,54 +216,10 @@ fn actualizar_secuencia(editor: &EditorHumo, estado: &mut Estado, gpu: &mut tela
     Ok(())
 }
 
-fn configurar_pulso(args: &[String], editor: &mut EditorHumo) {
-    if args.iter().any(|v| v == "--explosion") {
-        editor.explosion.0[0] = 0.35;
-        editor.humo.0[0] = 0.13;
-        editor.volumen_opciones.0[1] = 0.0;
-        editor.vista = 1;
-        editor.pagina = 3;
-        editor.mensaje = "Pulso expansivo · R reinicia reloj · sin combustión química".into();
-    }
-}
-
-fn predeterminada(args: &[String], volumen: bool) -> &'static str {
-    if args.iter().any(|v| v == "--trazadores") {
-        return "trazadores.tlar";
-    }
-    if args.iter().any(|v| v == "--particulas") {
-        return "particulas.tlar";
-    }
-    if args.iter().any(|v| v == "--explosion") {
-        "explosion.tlar"
-    } else if volumen {
-        "humo3d.tlar"
-    } else {
-        "humo.tlar"
-    }
-}
-
-fn crear_editor(args: &[String], volumen: bool, abrir: Option<&str>) -> Result<EditorHumo, String> {
-    let mut editor = EditorHumo::default();
-    editor.volumen = volumen;
-    configurar_pulso(args, &mut editor);
-    editor.trazadores = args.iter().any(|v| v == "--trazadores");
-    if editor.trazadores {
-        editor.vista = 3;
-        editor.mensaje = "128 trazadores MAC GPU · vida fija 2s · R reinicia · F8 partículas GEO".into();
-    }
-    if args.iter().any(|v| v == "--particulas") {
-        editor.particulas = Some(telar_ui::Particulas::default());
-        editor.mensaje = "Emisor GPU · plazas reutilizables · Espacio / N / R · D datos · F5/F9 · F8 GEO".into();
-    }
-    if let Some(ruta) = abrir {
-        leer_editor(Path::new(ruta), &mut editor)?;
-    }
-    Ok(editor)
-}
-
 fn exportar_editor(gpu: &telar_gpu::Gpu, editor: &EditorHumo, ruta: &Path) -> Result<usize, String> {
-    if editor.trazadores {
+    if editor.vfx.is_some() {
+        crate::particulas_geo::exportar_vfx(gpu, ruta)
+    } else if editor.trazadores {
         crate::particulas_geo::exportar_trazadores(gpu, crate::volumen_vista::LADO, ruta)
     } else if editor.particulas.is_some() {
         crate::particulas_geo::exportar(gpu, ruta)
@@ -320,18 +240,19 @@ fn salida_geo(gpu: &telar_gpu::Gpu, editor: &EditorHumo, ruta: Option<&str>) -> 
     Ok(())
 }
 
-fn nombre_editor(editor: &EditorHumo) -> &'static str {
-    if editor.particulas.is_some() {
-        "partículas GPU"
-    } else if editor.trazadores {
-        "trazadores MAC GPU"
-    } else if editor.volumen {
-        "humo MAC 3D"
-    } else {
-        "humo MAC 2D"
+fn guardar_al_salir(guardar: bool, ruta: &Path, editor: &EditorHumo) -> Result<(), String> {
+    if guardar {
+        guardar_editor(ruta, editor)?;
     }
+    Ok(())
 }
 
+fn es_volumen(args: &[String], cache: bool) -> bool {
+    cache
+        || args.iter().any(|v| {
+            matches!(v.as_str(), "--humo-3d" | "--explosion" | "--particulas" | "--trazadores" | "--plano-vfx")
+        })
+}
 #[cfg(test)]
 mod tests {
     use super::*;

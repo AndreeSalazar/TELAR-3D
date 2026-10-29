@@ -5,19 +5,20 @@ const N: u32 = crate::trazadores::CAPACIDAD;
 fn leer(f: &mut Funcion, m: &Memoria, id: Id, canal: u32) -> Id {
     let base = Memoria::u(f, canal * N);
     let indice = f.binaria(op::I_ADD, m.entero, base, id);
-    m.leer(f, indice, 17)
+    m.leer(f, indice, if m.vfx { 20 } else { 17 })
 }
 fn guardar(f: &mut Funcion, m: &Memoria, id: Id, canal: u32, valor: Id) {
     let base = Memoria::u(f, canal * N);
     let indice = f.binaria(op::I_ADD, m.entero, base, id);
     // GPU: solo esta invocación escribe su plaza en la cola; no modifica ningún campo MAC.
-    m.guardar(f, indice, 17, valor);
+    m.guardar(f, indice, if m.vfx { 20 } else { 17 }, valor);
 }
 pub(super) fn emitir(f: &mut Funcion, m: &Memoria, id: Id) {
     let cantidad = Memoria::u(f, N);
     let dentro = f.binaria(op::U_LESS_THAN, m.booleano, id, cantidad);
     let longitud = f.longitud(m.entero, m.buffer, 0);
-    let minimo = Memoria::u(f, 17 * m.celdas() + crate::trazadores::PALABRAS);
+    let minimo =
+        Memoria::u(f, if m.vfx { 20 * m.celdas() + 3072 } else { 17 * m.celdas() + crate::trazadores::PALABRAS });
     let cabe = f.binaria(op::U_LESS_THAN_EQUAL, m.booleano, minimo, longitud);
     let dentro = f.binaria(op::LOGICAL_AND, m.booleano, dentro, cabe);
     let cuerpo = f.etiqueta();
@@ -101,7 +102,29 @@ fn actualizar(f: &mut Funcion, m: &Memoria, id: Id, previo: [Id; 11], reloj: [Id
     let libre = f.binaria(op::F_ORD_GREATER_THAN, m.booleano, limite, previo[8]);
     let nace = f.binaria(op::LOGICAL_AND, m.booleano, ventana, inactiva);
     let nace = f.binaria(op::LOGICAL_AND, m.booleano, nace, libre);
-    let nueva = origen(f, m, id);
+    let id_origen = if m.vfx { crate::vfx_particulas::semilla(f, m, id, previo[8]) } else { id };
+    let nueva = origen(f, m, id_origen);
+    let habilitada = if m.vfx {
+        let real = f.unaria(op::U_A_F, m.real, id);
+        let cantidad = m.ajuste(f, 7);
+        f.binaria(op::F_ORD_GREATER_THAN, m.booleano, cantidad, real)
+    } else {
+        libre
+    };
+    let nace = if m.vfx {
+        let punto = nueva.map(|v| {
+            let v = m.escala(f, v, m.lado as f32);
+            let medio = Memoria::c(f, 0.5);
+            m.sub(f, v, medio)
+        });
+        let calor = m.muestra3(f, punto, 4);
+        let umbral = m.ajuste(f, 23);
+        let caliente = f.binaria(190, m.booleano, calor, umbral);
+        let nace = f.binaria(op::LOGICAL_AND, m.booleano, nace, caliente);
+        f.binaria(op::LOGICAL_AND, m.booleano, nace, habilitada)
+    } else {
+        nace
+    };
     let posicion = core::array::from_fn::<_, 3, _>(|i| f.elegir(m.real, nace, nueva[i], previo[i]));
     let velocidad = core::array::from_fn::<_, 3, _>(|eje| {
         let mut coords = posicion.map(|valor| m.escala(f, valor, m.lado as f32));
@@ -111,6 +134,8 @@ fn actualizar(f: &mut Funcion, m: &Memoria, id: Id, previo: [Id; 11], reloj: [Id
         }
         m.muestra3(f, coords, u32::try_from(eje).unwrap_or(0))
     });
+    let velocidad =
+        if m.vfx { crate::vfx_particulas::velocidad(f, m, velocidad, &previo, nace, dt) } else { velocidad };
     let limite = Memoria::c(f, 1e20);
     let mut finita = f.binaria(180, m.booleano, cero, cero);
     let velocidad = velocidad.map(|valor| {
@@ -123,7 +148,7 @@ fn actualizar(f: &mut Funcion, m: &Memoria, id: Id, previo: [Id; 11], reloj: [Id
         let delta = m.mul(f, velocidad[i], dt);
         m.add(f, posicion[i], delta)
     });
-    let vida = Memoria::c(f, 2.0);
+    let vida = if m.vfx { m.ajuste(f, 6) } else { Memoria::c(f, 2.0) };
     let edad = f.elegir(m.real, nace, cero, previo[6]);
     let edad = m.add(f, edad, dt);
     let edad = f.glsl(m.real, 37, &[edad, vida]);
@@ -132,6 +157,7 @@ fn actualizar(f: &mut Funcion, m: &Memoria, id: Id, previo: [Id; 11], reloj: [Id
     let nacimiento = f.elegir(m.real, nace, tiempo, previo[9]);
     let activa = f.binaria(180, m.booleano, previo[10], uno);
     let mueve = f.binaria(166, m.booleano, activa, nace);
+    let mueve = if m.vfx { f.binaria(op::LOGICAL_AND, m.booleano, mueve, habilitada) } else { mueve };
     let joven = f.binaria(op::F_ORD_GREATER_THAN, m.booleano, vida, edad);
     let dentro = destino(f, m, nueva_p);
     let encendida = f.binaria(op::LOGICAL_AND, m.booleano, joven, dentro);
@@ -156,6 +182,9 @@ fn actualizar(f: &mut Funcion, m: &Memoria, id: Id, previo: [Id; 11], reloj: [Id
         let valor = f.elegir(m.real, finita, valor, previo[i]);
         guardar(f, m, id, u32::try_from(i).unwrap_or(0), valor);
     }
+    if m.vfx {
+        crate::vfx_particulas::historial(f, m, id, posicion, [nace, mueve, finita]);
+    }
     guardar(f, m, id, 10, encendida);
 }
 #[allow(clippy::cast_precision_loss, reason = "retícula de 4x8x4 dentro del emisor")]
@@ -175,7 +204,11 @@ fn origen(f: &mut Funcion, m: &Memoria, id: Id) -> [Id; 3] {
         let medio = Memoria::c(f, 0.5);
         let valor = m.sub(f, valor, medio);
         let valor = m.mul(f, valor, radio);
-        let centro = Memoria::c(f, if i == 1 { 0.18 + 0.5 / m.lado as f32 } else { 0.5 });
+        let centro = if m.vfx {
+            m.ajuste(f, 20 + u32::try_from(i).unwrap_or(0))
+        } else {
+            Memoria::c(f, if i == 1 { 0.18 + 0.5 / m.lado as f32 } else { 0.5 })
+        };
         m.add(f, valor, centro)
     })
 }

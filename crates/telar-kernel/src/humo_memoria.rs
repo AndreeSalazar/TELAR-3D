@@ -14,6 +14,7 @@ pub(super) struct Memoria {
     push: Id,
     pub lado: u32,
     pub volumen: bool,
+    pub vfx: bool,
 }
 impl Memoria {
     pub(super) fn nueva(m: &mut Modulo, lado: u32, volumen: bool) -> Self {
@@ -41,7 +42,12 @@ impl Memoria {
             constantes,
             lado,
             volumen,
+            vfx: false,
         }
+    }
+    pub(super) fn ajuste(&self, f: &mut Funcion, i: u32) -> Id {
+        let indice = Self::u(f, i);
+        self.leer(f, indice, 19)
     }
     pub(super) fn celdas(&self) -> u32 {
         self.lado * self.lado * if self.volumen { self.lado } else { 1 }

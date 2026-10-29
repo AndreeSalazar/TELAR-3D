@@ -170,3 +170,9 @@ combustión, iluminación de volumen, secundarios, cachés y secuencias finales.
 La rama 3D añade [tiempo y esfera estática](TIEMPO-COLISION-3D.md), con dt decidido en GPU y subpasos acotados. P2 avanzado y la explosión física completa siguen abiertos.
 
 P3 de explosión dispone de una primera [fuente pulsada y expansión compensada](PULSO-EXPANSIVO-3D.md). No añade todavía combustible/reacción ni render volumétrico de producción.
+
+Actualización 29-10-2026: [PLANO-VFX.md](PLANO-VFX.md) integra combustible,
+reacción, enfriamiento, secundarios con historial, dispersión simple y caché
+reanudable/secuencias HDR. Las notas anteriores describen entregas históricas.
+El estado vigente sigue siendo parcial a 32³: faltan regiones activas, colisiones
+generales, transporte completo, herramientas artísticas y salida de producción.

@@ -155,3 +155,8 @@ Intercambio inicial inspirado en el estudio de Partio: `telar --explosion --paso
 Partículas residentes: `telar --particulas` o **TELAR Particulas.cmd**. Nacimiento, edad/vida, reciclaje e identidad en GPU, diez controles, cuatro vistas y exportación GEO. Base independiente del humo; [contrato, pruebas y límites](docs/PARTICULAS-GPU.md).
 
 Trazadores acoplados al humo: `telar --explosion --trazadores` o **TELAR Trazadores.cmd**. 128 puntos leen velocidad MAC y dt directamente en GPU, con vista propia y GEO de vivas. [Contrato y evidencia](docs/TRAZADORES-MAC.md).
+
+Plano reactivo integrado: `telar --plano-vfx` o **TELAR Plano VFX.cmd**. Combustible,
+reacción/enfriamiento, secundarios con historial, luz y sombra volumétricas,
+28 controles adicionales, .tlar v13, caché exacta y secuencias HDR a 1..1024 spp.
+Prototipo 32³; [comandos, costes, pruebas y pendientes](docs/PLANO-VFX.md).

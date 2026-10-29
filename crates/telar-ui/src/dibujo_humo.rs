@@ -39,7 +39,9 @@ impl EditorHumo {
         texto(
             &mut lienzo,
             [20.0, 18.0, 145.0, 32.0],
-            if self.particulas.is_some() {
+            if self.vfx.is_some() {
+                "TELAR · VFX"
+            } else if self.particulas.is_some() {
                 "TELAR · Chispas"
             } else if self.trazadores {
                 "TELAR · Flujo"
@@ -53,7 +55,9 @@ impl EditorHumo {
         texto(
             &mut lienzo,
             [180.0, 22.0, ancho - 200.0, 30.0],
-            if self.particulas.is_some() {
+            if self.vfx.is_some() {
+                "Combustión GPU · órbita / rueda · Espacio / N / R · F5 / F9: escena · F8: GEO"
+            } else if self.particulas.is_some() {
                 "Partículas GPU · arrastrar: órbita · rueda: zoom · Espacio / N / R · F8: GEO"
             } else if self.trazadores {
                 "MAC 32³ · 128 trazadores GPU · órbita / rueda · Espacio / N / R · F8: partículas GEO"
@@ -65,12 +69,7 @@ impl EditorHumo {
             &etiqueta,
         );
         lienzo.caja(diseno.panel, &panel);
-        texto(
-            &mut lienzo,
-            [diseno.panel.x + 16.0, 80.0, 288.0, 24.0],
-            if self.particulas.is_some() { "Partículas · parámetros" } else { "Inspeccionar campos" },
-            &titulo,
-        );
+        texto(&mut lienzo, [diseno.panel.x + 16.0, 80.0, 288.0, 24.0], self.nombre_panel(), &titulo);
         for (i, nombre) in self.vistas().iter().enumerate() {
             let boton = self.estilo("boton", self.vista == i);
             let rect = diseno.entidad(i);
@@ -119,8 +118,29 @@ fn texto(lienzo: &mut Lienzo, rect: [f32; 4], texto: &str, estilo: &Estilo) {
 }
 
 impl EditorHumo {
+    fn nombre_panel(&self) -> &'static str {
+        if self.vfx.is_some() {
+            [
+                "Emisor 1/9",
+                "Presión 2/9",
+                "Tiempo 3/9",
+                "Pulso 4/9",
+                "Combustión 5/9",
+                "Partículas 6/9",
+                "Luz 7/9",
+                "Aspecto/fuente 8/9",
+                "Detalle 9/9",
+            ][self.pagina.min(8)]
+        } else if self.particulas.is_some() {
+            "Partículas · parámetros"
+        } else {
+            "Inspeccionar campos"
+        }
+    }
     fn paginas(&self) -> &'static [&'static str] {
-        if self.particulas.is_some() {
+        if self.vfx.is_some() {
+            &["Anterior", "Siguiente"]
+        } else if self.particulas.is_some() {
             &["Dinámica", "Emisor / visor"]
         } else if self.volumen {
             &["Emisor", "Presión", "Tiempo", "Pulso"]
@@ -129,7 +149,9 @@ impl EditorHumo {
         }
     }
     fn vistas(&self) -> [&'static str; 4] {
-        if self.particulas.is_some() {
+        if self.vfx.is_some() {
+            ["Belleza", "Calor", "Combustible", "Partículas"]
+        } else if self.particulas.is_some() {
             ["Belleza", "Edad / vida", "Velocidad", "Identidad"]
         } else if self.trazadores {
             ["Densidad", "Calor", "Velocidad", "Trazadores"]

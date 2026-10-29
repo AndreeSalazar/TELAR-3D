@@ -21,6 +21,24 @@ impl Default for Entrada {
     }
 }
 impl Entrada {
+    pub(crate) fn encuadrar_vfx(&mut self) {
+        self.camara.objetivo = [0.5, 0.35, 0.5];
+        self.camara.distancia = 1.3;
+    }
+    pub(crate) fn camara_guardable(&self) -> [f32; 8] {
+        let c = &self.camara;
+        [c.objetivo[0], c.objetivo[1], c.objetivo[2], c.distancia, c.giro, c.inclinacion, c.campo, c.cerca]
+    }
+    pub(crate) fn restaurar_camara(&mut self, c: [f32; 8]) {
+        self.camara = nudo::Camara {
+            objetivo: [c[0], c[1], c[2]],
+            distancia: c[3],
+            giro: c[4],
+            inclinacion: c[5],
+            campo: c[6],
+            cerca: c[7],
+        };
+    }
     #[allow(clippy::cast_precision_loss, reason = "píxeles de ratón")]
     pub(crate) fn mover(&mut self, editor: &mut EditorHumo, d: DisenoObjetos, x: i32, y: i32) {
         if self.orbitando {

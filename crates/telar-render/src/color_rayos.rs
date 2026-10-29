@@ -3,9 +3,12 @@ use crate::trazado::Matematica;
 use hilo_spirv::{Funcion, Id, op};
 
 pub(crate) fn convertir(f: &mut Funcion, mat: &Matematica, lineal: Id, exposicion: f32) -> Id {
+    let exposicion = Matematica::escalar(f, exposicion);
+    convertir_exposicion(f, mat, lineal, exposicion)
+}
+pub(crate) fn convertir_exposicion(f: &mut Funcion, mat: &Matematica, lineal: Id, exposicion: Id) -> Id {
     let mut empaquetado = f.modulo().constante_u32(0);
     let uno = Matematica::escalar(f, 1.0);
-    let exposicion = Matematica::escalar(f, exposicion);
     for canal in 0..3 {
         let valor = f.extraer(mat.real, lineal, canal);
         let valor = f.binaria(op::F_MUL, mat.real, valor, exposicion);

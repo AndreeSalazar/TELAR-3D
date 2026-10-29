@@ -72,6 +72,8 @@ fn dominio(i: usize) -> (&'static str, f32, f32) {
 pub struct EditorHumo {
     /// Selecciona presentación 3D; la app mantiene los campos y su formato por separado.
     pub volumen: bool,
+    /// Configuración del plano reactivo; cuatro páginas adicionales.
+    pub vfx: Option<crate::Vfx>,
     /// Trazadores pasivos MAC en la cuarta vista; configuración física compartida.
     pub trazadores: bool,
     /// Parámetros específicos 3D, guardados aparte de los diez comunes.
@@ -100,6 +102,7 @@ impl Default for EditorHumo {
         Self {
             animando: true,
             volumen: false,
+            vfx: None,
             trazadores: false,
             volumen_opciones: crate::VolumenHumo::default(),
             explosion: crate::ExplosionHumo::default(),
@@ -119,6 +122,10 @@ impl Default for EditorHumo {
 }
 impl EditorHumo {
     pub(crate) fn campo(&self, i: usize) -> Option<usize> {
+        if self.vfx.is_some() && self.pagina >= 4 {
+            return (self.pagina < 9 && i < 6 && 18 + (self.pagina - 4) * 6 + i < 46)
+                .then_some(18 + (self.pagina - 4) * 6 + i);
+        }
         if self.particulas.is_some() {
             return (i < 6 && self.pagina < 2 && self.pagina * 6 + i < 10).then_some(self.pagina * 6 + i);
         }
@@ -136,6 +143,9 @@ impl EditorHumo {
     #[must_use]
     pub fn control(&self, i: usize) -> Option<Control> {
         let campo = self.campo(i)?;
+        if campo >= 18 {
+            return self.vfx?.control(campo - 18);
+        }
         if let Some(p) = self.particulas {
             return p.control(campo);
         }
@@ -159,7 +169,9 @@ impl EditorHumo {
             EntradaNumero::Cancelar => self.edicion = None,
             EntradaNumero::Confirmar => {
                 let resultado = texto.parse::<f32>().map_err(|_| "número inválido").and_then(|v| {
-                    if let Some(p) = &mut self.particulas {
+                    if *i >= 18 {
+                        self.vfx.as_mut().ok_or("configuración VFX ausente")?.poner(*i - 18, v)
+                    } else if let Some(p) = &mut self.particulas {
                         p.poner(*i, v)
                     } else if *i < 10 {
                         self.humo.poner(*i, v)
@@ -208,7 +220,20 @@ impl EditorHumo {
                 self.vista = i;
             }
         }
-        for i in 0..if self.volumen && self.particulas.is_none() { 4 } else { 2 } {
+        if self.vfx.is_some() {
+            for i in 0..2 {
+                if d.pagina(i).contiene(x, y) {
+                    self.pagina = (self.pagina + if i == 0 { 8 } else { 1 }) % 9;
+                }
+            }
+        }
+        for i in 0..if self.vfx.is_some() {
+            0
+        } else if self.volumen && self.particulas.is_none() {
+            4
+        } else {
+            2
+        } {
             if self.pagina_rect(d, i).contiene(x, y) {
                 self.pagina = i;
             }
@@ -245,12 +270,17 @@ impl EditorHumo {
         let valor = min + (max - min) * ((x - rect.x) / rect.ancho).clamp(0.0, 1.0);
         let valor = if self.particulas.is_none() && campo == 7 {
             ((valor * 0.5 + 0.5) as u32 * 2) as f32
-        } else if campo == 10 || (self.particulas.is_some() && matches!(campo, 0 | 7)) {
+        } else if campo == 10
+            || (self.vfx.is_some() && matches!(campo, 25 | 26))
+            || (self.particulas.is_some() && matches!(campo, 0 | 7))
+        {
             (valor + 0.5) as u32 as f32
         } else {
             valor
         };
-        if let Err(e) = if let Some(p) = &mut self.particulas {
+        if let Err(e) = if campo >= 18 {
+            self.vfx.as_mut().ok_or("configuración VFX ausente").and_then(|v| v.poner(campo - 18, valor))
+        } else if let Some(p) = &mut self.particulas {
             p.poner(campo, valor)
         } else if campo < 10 {
             self.humo.poner(campo, valor)
@@ -266,6 +296,9 @@ impl EditorHumo {
 
 impl EditorHumo {
     fn valor(&self, campo: usize) -> f32 {
+        if campo >= 18 {
+            return self.vfx.map_or(0.0, |v| v.0[campo - 18]);
+        }
         if let Some(p) = self.particulas {
             return p.0[campo];
         }
@@ -279,7 +312,7 @@ impl EditorHumo {
     }
     #[allow(clippy::cast_precision_loss, reason = "cuatro pestañas")]
     pub(crate) fn pagina_rect(&self, d: DisenoObjetos, i: usize) -> crate::Rectangulo {
-        if !self.volumen || self.particulas.is_some() {
+        if !self.volumen || self.particulas.is_some() || self.vfx.is_some() {
             return d.pagina(i);
         }
         let mut rect = d.pagina(0);

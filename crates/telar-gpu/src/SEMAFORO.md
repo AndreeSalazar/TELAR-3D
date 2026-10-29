@@ -67,3 +67,20 @@ API de dibujo/captura solo UI permite el centro sin visor ni buffers de simulaci
 PlanCampos admite 1..20 palabras por elemento con límite explícito de 64 MiB. El humo 3D usa 17, a 32³ reserva lógica de estado 2228224 B más palabra auxiliar y recursos gráficos. El backend sigue opaco a física/UI; no añade dependencia ni FFI. Ver docs/HUMO-3D.md y tests/volumen_gpu.rs de la app.
 
 El límite de secuencia de campos sube de 512 a 2048 posiciones (preparación y cambio de plan), manteniendo máximo 16 programas y 64 MiB. Permite cuatro subpasos 3D acotados; no añade buffers ni operaciones físicas al backend. Coste CPU de registro y GPU de pasadas crece con el plan.
+
+
+Plano VFX (29-10-2026): se conserva el estado de riesgo anterior; FFI sigue ROJO.
+CPU prepara SPIR-V, interfaz, constantes, envios y E/S explicita; GPU ejecuta
+MAC/reaccion, secundarios y pixeles. Actualizar parametros VFX sube 112 B;
+no descarga campos por cuadro estable. Reserva logica compartida 4063236 B
+a 32 cubico con salida final; staging, imagenes, alineacion y pipelines aparte,
+sin pico fisico ni tiempos GPU medidos. RAM: copias/serializacion de cache y HDR
+solo por solicitud. Render lee 1310720 B; cache reactiva copia 1015808 palabras,
+archivo 4063512 B. Tests usan GPU real y crean archivos temporales en target.
+Frecuencia de trabajo: simulacion por subpaso, visor 384 cuadrado; HDR 256 cuadrado,
+1..1024 muestras en envios acotados. E/S de cache/escena/secuencia es optativa,
+sin reemplazar resultados; salida VFX por lotes sin trabajador asincrono.
+Limites adicionales: 32 cubico, 128 secundarios, cuatro posiciones de historial,
+dispersion simple, sin oclusion de estelas ni color de produccion; cache ligada
+a GPU/driver/Vulkan, requiere enlaces duros. No equivale a coste cero ni a Pyro.
+Contrato, fuentes, evidencia real y pendientes: docs/PLANO-VFX.md.

@@ -53,6 +53,12 @@ pub(crate) fn exportar(gpu: &telar_gpu::Gpu, ruta: &Path) -> Result<usize, Strin
     escribir(ruta, &puntos)
 }
 pub(crate) fn exportar_trazadores(gpu: &telar_gpu::Gpu, lado: u32, ruta: &Path) -> Result<usize, String> {
+    exportar_mac(gpu, lado, ruta, 17)
+}
+pub(crate) fn exportar_vfx(gpu: &telar_gpu::Gpu, ruta: &Path) -> Result<usize, String> {
+    exportar_mac(gpu, 32, ruta, 20)
+}
+fn exportar_mac(gpu: &telar_gpu::Gpu, lado: u32, ruta: &Path, base: u32) -> Result<usize, String> {
     crate::intercambio_archivo::validar_destino(ruta)?;
     let n = lado.checked_pow(3).ok_or("dimensión inválida")?;
     if !(8..=64).contains(&lado) {
@@ -65,7 +71,7 @@ pub(crate) fn exportar_trazadores(gpu: &telar_gpu::Gpu, lado: u32, ruta: &Path) 
     {
         return Err("estado MAC inválido; no exportar trazadores".into());
     }
-    let datos = gpu.inspeccionar_rango_campos(17 * n, 11 * 128)?;
+    let datos = gpu.inspeccionar_rango_campos(base * n, 11 * 128)?;
     let puntos = convertir(&datos, f32::from_bits(control[13]))?;
     escribir(ruta, &puntos)
 }

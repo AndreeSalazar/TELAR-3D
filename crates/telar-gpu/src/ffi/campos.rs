@@ -153,6 +153,14 @@ impl Campos {
             barrera(fd, cmd, ETAPA_CALCULO, ETAPA_PIPELINE_FRAGMENTOS, ACCESO_SHADER_WRITE, ACCESO_SHADER_READ);
         }
     }
+    pub(super) fn ejecutar(&self, ctx: &Contexto, bloque: &[f32; 32]) -> Result<(), String> {
+        una_vez(ctx, |fd, cmd| {
+            // SAFETY: una_vez conserva el estado/pipelines hasta completar la valla, fuera de rendering.
+            unsafe {
+                self.grabar(fd, cmd, bloque);
+            }
+        })
+    }
     pub(super) fn transferir(&self, ctx: &Contexto, datos: Option<&[u32]>) -> Result<Vec<u32>, String> {
         if datos.is_some_and(|v| core::mem::size_of_val(v) as u64 != self.bytes) {
             return Err("tamaño de campos incompatible".into());
@@ -166,6 +174,14 @@ impl Campos {
             return Err("rango de campos inválido".into());
         }
         self.transferir_rango(ctx, None, desde, bytes)
+    }
+    pub(super) fn escribir_rango(&self, ctx: &Contexto, desde: u32, datos: &[u32]) -> Result<(), String> {
+        let inicio = u64::from(desde) * 4;
+        let bytes = u64::try_from(core::mem::size_of_val(datos)).map_err(|_| "rango excesivo")?;
+        if bytes == 0 || inicio + bytes > self.bytes {
+            return Err("rango de carga inválido".into());
+        }
+        self.transferir_rango(ctx, Some(datos), inicio, bytes).map(|_| ())
     }
     fn transferir_rango(
         &self,

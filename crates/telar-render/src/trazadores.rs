@@ -54,7 +54,7 @@ pub(super) fn sumar(
 fn leer(f: &mut Funcion, t: &Tipos, v: &Volumen, id: Id, canal: u32) -> Id {
     let entero = f.modulo().tipo_u32();
     let cero = f.modulo().constante_u32(0);
-    let base = f.modulo().constante_u32(17 * v.lado * v.lado * v.lado + canal * 128);
+    let base = f.modulo().constante_u32((if v.vfx { 20 } else { 17 }) * v.lado * v.lado * v.lado + canal * 128);
     let indice = f.binaria(op::I_ADD, entero, base, id);
     let ptr = f.acceso(v.puntero, v.buffer, &[cero, indice]);
     f.cargar(t.real, ptr)
@@ -76,11 +76,18 @@ fn splat(f: &mut Funcion, t: &Tipos, mat: &Matematica, v: &Volumen, id: Id, cama
     let delante = f.binaria(op::F_ORD_GREATER_THAN, mat.booleano, proy, cero);
     let peso = f.elegir(t.real, delante, peso, cero);
     let edad = leer(f, t, v, id, 6);
-    let medio = Matematica::escalar(f, 0.5);
+    let medio = if v.vfx {
+        let vida = crate::vfx_volumen::ajuste(f, t, v, 6);
+        let uno = Matematica::escalar(f, 1.0);
+        f.binaria(op::F_DIV, t.real, uno, vida)
+    } else {
+        Matematica::escalar(f, 0.5)
+    };
     let edad = f.binaria(op::F_MUL, t.real, edad, medio);
     let uno = Matematica::escalar(f, 1.0);
     let joven = f.binaria(op::F_SUB, t.real, uno, edad);
     let azul = Matematica::escalar(f, 0.2);
     let rgb = f.construir(t.v3, &[uno, joven, azul]);
-    f.binaria(op::VECTOR_TIMES_SCALAR, t.v3, rgb, peso)
+    let rgb = f.binaria(op::VECTOR_TIMES_SCALAR, t.v3, rgb, peso);
+    if v.vfx { crate::vfx_estelas::sumar(f, t, mat, v, id, [ojo, direccion, p, rgb]) } else { rgb }
 }

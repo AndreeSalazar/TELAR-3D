@@ -32,6 +32,11 @@ pub(crate) fn procesar(args: &[String]) -> Option<Result<(), String>> {
                 .take(4_194_453)
                 .read_to_end(&mut bytes)
                 .map_err(|e| format!("leer {ruta}: {e}"))?;
+            if bytes.get(4..8).is_some_and(|v| v == 13u32.to_le_bytes()) {
+                let (_, _, _, v) = crate::vfx_archivo::decodificar(&bytes)?;
+                println!("telar: .tlar v13 · plano reactivo · combustible {} · {} partículas", v.0[0], v.0[7]);
+                return Ok(());
+            }
             if bytes.get(4..8).is_some_and(|v| v == 12u32.to_le_bytes()) {
                 let p = crate::particulas_archivo::decodificar(&bytes)?;
                 println!(

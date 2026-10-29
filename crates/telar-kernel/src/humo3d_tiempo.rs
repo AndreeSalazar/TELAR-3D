@@ -78,6 +78,13 @@ fn decidir(f: &mut Funcion, m: &Memoria) {
     let viento = m.parametro(f, 3);
     let viento = f.glsl(m.real, 4, &[viento]);
     let fuerzas = m.add(f, flotacion, viento);
+    let fuerzas = if m.vfx {
+        let detalle = m.ajuste(f, 24);
+        let detalle = m.escala(f, detalle, 4.5);
+        m.add(f, fuerzas, detalle)
+    } else {
+        fuerzas
+    };
     let fuerzas = m.mul(f, fuerzas, calor);
     let impulso = m.mul(f, fuerzas, solicitado);
     let cota = m.add(f, velocidad, impulso);

@@ -78,8 +78,18 @@ pub(super) fn programa_trazadores(
     volumen: bool,
     trazadores: bool,
 ) -> Vec<u32> {
+    programa_extension(config, etapa, adaptativo, volumen, u32::from(trazadores))
+}
+pub(super) fn programa_extension(
+    config: Configuracion,
+    etapa: u32,
+    adaptativo: bool,
+    volumen: bool,
+    extension: u32,
+) -> Vec<u32> {
     let mut modulo = Modulo::nuevo();
-    let memoria = Memoria::nueva(&mut modulo, config.lado, volumen);
+    let mut memoria = Memoria::nueva(&mut modulo, config.lado, volumen);
+    memoria.vfx = extension == 2;
     let v3 = modulo.tipo_vector(memoria.entero, 3);
     let ptr = modulo.tipo_puntero(Clase::Entrada, v3);
     let global = modulo.variable(ptr, Clase::Entrada);
@@ -97,7 +107,9 @@ pub(super) fn programa_trazadores(
         _ => memoria.celdas(),
     };
     let cantidad = Memoria::u(&mut f, invocaciones);
-    let canales = if volumen {
+    let canales = if memoria.vfx {
+        crate::vfx::canales(config.lado)
+    } else if volumen {
         crate::humo3d::CANALES
     } else if adaptativo {
         CANALES_ADAPTATIVOS
@@ -123,7 +135,7 @@ pub(super) fn programa_trazadores(
     } else {
         crate::humo_control::emitir(&mut f, &memoria, pixel, etapa);
     }
-    if trazadores {
+    if extension > 0 && etapa == 5 {
         crate::trazadores_paso::emitir(&mut f, &memoria, pixel);
     }
     f.saltar(fin);

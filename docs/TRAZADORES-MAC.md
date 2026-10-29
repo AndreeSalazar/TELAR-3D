@@ -134,3 +134,8 @@ semilla, integración de mayor orden, estelas con historial y acoplamiento de
 partículas inerciales. Después, fragmentos y colisiones continuas. Siguen pendientes
 combustible/reacción de P3, iluminación volumétrica de P4 y cachés de P6; esto no
 convierte la explosión en un plano de producción terminado.
+
+Actualización 29-10-2026: la rama separada [PLANO-VFX.md](PLANO-VFX.md)
+implementa parámetros v13, umbral de calor, inercia, semilla e historial corto,
+junto con reacción, iluminación simple y caché. Este modo pasivo conserva su
+contrato original; la comparación profesional continúa abierta.

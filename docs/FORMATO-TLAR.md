@@ -174,3 +174,19 @@ F5/F9 conservan configuración; abrir reinicia plazas y reloj. Sin cámara,
 generaciones, posiciones ni caché reanudable.
 
 El modo `--trazadores` utiliza configuración física MAC v11. El modificador de presentación/transporte no se serializa: reabrir con el mismo modificador. No guarda plazas ni reloj; [TRAZADORES-MAC.md](TRAZADORES-MAC.md).
+
+## Plano VFX v13 y caché independiente
+
+200 B: cabecera TLAR/version=13/cantidad=46/CRC32(payload), seguida de 18 f32
+del contrato v11 y 28 f32 de `telar-ui/src/vfx.rs`, en ese orden. Se comprueban
+CRC, tamaño y dominios antes de aplicar; lector acotado a 201 B. F5/F9 conservan
+parámetros, no reloj ni campos; abrir requiere el modo `--plano-vfx`.
+
+.tlcache revisión 2 es otro formato: doce u32 LE de cabecera (magic 0x48434c54,
+revisión, lado=32, modo 0/1/2, palabras, avances, vendor, dispositivo, driver,
+versión Vulkan, bytes de escena, CRC), escena v11 de 88 B o v13 de 200 B,
+cámara de ocho f32 y todas las palabras GPU. CRC protege cabecera salvo el propio
+CRC y cuerpo. Modo 2 exige v13; 0/1 exigen v11. Límite 16 MiB, recuentos exactos,
+valores finitos y perfil de GPU comprobados antes de subir. Una revisión futura
+debe cambiar si cambia el ABI o la interpretación del solver. Publicación
+exclusiva sin reemplazo; [uso, restricciones y pruebas](PLANO-VFX.md).

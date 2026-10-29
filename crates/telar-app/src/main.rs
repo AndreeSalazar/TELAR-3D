@@ -24,6 +24,7 @@
 
 mod archivo;
 mod arranque;
+mod cache_campos;
 mod calculo;
 mod calidad;
 mod centro_estudio;
@@ -38,7 +39,11 @@ mod fuego_archivo;
 mod grafo;
 mod grafo_compilar;
 mod humo_archivo;
+mod humo_archivos;
+mod humo_cache;
 mod humo_entrada;
+mod humo_eventos;
+mod humo_modos;
 mod humo_vista;
 mod intercambio_archivo;
 mod objetos;
@@ -54,6 +59,8 @@ mod render_objetos;
 mod salida_hdr;
 mod sesion;
 mod tipografia;
+mod vfx_archivo;
+mod vfx_salida;
 mod visor;
 mod vista_objetos;
 mod volumen_archivo;

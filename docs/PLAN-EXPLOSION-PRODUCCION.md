@@ -11,10 +11,10 @@ Se estudian guías públicas; no se dispone del código propietario de Houdini.
 |---|---|---|
 | P1 · Campos 3D | Velocidad MAC, densidad y calor persistentes; advección trilineal, fuerzas, presión, visor orbitable y referencia escalar | Base implementada y probada a 32³; ver HUMO-3D.md |
 | P2 · Tiempo y colisiones | Subpasos temporales, control de estabilidad, obstáculos y velocidades de colisión; error de presión medido | Parcial: subpasos, predictor CFL GPU y esfera estática probados; faltan mallas y colisiones móviles |
-| P3 · Explosión | Fuente animada de corta duración, expansión objetivo, reacción/enfriamiento y humo; parámetros separados de simulación y aspecto | Parcial: pulso finito de calor/humo y expansión compensada en GPU; combustible/reacción y fuentes dirigibles pendientes |
-| P4 · Render volumétrico | Absorción, emisión, sombras y dispersión; temperatura con unidades/mapeo y gestión de color | Pendiente; existe fuego analítico separado |
-| P5 · Secundarios | Trayectorias, estelas, chispas y fragmentos con edad/vida; fuentes secundarias controlables | Parcial: emisor independiente y 128 trazadores pasivos acoplados a velocidad MAC GPU, vida/identidad y GEO; faltan emisión por campos, estelas y fragmentos |
-| P6 · Caché y salida | Estado versionado por fotograma/semilla, reanudación comprobada, secuencia HDR y pases | Caché/seq. pendientes; intercambio inicial de muestras GEO implementado, sin reanudación de campos |
+| P3 · Explosión | Fuente animada de corta duración, expansión objetivo, reacción/enfriamiento y humo; parámetros separados de simulación y aspecto | Parcial: pulso, fuente posicionable, combustible/reacción/enfriamiento en GPU; faltan química calibrada y expansión ligada a reacción |
+| P4 · Render volumétrico | Absorción, emisión, sombras y dispersión; temperatura con unidades/mapeo y gestión de color | Parcial: Beer–Lambert, emisión artística, luz puntual/sombra y dispersión simple HG; faltan dispersión múltiple, superficies y color de producción |
+| P5 · Secundarios | Trayectorias, estelas, chispas y fragmentos con edad/vida; fuentes secundarias controlables | Parcial: hasta 128 secundarios por umbral de calor, respuesta inercial al MAC, vida/semilla e historial de cuatro posiciones; faltan escala, fragmentos y colisión continua |
+| P6 · Caché y salida | Estado versionado por fotograma/semilla, reanudación comprobada, secuencia HDR y pases | Base: caché exacta ligada a GPU/driver y secuencia PFM/PPM con cuatro pases; faltan portabilidad, EXR/OpenVDB y flujo de producción |
 | P7 · Plano final | Cámara, composición, rango dinámico y comparación reproducible de secuencia; coste GPU/VRAM publicado | Pendiente |
 
 Los hitos se cierran con datos y pruebas. Añadir una carpeta, tarjeta, shader o
@@ -66,3 +66,7 @@ modernas. [La primera aplicación propia](INTERCAMBIO-GEO.md) exporta/inspeccion
 Primera base de P5: [PARTICULAS-GPU.md](PARTICULAS-GPU.md). No cierra P5/P6; los estados de partículas y humo siguen separados.
 
 Primer acoplamiento de P5 con P1/P3: [TRAZADORES-MAC.md](TRAZADORES-MAC.md). Transporte pasivo y unidireccional; el emisor balístico sigue separado. No cierra P3/P4/P5/P6.
+
+Entrega integrada del 29-10-2026: [PLANO-VFX.md](PLANO-VFX.md). Avanza P3–P6
+con pruebas de reacción, transmisión y reanudación exacta. Mantiene los hitos
+parciales: no completa P7 ni sustituye grafo VFX, curvas, deshacer y proyecto.

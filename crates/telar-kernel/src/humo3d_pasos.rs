@@ -78,6 +78,10 @@ fn proyectar(f: &mut Funcion, m: &Memoria, pixel: Id, presion: u32) {
         let nuevo = f.elegir(m.real, existe, nuevo, cero);
         m.guardar(f, pixel, canal, nuevo);
     }
+    if m.vfx {
+        let fuel = m.leer(f, pixel, 18);
+        m.guardar(f, pixel, 17, fuel);
+    }
     for canal in 3..5 {
         let valor = m.leer(f, pixel, canal + 5);
         m.guardar(f, pixel, canal, valor);
@@ -126,6 +130,12 @@ fn advectar(f: &mut Funcion, m: &Memoria, pixel: Id) {
             } else {
                 cero
             };
+            let fuerza = if m.vfx {
+                let detalle = crate::vfx_reaccion::detalle(f, m, coords, canal);
+                m.add(f, fuerza, detalle)
+            } else {
+                fuerza
+            };
             let impulso = m.mul(f, fuerza, dt);
             valor = m.add(f, valor, impulso);
             valor = m.limitar(f, valor, -0.8, 0.8);
@@ -146,6 +156,9 @@ fn advectar(f: &mut Funcion, m: &Memoria, pixel: Id) {
             valor = m.add(f, valor, aporte);
             valor = m.limitar(f, valor, 0.0, 10.0);
         }
+        if m.vfx && canal >= 3 {
+            valor = crate::vfx_reaccion::ajustar(f, m, pixel, valor, canal);
+        }
         let fluido = m.fluido(f, pixel);
         let valor = f.elegir(m.real, fluido, valor, cero);
         m.guardar(f, pixel, canal + 5, valor);
@@ -155,8 +168,15 @@ fn advectar(f: &mut Funcion, m: &Memoria, pixel: Id) {
 pub(super) fn mascara(f: &mut Funcion, m: &Memoria, coords: [Id; 3]) -> Id {
     let centro = [(m.lado as f32 - 1.0) * 0.5, m.lado as f32 * 0.18, (m.lado as f32 - 1.0) * 0.5];
     let mut r2 = Memoria::c(f, 0.0);
-    for (coord, centro) in coords.into_iter().zip(centro) {
-        let centro = Memoria::c(f, centro);
+    for (eje, (coord, centro)) in coords.into_iter().zip(centro).enumerate() {
+        let centro = if m.vfx {
+            let posicion = m.ajuste(f, 20 + u32::try_from(eje).unwrap_or(0));
+            let posicion = m.escala(f, posicion, m.lado as f32);
+            let medio = Memoria::c(f, 0.5);
+            m.sub(f, posicion, medio)
+        } else {
+            Memoria::c(f, centro)
+        };
         let delta = m.sub(f, coord, centro);
         let cuadrado = m.mul(f, delta, delta);
         r2 = m.add(f, r2, cuadrado);

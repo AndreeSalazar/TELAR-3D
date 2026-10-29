@@ -8,17 +8,26 @@ pub(super) struct Volumen {
     pub buffer: Id,
     pub puntero: Id,
     pub lado: u32,
+    pub vfx: bool,
 }
 impl Volumen {
     pub(super) fn nuevo(m: &mut Modulo, t: &Tipos, lado: u32) -> Self {
+        Self::crear(m, t, lado, true)
+    }
+    pub(super) fn nuevo_calculo(m: &mut Modulo, t: &Tipos, lado: u32) -> Self {
+        Self::crear(m, t, lado, false)
+    }
+    fn crear(m: &mut Modulo, t: &Tipos, lado: u32, lectura: bool) -> Self {
         let array = m.tipo_array_dinamico(t.real, 4);
         let bloque = m.tipo_bloque(&[array], &[0]);
         let ptr = m.tipo_puntero(Clase::Almacen, bloque);
         let buffer = m.variable(ptr, Clase::Almacen);
         m.decorar(buffer, op::DECORACION_CONJUNTO, &[0]);
         m.decorar(buffer, op::DECORACION_ENLACE, &[1]);
-        m.decorar(buffer, 24, &[]);
-        Self { buffer, puntero: m.tipo_puntero(Clase::Almacen, t.real), lado }
+        if lectura {
+            m.decorar(buffer, 24, &[]);
+        }
+        Self { buffer, puntero: m.tipo_puntero(Clase::Almacen, t.real), lado, vfx: false }
     }
     #[allow(clippy::cast_precision_loss, reason = "lado <=64")]
     pub(super) fn muestra(&self, f: &mut Funcion, t: &Tipos, mat: &Matematica, punto: Id, canal: Id) -> Id {

@@ -28,12 +28,20 @@ pub(crate) fn preparar(
     )?;
     let config =
         telar_kernel::humo3d::Configuracion { lado: LADO, iteraciones: crate::humo_vista::iteraciones(editor) };
-    let programas = if editor.trazadores {
+    let mut programas = if editor.vfx.is_some() {
+        telar_kernel::vfx::compilar(config, subpasos(editor))?
+    } else if editor.trazadores {
         telar_kernel::trazadores::compilar(config, subpasos(editor))?
     } else {
         config.compilar_temporal(subpasos(editor))?
     };
-    let fragmentos = if editor.trazadores {
+    if editor.vfx.is_some() {
+        programas.codigos.push(telar_render::vfx_final::programa(LADO, false)?);
+        programas.codigos.push(telar_render::vfx_final::programa(LADO, true)?);
+    }
+    let fragmentos = if editor.vfx.is_some() {
+        telar_render::volumen::fragmentos_vfx(LADO, 64)?
+    } else if editor.trazadores {
         telar_render::volumen::fragmentos_trazadores(LADO, 64)?
     } else {
         telar_render::volumen::fragmentos(LADO, 64)?
@@ -42,7 +50,9 @@ pub(crate) fn preparar(
         Sombreadores { vertices: &telar_render::visor_rayos::vertices(), fragmentos: &fragmentos },
         PlanCampos {
             elementos: LADO * LADO * LADO,
-            palabras: if editor.trazadores {
+            palabras: if editor.vfx.is_some() {
+                telar_kernel::vfx::canales(LADO) + telar_render::vfx_final::PALABRAS_IMAGEN.div_ceil(LADO.pow(3))
+            } else if editor.trazadores {
                 telar_kernel::trazadores::canales(LADO)
             } else {
                 telar_kernel::humo3d::CANALES

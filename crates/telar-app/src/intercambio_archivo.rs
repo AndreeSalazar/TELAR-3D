@@ -15,7 +15,9 @@ pub(crate) fn destino(args: &[String], volumen: bool) -> Result<Option<String>, 
 }
 pub(crate) fn procesar(args: &[String]) -> Option<Result<(), String>> {
     if args.iter().any(|v| v == "--exportar-geo")
-        && !args.iter().any(|v| v == "--humo-3d" || v == "--explosion" || v == "--particulas")
+        && !args.iter().any(|v| {
+            v == "--humo-3d" || v == "--explosion" || v == "--particulas" || v == "--plano-vfx" || v == "--abrir-cache"
+        })
     {
         return Some(Err("--exportar-geo necesita --humo-3d, --explosion o --particulas".into()));
     }
@@ -26,7 +28,10 @@ pub(crate) fn procesar(args: &[String]) -> Option<Result<(), String>> {
         if args.iter().any(|v| {
             matches!(
                 v.as_str(),
-                "--trazadores"
+                "--plano-vfx"
+                    | "--abrir-cache"
+                    | "--guardar-cache"
+                    | "--trazadores"
                     | "--exportar-geo"
                     | "--humo"
                     | "--humo-3d"

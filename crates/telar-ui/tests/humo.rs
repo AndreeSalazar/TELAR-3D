@@ -122,3 +122,40 @@ fn inspector_de_particulas_aplica_dominios_propios() -> Result<(), &'static str>
     }
     Ok(())
 }
+
+#[test]
+fn controles_vfx_y_navegacion_guardan_el_valor_real() -> Result<(), &'static str> {
+    let mut editor = telar_ui::EditorHumo::default();
+    editor.volumen = true;
+    editor.vfx = Some(telar_ui::Vfx::default());
+    editor.pagina = 4;
+    let d = telar_ui::DisenoObjetos::nuevo((1280, 800));
+    let rect = d.valor(0);
+    editor.pulsar(d, rect.x + 5.0, rect.y + 5.0);
+    for c in "12".chars() {
+        editor.numero(telar_ui::EntradaNumero::Caracter(c));
+    }
+    editor.numero(telar_ui::EntradaNumero::Confirmar);
+    assert_eq!(editor.vfx.ok_or("configuración VFX ausente")?.0[0].to_bits(), 12.0f32.to_bits());
+    let siguiente = telar_ui::Rectangulo { x: d.control(0).x + 148.0, y: 198.0, ancho: 140.0, alto: 28.0 };
+    editor.pulsar(d, siguiente.x + 5.0, siguiente.y + 5.0);
+    assert_eq!(editor.pagina, 5);
+    let valor = d.valor(1);
+    editor.pulsar(d, valor.x + 5.0, valor.y + 5.0);
+    for c in "17".chars() {
+        editor.numero(telar_ui::EntradaNumero::Caracter(c));
+    }
+    editor.numero(telar_ui::EntradaNumero::Confirmar);
+    assert_eq!(editor.vfx.ok_or("configuración VFX ausente")?.0[7].to_bits(), 17.0f32.to_bits());
+    for _ in 0..4 {
+        editor.pulsar(d, siguiente.x + 5.0, siguiente.y + 5.0);
+    }
+    assert_eq!(editor.pagina, 0);
+    let mut v = telar_ui::Vfx::default();
+    let antes = v;
+    assert!(v.poner(7, 17.5).is_err());
+    assert!(v.poner(25, 0.0).is_err());
+    assert!(v.poner(2, f32::NAN).is_err());
+    assert_eq!(v, antes);
+    Ok(())
+}
