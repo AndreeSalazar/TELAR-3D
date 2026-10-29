@@ -48,6 +48,12 @@ hay que leer su cabecera. Se evita reconstruir propiedades al mover la cámara.
 Actualización: [reutilización compute](COMPUTE-REUTILIZABLE.md) añade tres
 contadores de grabación/reuso/ruta directa; el CSV vigente tiene 21 columnas.
 
+Actualización: [presión indirecta](PRESION-INDIRECTA.md) muestra I4 para cuatro
+programas consumidores. Los tiempos GPU vigentes son medias de hasta 120
+muestras terminadas, todavía diferidas; los archivos anteriores conservan
+la semántica de última muestra. D en 3D añade una lectura explícita de 64 B
+para consultar los dos comandos futuros de presión.
+
 La semilla/escena/resolución, validación, VSync, calentamiento de pipelines y otras
 aplicaciones afectan una comparación. La primera ventana de estadísticas puede
 incluir compilación inicial. Para comparar, espera al menos 120 cuadros y conserva

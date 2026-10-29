@@ -16,6 +16,7 @@ mod humo3d_muestreo;
 mod humo3d_pasos;
 mod humo3d_tiempo;
 mod humo_control;
+pub mod humo_indirecto;
 mod humo_memoria;
 mod humo_pasos;
 mod maquina;

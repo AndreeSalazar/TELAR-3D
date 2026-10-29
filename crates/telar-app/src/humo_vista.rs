@@ -82,6 +82,12 @@ pub(crate) fn datos_editor(gpu: &Gpu, editor: &EditorHumo) -> Result<String, Str
     }
     if editor.volumen {
         let resumen = resumen(gpu, telar_kernel::humo3d::CONTROL * crate::volumen_vista::LADO.pow(3), true)?;
+        let resumen = if gpu.carga_campos().indirectos > 0 {
+            let argumentos = gpu.inspeccionar_argumentos_campos()?;
+            format!("{resumen} · próximos grupos GPU {}/{}", argumentos[0], argumentos[3])
+        } else {
+            resumen
+        };
         if editor.trazadores {
             let flags = gpu.inspeccionar_rango_campos(
                 (if editor.vfx.is_some() { 20 } else { 17 }) * crate::volumen_vista::LADO.pow(3) + 10 * 128,

@@ -52,7 +52,7 @@ CPU: mismos parámetros, interfaz y envíos; sin intersecciones ni mezcla de
 píxeles del producto en host. GPU añade cuadráticas y sombreado de superficie;
 reemplaza las antiguas ocho comprobaciones voxelizadas de esfera por segmento.
 No añade buffers ni descargas por cuadro. Reserva lógica VFX sin cambios:
-4 063 236 B, más imágenes, staging, alineación y pipelines del backend. No se
+4 063 296 B con el auxiliar de presión indirecta, más imágenes, staging, alineación y pipelines del backend. No se
 han medido duración GPU, FPS ni pico físico; no se anuncia mejora de velocidad.
 RAM/E/S nuevas: escena de 200 B y capturas explícitas de documentación.
 

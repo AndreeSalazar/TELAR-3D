@@ -1,5 +1,15 @@
 //! Ejecución de campos residentes: programas y orden opacos al backend.
 use crate::{Gpu, Sombreadores};
+/// Dominio directo acotado o argumentos de despacho escritos por GPU.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RutaCampos {
+    /// Grupos X entre 1 y el máximo de grupos del plan.
+    Directo(u32),
+    /// Kernel directo que publica argumentos en el auxiliar binding 0.
+    Productor(u32),
+    /// Offset alineado en bytes, 0..52, dentro del auxiliar reservado de 64 B.
+    Indirecto(u64),
+}
 /// Un buffer de palabras compartido entre pasadas, con propietario por elemento.
 #[derive(Clone, Copy)]
 pub struct PlanCampos<'a> {
@@ -33,6 +43,19 @@ impl PlanCampos<'_> {
     }
 }
 impl Gpu {
+    /// Diagnóstico explícito del auxiliar de dieciséis u32; espera su copia, no gobierna el solver.
+    /// # Errors
+    /// Rechaza falta de campos o fallos de transferencia Vulkan.
+    pub fn inspeccionar_argumentos_campos(&self) -> Result<Vec<u32>, String> {
+        self.visor.as_ref().ok_or("falta visor")?.argumentos_campos(&self.contexto)
+    }
+    /// Cambia rutas de despacho por programa; lista vacía restaura los grupos del plan.
+    /// Argumentos indirectos están en el auxiliar reservado binding 0 de 64 B.
+    /// # Errors
+    /// Rechaza programas duplicados/ausentes, grupos fuera del plan u offsets inválidos.
+    pub fn configurar_despachos_campos(&mut self, rutas: &[(usize, RutaCampos)]) -> Result<(), String> {
+        self.visor.as_mut().ok_or("falta visor")?.configurar_despachos_campos(rutas)
+    }
     /// Reutiliza compute en el visor; la máscara declara palabras push usadas por los kernels.
     /// Las palabras omitidas se envían como cero a compute. Por defecto se conservan las 32.
     /// Capturas y `ejecutar_campos` siguen la ruta directa con todas las constantes.

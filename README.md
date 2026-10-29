@@ -178,3 +178,7 @@ de propiedades; el visor sigue actualizando la cámara.
 El [plan compute reutilizable](docs/COMPUTE-REUTILIZABLE.md) evita registrar de
 nuevo sus despachos cada cuadro. El monitor cuenta grabaciones/reusos y se
 conserva `--sin-cache-compute` para comparar resultados y coste.
+
+[Presión indirecta](docs/PRESION-INDIRECTA.md): la GPU publica cero grupos al
+converger, evitando lanzar pasadas pesadas innecesarias. Fallback
+`--sin-indirectos`, argumentos auxiliares acotados y resultados idénticos.

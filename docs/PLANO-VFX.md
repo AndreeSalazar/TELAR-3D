@@ -54,7 +54,7 @@ el reloj GPU puede reducir dt por CFL, no se promete una cadencia de cine fija.
 La salida por lotes es síncrona en una ventana oculta; no añade trabajador
 asíncrono al editor VFX. Si falla un cuadro posterior, se conservan los anteriores.
 
-.tlcache revisión 2 guarda campos exactos, cámara, parámetros y contador de
+.tlcache revisión 3 guarda campos exactos, cámara, parámetros y contador de
 avances. Tiene CRC de cabecera/cuerpo, máximo 16 MiB y comprueba GPU, driver y
 versión Vulkan antes de cargar. La publicación usa temporal sincronizado y
 enlace exclusivo en el mismo sistema de archivos: requiere soporte de enlaces
@@ -90,17 +90,18 @@ integración con geometría general y gestión de color de producción.
 
 CPU prepara SPIR-V, interfaz, constantes, envíos, esperas y archivos. GPU
 transporta/reacciona/proyecta, decide dt/estado de presión, actualiza secundarios
-y calcula los píxeles. No hay lecturas de campos por cuadro estable; editar
+y calcula los píxeles. Con monitor apagado no hay lecturas de campos por cuadro estable; editar
 parámetros VFX sube 112 B. El host sigue enviando trabajo Vulkan: no hay
 autonomía de dispositivo fuera de ese contrato.
 
-Reserva lógica compartida a 32³: 31 planos de 32768 palabras más cuatro bytes
-del backend = **4 063 236 B**. Incluye campos, cola y salida final; no representa
+Reserva lógica compartida a 32³: 31 planos de 32768 palabras más 64 bytes
+del backend = **4 063 296 B**, con auxiliar ampliado a 64 B para [indirectos](PRESION-INDIRECTA.md). Incluye campos, cola y salida final; no representa
 VRAM física total: staging, alineación, imágenes y pipelines añaden coste.
 Render descarga 1 310 720 B; caché copia 1 015 808 palabras y ocupa 4 063 512 B
 incluyendo cabecera/escena/cámara. RAM crece con copias y serialización explícitas.
-Cada muestra final usa un envío acotado. No se ha medido tiempo GPU ni ventaja
-de velocidad; no se declara MÁS RÁPIDO ni consumo cero.
+Cada muestra final usa un envío acotado. Las mediciones de tiempo GPU y
+comparaciones vigentes están en [presión indirecta](PRESION-INDIRECTA.md);
+el monitor activo añade su observación acotada. No se declara consumo cero.
 
 En RTX 3060 / Windows 11 se comprobaron:
 

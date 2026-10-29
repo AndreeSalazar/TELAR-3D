@@ -47,7 +47,7 @@ pub struct TelemetriaHost {
 pub struct CargaCampos {
     /// Bytes lógicos de campos, incluido el buffer auxiliar de cuatro bytes.
     pub bytes: u64,
-    /// Grupos de 64 hilos por despacho.
+    /// Máximo de grupos de 64 hilos del plan; las rutas pueden reducirlo.
     pub grupos: u32,
     /// Ranuras de la secuencia, incluidas las que el shader omite.
     pub ranuras: usize,
@@ -59,6 +59,8 @@ pub struct CargaCampos {
     pub reusos: u64,
     /// Cuadros compute grabados directamente al desactivar caché.
     pub directas: u64,
+    /// Programas de la ruta configurados para leer argumentos GPU.
+    pub indirectos: usize,
 }
 impl Gpu {
     /// Último desglose host; no espera y no añade consultas Vulkan.

@@ -64,3 +64,19 @@ Limites adicionales: 32 cubico, 128 secundarios, cuatro posiciones de historial,
 dispersion simple, sin oclusion de estelas ni color de produccion; cache ligada
 a GPU/driver/Vulkan, requiere enlaces duros. No equivale a coste cero ni a Pyro.
 Contrato, fuentes, evidencia real y pendientes: docs/PLANO-VFX.md.
+
+
+Presion indirecta (29-10-2026): argumentos u32 acotados publicados por la
+GPU en auxiliar binding 0 ampliado de 4 a 64 B (+60 B logicos). Los campos
+fisicos no cambian de planos; VFX suma 4063296 B logicos mas recursos del
+driver sin pico medido. CPU conserva plan/envio; no lee residual para decidir
+grupo. GPU evita invocaciones de Jacobi/residual/reduccion con x=0; mantiene
+ranuras/decisor pequeno y coste de leer argumentos. Productores sincronizados
+hacia INDIRECT_COMMAND_READ y contra lecturas previas; FFI sigue ROJO.
+No hay descarga nueva por cuadro; D/captura 3D lee 64 B explicitos adicionales,
+640 B con trazadores. Monitor GPU pasa a medias de hasta 120 muestras.
+Archivos de esta entrega: cache ABI revision 3, rechaza previas sin sobrescribir; .tlar sin cambio.
+Ritmo: publicacion por decision; monitor 2 Hz. Beneficio dependiente de escena
+y hardware; fallback --sin-indirectos. No es solver sparse ni compactacion
+espacial. Se conservan los estados anteriores de riesgo. Pruebas, costes y
+mediciones completas: docs/PRESION-INDIRECTA.md.

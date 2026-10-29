@@ -36,6 +36,15 @@ pub(crate) struct Visor {
 }
 
 impl Visor {
+    pub(crate) fn argumentos_campos(&self, ctx: &Contexto) -> Result<Vec<u32>, String> {
+        self.campos.as_ref().ok_or("faltan campos")?.leer_argumentos(ctx)
+    }
+    pub(crate) fn configurar_despachos_campos(
+        &mut self,
+        comandos: &[(usize, crate::RutaCampos)],
+    ) -> Result<(), String> {
+        self.campos.as_mut().ok_or("faltan campos")?.configurar_despachos(comandos)
+    }
     pub(crate) fn configurar_cache_campos(&self, activa: bool, mascara: u32) -> Result<(), String> {
         self.campos.as_ref().ok_or("falta el estado de campos")?.configurar_cache(activa, mascara);
         Ok(())

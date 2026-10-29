@@ -91,7 +91,7 @@ universales ni confundir espera de valla con cálculo de física CPU.
 ## Comparación medida · MÁS RÁPIDO en grabación host
 
 Release, RTX 3060 / Windows 11, validación y validación de sincronización activas,
-escena `referencias/plano-vfx-esfera.tlar`, MAC 32³, visor 384², un subpaso y
+escena `referencias/plano-vfx-esfera.tlar`, MAC 32³, visor 384², dos subpasos y
 200 avances por ejecución. Tres ejecuciones por ruta, orden cache/directa,
 directa/cache, cache/directa. Se usa la última ventana de 120 cuadros de cada
 sesión, excluyendo las dos grabaciones iniciales. No había pruebas GPU de TELAR

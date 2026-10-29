@@ -9,6 +9,8 @@ pub(super) struct Memoria {
     pub booleano: Id,
     pub vector: Id,
     pub buffer: Id,
+    argumentos: Id,
+    puntero_argumento: Id,
     puntero: Id,
     constantes: Id,
     push: Id,
@@ -28,6 +30,12 @@ impl Memoria {
         let buffer = m.variable(ptr, Clase::Almacen);
         m.decorar(buffer, op::DECORACION_CONJUNTO, &[0]);
         m.decorar(buffer, op::DECORACION_ENLACE, &[1]);
+        let array_argumentos = m.tipo_array_dinamico(entero, 4);
+        let bloque_argumentos = m.tipo_bloque(&[array_argumentos], &[0]);
+        let ptr_argumentos = m.tipo_puntero(Clase::Almacen, bloque_argumentos);
+        let argumentos = m.variable(ptr_argumentos, Clase::Almacen);
+        m.decorar(argumentos, op::DECORACION_CONJUNTO, &[0]);
+        m.decorar(argumentos, op::DECORACION_ENLACE, &[0]);
         let bloque = m.tipo_bloque(&[vector; 8], &[0, 16, 32, 48, 64, 80, 96, 112]);
         let ptr = m.tipo_puntero(Clase::Constantes, bloque);
         let constantes = m.variable(ptr, Clase::Constantes);
@@ -37,6 +45,8 @@ impl Memoria {
             booleano,
             vector,
             buffer,
+            argumentos,
+            puntero_argumento: m.tipo_puntero(Clase::Almacen, entero),
             puntero: m.tipo_puntero(Clase::Almacen, real),
             push: m.tipo_puntero(Clase::Constantes, vector),
             constantes,
@@ -44,6 +54,13 @@ impl Memoria {
             volumen,
             vfx: false,
         }
+    }
+    pub(super) fn guardar_argumento(&self, f: &mut Funcion, indice: u32, valor: Id) {
+        let cero = Self::u(f, 0);
+        let indice = Self::u(f, indice);
+        let ptr = f.acceso(self.puntero_argumento, self.argumentos, &[cero, indice]);
+        // GPU: solo la invocación de decisión publica x/y/z; no comparte buffer con los kernels indirectos consumidores.
+        f.guardar(ptr, valor);
     }
     pub(super) fn ajuste(&self, f: &mut Funcion, i: u32) -> Id {
         let indice = Self::u(f, i);

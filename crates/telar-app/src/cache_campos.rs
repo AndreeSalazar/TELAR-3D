@@ -6,7 +6,7 @@ use std::{
 const MAX_BYTES: usize = 16_777_216;
 const MAGIC: u32 = 0x4843_4c54;
 /// Revisión del ABI de simulación; debe cambiar si cambia la interpretación de campos/programas.
-const REVISION: u32 = 2;
+const REVISION: u32 = 3;
 pub(crate) struct Cache {
     pub trazadores: bool,
     pub pasos: u32,
@@ -48,6 +48,12 @@ impl Cache {
             return Err("tamaño de caché inválido".into());
         }
         let h: Vec<_> = bytes[..48].as_chunks::<4>().0.iter().map(|v| u32::from_le_bytes(*v)).collect();
+        if h[0] == MAGIC && h[1] != REVISION {
+            return Err(format!(
+                "caché revisión {} incompatible con ABI {REVISION}; abre su escena .tlar o usa la versión que creó la caché",
+                h[1]
+            ));
+        }
         if h[0] != MAGIC
             || h[1] != REVISION
             || h[2] != 32
@@ -175,6 +181,11 @@ mod tests {
         };
         let bytes = cache.codificar()?;
         let otro = Cache::decodificar(&bytes)?;
+        let mut anterior = bytes.clone();
+        anterior[4..8].copy_from_slice(&2u32.to_le_bytes());
+        let checksum = crc(&anterior);
+        anterior[44..48].copy_from_slice(&checksum.to_le_bytes());
+        assert!(Cache::decodificar(&anterior).err().is_some_and(|e| e.contains("ABI 3")));
         assert_eq!(otro.campos, cache.campos);
         assert_eq!(otro.pasos, 37);
         assert_eq!(otro.camara, cache.camara);

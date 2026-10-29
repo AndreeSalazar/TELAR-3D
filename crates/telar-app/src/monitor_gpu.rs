@@ -28,6 +28,32 @@ impl Observador {
         // ABI MAC 3D: física en 0..15 y los componentes W 19/23/27/31; cámara XYZ solo gráfica.
         let mascara = if editor.volumen && editor.particulas.is_none() { 0x8888_ffff } else { u32::MAX };
         gpu.configurar_cache_campos(!args.iter().any(|v| v == "--sin-cache-compute"), mascara)?;
+        if editor.particulas.is_none() {
+            let grupos = gpu.carga_campos().grupos;
+            let indirectos = !args.iter().any(|v| v == "--sin-indirectos");
+            let mut rutas = vec![
+                (7, telar_gpu::RutaCampos::Directo(grupos.div_ceil(64))),
+                (8, telar_gpu::RutaCampos::Productor(1)),
+                (13, telar_gpu::RutaCampos::Productor(1)),
+            ];
+            for (programa, offset) in
+                telar_kernel::humo_indirecto::PROGRAMAS.into_iter().zip(telar_kernel::humo_indirecto::OFFSETS)
+            {
+                let ruta = if indirectos {
+                    telar_gpu::RutaCampos::Indirecto(offset)
+                } else {
+                    telar_gpu::RutaCampos::Directo(if programa == 12 { grupos.div_ceil(64) } else { grupos })
+                };
+                rutas.push((programa, ruta));
+            }
+            if editor.volumen {
+                rutas.extend([
+                    (14, telar_gpu::RutaCampos::Directo(grupos.div_ceil(64))),
+                    (15, telar_gpu::RutaCampos::Directo(1)),
+                ]);
+            }
+            gpu.configurar_despachos_campos(&rutas)?;
+        }
         let archivo = crate::estudio_humo::valor(args, "--benchmark-gpu")?.map(PathBuf::from);
         if archivo.as_ref().is_some_and(|p| p.exists() || p.with_extension("txt").exists()) {
             return Err("el informe GPU ya existe".into());
@@ -119,11 +145,11 @@ impl Observador {
         lineas.push(crate::monitor_host::resumen(&self.host));
         let fases_host = crate::monitor_host::media(&self.fases_host);
         lineas.extend(crate::monitor_host::lineas(fases_host));
-        let tiempos = self.gpu.back().copied();
+        let tiempos = media_gpu(&self.gpu);
         if let Some([calculo, escena, interfaz]) = tiempos {
-            lineas.push(format!("GPU cálculo {calculo:.3} ms"));
-            lineas.push(format!("GPU escena {escena:.3} ms"));
-            lineas.push(format!("GPU UI/final {interfaz:.3} ms"));
+            lineas.push(format!("GPU cálculo medio {calculo:.3} ms"));
+            lineas.push(format!("GPU escena media {escena:.3} ms"));
+            lineas.push(format!("GPU UI/final media {interfaz:.3} ms"));
         } else {
             lineas.push("Tiempos GPU: N/D o pendientes".into());
         }
@@ -147,8 +173,8 @@ impl Observador {
         }
         let carga = gpu.carga_campos();
         lineas.push(format!("Campos lógicos {} KiB", carga.bytes / 1024));
-        lineas.push(format!("{} ranuras · {} grupos", carga.ranuras, carga.grupos));
-        lineas.push(format!("{} pipes · caché {}g/{}r", carga.programas, carga.grabaciones, carga.reusos));
+        lineas.push(format!("{} ranuras · máx {} grupos", carga.ranuras, carga.grupos));
+        lineas.push(format!("I{} · caché {}g/{}r", carga.indirectos, carga.grabaciones, carga.reusos));
         let perfil = gpu.perfil();
         lineas.push(format!("Límite {} hilos/grupo", perfil.invocaciones));
         lineas.push(format!("Compartida {} KiB/grupo", perfil.compartida / 1024));
@@ -160,14 +186,15 @@ impl Observador {
                 estado = estado.max(1);
             }
             lineas.push(format!(
-                "Presión {} · {:.0} iter",
+                "Presión {} · {:.0}/{:.0} iter",
                 match c[5] {
                     1.0 => "OK",
                     2.0 => "límite",
                     3.0 => "inválida",
                     _ => "espera",
                 },
-                c[1]
+                c[1],
+                editor.humo.0[7]
             ));
             lineas.push(format!("Residual {:.4} / {:.4}", c[3], c[4]));
             lineas.push(format!("Dens {:.2} · calor {:.2}", c[6], c[7]));
@@ -247,6 +274,11 @@ impl Observador {
         }
         Ok(())
     }
+}
+#[allow(clippy::cast_precision_loss, reason = "ventana de hasta 120 muestras GPU")]
+fn media_gpu(muestras: &VecDeque<[f64; 3]>) -> Option<[f64; 3]> {
+    (!muestras.is_empty())
+        .then(|| core::array::from_fn(|i| muestras.iter().map(|m| m[i]).sum::<f64>() / muestras.len() as f64))
 }
 fn agregar<T>(cola: &mut VecDeque<T>, valor: T) {
     if cola.len() == 120 {

@@ -92,7 +92,7 @@ fn observa_sin_modificar_y_reutiliza_juegos_al_redimensionar() {
     }
     assert_eq!(gpu.inspeccionar_campos().unwrap(), estado);
     let carga = gpu.carga_campos();
-    assert_eq!(carga.bytes, 17 * 512 * 4 + 4);
+    assert_eq!(carga.bytes, 17 * 512 * 4 + 64);
     assert_eq!(carga.grupos, 8);
     assert_eq!(carga.programas, 16);
     let heaps = gpu.memoria_heaps();

@@ -148,6 +148,7 @@ fn decidir(f: &mut Funcion, m: &Memoria, inicial: bool) {
     let estado = f.elegir(m.real, error, tres, estado);
     let activo = f.binaria(180, m.booleano, estado, cero);
     let activo = f.elegir(m.real, activo, uno, cero);
+    crate::humo_indirecto::publicar(f, m, activo);
     for (i, v) in [(0, activo), (1, iteraciones), (2, div), (3, residuo), (4, tolerancia), (5, estado)] {
         guardar(f, m, i, v);
     }
