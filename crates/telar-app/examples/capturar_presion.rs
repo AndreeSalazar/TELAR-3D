@@ -42,3 +42,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     Ok(())
 }
+
+#[allow(dead_code, reason = "adaptador compartido por el panel físico; este ejemplo sigue siendo humo")]
+#[path = "../src/particulas_vista.rs"]
+mod particulas_vista;

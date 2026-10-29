@@ -20,7 +20,7 @@ cargo build -p telar-app --release
 .\target\release\telar.exe --inspeccionar-geo docs/ejemplos/muestras-telar.geo
 ```
 
-`--exportar-geo` requiere `--humo-3d` o `--explosion`. Ejecuta oculto hasta el
+`--exportar-geo` requiere `--humo-3d`, `--explosion` o `--particulas`. Ejecuta oculto hasta el
 número de cuadros solicitado (240 por defecto), exporta y termina. `--segundos`
 puede terminar antes; `--prueba` conserva su límite de 120 cuadros. La inspección
 es un comando independiente; no importa la nube a un grafo ni reproduce simulación.
@@ -111,5 +111,21 @@ el archivo con un lector externo. No se ha ejecutado Houdini ni Partio para
 certificar interoperabilidad o rendimiento. El siguiente ensayo externo debe
 registrar aplicación, versión/revisión, tipo y valores de atributos y tolerancias.
 
-Siguiente ampliación: atributos generales, partículas con edad/vida y conversores
+Siguiente ampliación: atributos generales y conversores
 externos comprobados; cachés reanudables de campos requieren un contrato distinto.
+
+## Segundo perfil fijo: partículas vivas
+
+`--particulas` y F8 exportan partículas simuladas, con los cinco atributos base
+más `age`, `life`, `birth_time` (float escalares, segundos; defaults 0, 1, 0).
+No altera el perfil MAC anterior: cada lector de núcleo exige su propio esquema;
+el inspector host distingue ambos. Puntos con vida>0, 0<=age<life y
+0<=birth_time<=sim_time; id único = generación*128+plaza. density=1 y
+heat=clamp(1-age/life), máscara visual sin unidades térmicas.
+
+[Ejemplo propio](ejemplos/particulas-telar.geo), `Particula` de 52 B y APIs
+`codificar_particulas_geo`/`decodificar_particulas_geo`. Comparten límites de
+65536 puntos/16 MiB; validación añade copia temporal de puntos e ids.
+Solo se exportan vivas: no constituye caché reanudable. Coste concreto del
+laboratorio y evidencia GPU en [PARTICULAS-GPU.md](PARTICULAS-GPU.md).
+Compatibilidad con lectores Houdini/Partio sigue **ABIERTO**.

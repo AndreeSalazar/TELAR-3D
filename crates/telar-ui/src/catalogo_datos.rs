@@ -10,6 +10,8 @@ pub enum Espacio {
     Humo,
     /// Solver MAC 3D de volumen denso.
     Humo3d,
+    /// Emisor independiente de partículas con vida residente.
+    Particulas,
     /// Volumen analítico animado.
     Fuego,
 }
@@ -110,11 +112,11 @@ pub const CATEGORIAS: &[Categoria] = &[
                 estado: "Pendiente",
             },
             Herramienta {
-                nombre: "Partículas y líquidos",
+                nombre: "Partículas GPU",
                 resumen: "Emisión, vida y movimiento",
-                detalle: "Plan: partículas con identidad y atributos, transferencia a rejilla y líquidos. No hay todavía un editor ni solver general de estas familias.",
-                espacio: None,
-                estado: "Pendiente",
+                detalle: "128 plazas GPU con semilla reproducible, edad, vida, gravedad, arrastre y rebote de suelo. Visor orbitable y GEO de partículas vivas. Sin acoplamiento al gas ni líquidos FLIP.",
+                espacio: Some(Espacio::Particulas),
+                estado: "Simulación GPU",
             },
             Herramienta {
                 nombre: "Rígidos y fractura",

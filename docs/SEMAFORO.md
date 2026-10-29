@@ -36,3 +36,13 @@ TIEMPO-COLISION-3D.md documenta predictor CFL, límites de tiempo/esfera y forma
 PULSO-EXPANSIVO-3D.md separa fuente/expansión iniciales de combustión y render final pendientes; publica evidencia numérica y límites del dominio cerrado.
 
 INTERCAMBIO-GEO.md describe formato, costes CPU/descargas, límites y diferencia entre muestras y caché MAC. No certifica interoperabilidad por el mero hecho de existir documentación.
+
+Partículas GPU (28-10-2026): base independiente de 128 plazas; dos despachos,
+6148 B lógicos compartidos y visor gaussiano hasta 384². CPU: constantes/eventos,
+configuración y GEO explícito; referencia escalar solo tests. GPU: física y dibujo;
+VRAM/RAM: costes lógicos y temporales descritos en docs/PARTICULAS-GPU.md, sin
+medición del pico físico. E/S: v12 de 56 B y GEO de vivas; descarga explícita
+5664 B al exportar, ninguna por cuadro estable. Sin acoplamiento al humo ni
+compatibilidad externa certificada; perfil de ocho atributos separado del MAC.
+Pruebas y captura reales: docs/PARTICULAS-GPU.md y telar-app/tests/particulas_gpu.rs.
+El estado de riesgo de esta carpeta se conserva; no significa consumo cero.

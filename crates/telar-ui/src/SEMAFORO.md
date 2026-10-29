@@ -78,3 +78,13 @@ VolumenHumo añade cuatro parámetros y pestaña Tiempo/col., sin recursos GPU. 
 ExplosionHumo añade cuatro valores y cuarta pestaña Pulso, sin recursos GPU. Dominios/Enter/decimal con coma son transaccionales; duración cero conserva emisión continua. Pruebas en tests/humo.rs.
 
 La cabecera 3D indica F8: GEO; la UI no adquiere dependencia de intercambio ni realiza E/S. La app resuelve la acción explícita.
+
+Partículas GPU (28-10-2026): base independiente de 128 plazas; dos despachos,
+6148 B lógicos compartidos y visor gaussiano hasta 384². CPU: constantes/eventos,
+configuración y GEO explícito; referencia escalar solo tests. GPU: física y dibujo;
+VRAM/RAM: costes lógicos y temporales descritos en docs/PARTICULAS-GPU.md, sin
+medición del pico físico. E/S: v12 de 56 B y GEO de vivas; descarga explícita
+5664 B al exportar, ninguna por cuadro estable. Sin acoplamiento al humo ni
+compatibilidad externa certificada; perfil de ocho atributos separado del MAC.
+Pruebas y captura reales: docs/PARTICULAS-GPU.md y telar-app/tests/particulas_gpu.rs.
+El estado de riesgo de esta carpeta se conserva; no significa consumo cero.

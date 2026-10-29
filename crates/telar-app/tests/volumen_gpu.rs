@@ -323,7 +323,9 @@ fn intercambio(gpu: &Gpu, estado: &[f32]) {
     let ruta = std::env::temp_dir().join(format!("telar-geo-gpu-{}.geo", std::process::id()));
     let antes = gpu.inspeccionar_campos().unwrap();
     assert_eq!(intercambio_archivo::exportar(gpu, 9, &ruta).unwrap(), CELDAS);
-    let puntos = intercambio_archivo::leer(&ruta).unwrap();
+    let intercambio_archivo::ArchivoGeo::Muestras(puntos) = intercambio_archivo::leer(&ruta).unwrap() else {
+        panic!("perfil inesperado");
+    };
     let raw: Vec<_> = estado[..5 * CELDAS].iter().map(|v| v.to_bits()).collect();
     let esperado = puntos_mac::convertir(9, &raw, estado[CONTROL + 13]).unwrap();
     assert_eq!(puntos, esperado);

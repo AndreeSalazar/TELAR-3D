@@ -50,6 +50,9 @@ impl Entrada {
         }
     }
     pub(crate) fn bloque(&self, editor: &EditorHumo, srgb: bool) -> Result<[f32; 32], String> {
+        if editor.particulas.is_some() {
+            return crate::particulas_vista::bloque(editor, &self.camara, srgb);
+        }
         if editor.volumen {
             crate::volumen_vista::bloque(editor, &self.camara, srgb)
         } else {

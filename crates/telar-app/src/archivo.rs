@@ -32,6 +32,14 @@ pub(crate) fn procesar(args: &[String]) -> Option<Result<(), String>> {
                 .take(4_194_453)
                 .read_to_end(&mut bytes)
                 .map_err(|e| format!("leer {ruta}: {e}"))?;
+            if bytes.get(4..8).is_some_and(|v| v == 12u32.to_le_bytes()) {
+                let p = crate::particulas_archivo::decodificar(&bytes)?;
+                println!(
+                    "telar: .tlar v12 · partículas GPU · {} plazas · vida base {}s · semilla {}",
+                    p.0[0], p.0[1], p.0[7]
+                );
+                return Ok(());
+            }
             if bytes
                 .get(4..8)
                 .is_some_and(|v| v == 9u32.to_le_bytes() || v == 10u32.to_le_bytes() || v == 11u32.to_le_bytes())

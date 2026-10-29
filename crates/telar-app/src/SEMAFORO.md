@@ -85,3 +85,13 @@ Humo 3D conserva 17 planos, añade cuatro constantes de tiempo/esfera y .tlar v1
 --explosion configura el laboratorio 3D y la pestaña Pulso; CPU solo compone constantes, plan y eventos. El GPU decide emisión por reloj congelado. .tlar v11 de 88 B migra v9/v10 sin pulso. D permanece en 64 B; no caché de campos. Pruebas/formato y capturas descritos en docs/PULSO-EXPANSIVO-3D.md.
 
 F8/--exportar-geo solicita 64 B de control + cinco planos físicos; a 32³ descarga 655424 B. CPU centra velocidades MAC, valida y serializa hasta 65536 muestras/16 MiB de texto. No hay lecturas adicionales en cuadros estables. La escritura es síncrona, destino exclusivo nuevo; error puede dejar archivo incompleto. --inspeccionar-geo usa solo CPU/RAM/E/S, sin contexto Vulkan. Ver docs/INTERCAMBIO-GEO.md y tests/volumen_gpu.rs.
+
+Partículas GPU (28-10-2026): base independiente de 128 plazas; dos despachos,
+6148 B lógicos compartidos y visor gaussiano hasta 384². CPU: constantes/eventos,
+configuración y GEO explícito; referencia escalar solo tests. GPU: física y dibujo;
+VRAM/RAM: costes lógicos y temporales descritos en docs/PARTICULAS-GPU.md, sin
+medición del pico físico. E/S: v12 de 56 B y GEO de vivas; descarga explícita
+5664 B al exportar, ninguna por cuadro estable. Sin acoplamiento al humo ni
+compatibilidad externa certificada; perfil de ocho atributos separado del MAC.
+Pruebas y captura reales: docs/PARTICULAS-GPU.md y telar-app/tests/particulas_gpu.rs.
+El estado de riesgo de esta carpeta se conserva; no significa consumo cero.

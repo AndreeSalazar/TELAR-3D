@@ -58,3 +58,13 @@ Visor de campos 3D: marcha de rayos de 16..128 muestras con trilineal, emisión/
 El visor 3D dibuja también la máscara esférica voxelizada en azul, evaluada en shader; sin buffer adicional. No implica malla suavizada, sombras ni luz de producción. Aumenta aritmética por muestra; coste no medido. Captura real: docs/capturas/humo-3d-colision.png.
 
 La vista Calor 3D usa paleta artística por magnitud normalizada; no es radiancia de cuerpo negro. Sigue sin sombras/dispersión. Añade pocas operaciones escalares por muestra, sin buffers nuevos; capturas pulso-inicio/tarde en docs/capturas.
+
+Partículas GPU (28-10-2026): base independiente de 128 plazas; dos despachos,
+6148 B lógicos compartidos y visor gaussiano hasta 384². CPU: constantes/eventos,
+configuración y GEO explícito; referencia escalar solo tests. GPU: física y dibujo;
+VRAM/RAM: costes lógicos y temporales descritos en docs/PARTICULAS-GPU.md, sin
+medición del pico físico. E/S: v12 de 56 B y GEO de vivas; descarga explícita
+5664 B al exportar, ninguna por cuadro estable. Sin acoplamiento al humo ni
+compatibilidad externa certificada; perfil de ocho atributos separado del MAC.
+Pruebas y captura reales: docs/PARTICULAS-GPU.md y telar-app/tests/particulas_gpu.rs.
+El estado de riesgo de esta carpeta se conserva; no significa consumo cero.

@@ -72,6 +72,8 @@ pub struct EditorHumo {
     pub volumen_opciones: crate::VolumenHumo,
     /// Pulso y divergencia objetivo; se activan con duración positiva.
     pub explosion: crate::ExplosionHumo,
+    /// Cuando está presente, el panel usa el contrato del emisor independiente.
+    pub particulas: Option<crate::Particulas>,
     /// Avanza el estado físico un paso fijo por fotograma dibujado.
     pub animando: bool,
     /// Valores guardables, independientes de la vista.
@@ -94,6 +96,7 @@ impl Default for EditorHumo {
             volumen: false,
             volumen_opciones: crate::VolumenHumo::default(),
             explosion: crate::ExplosionHumo::default(),
+            particulas: None,
             humo: Humo::default(),
             vista: 0,
             pagina: 0,
@@ -109,6 +112,9 @@ impl Default for EditorHumo {
 }
 impl EditorHumo {
     pub(crate) fn campo(&self, i: usize) -> Option<usize> {
+        if self.particulas.is_some() {
+            return (i < 6 && self.pagina < 2 && self.pagina * 6 + i < 10).then_some(self.pagina * 6 + i);
+        }
         let campo = if self.volumen && self.pagina >= 2 { 10 + (self.pagina - 2) * 4 + i } else { self.pagina * 6 + i };
         let cantidad = if self.pagina == 0 {
             6
@@ -123,6 +129,9 @@ impl EditorHumo {
     #[must_use]
     pub fn control(&self, i: usize) -> Option<Control> {
         let campo = self.campo(i)?;
+        if let Some(p) = self.particulas {
+            return p.control(campo);
+        }
         let (nombre, minimo, maximo) = dominio(campo);
         let nombre = if self.volumen && campo == 5 { "Tiempo solicitado / cuadro" } else { nombre };
         Some(Control { nombre, minimo, maximo, valor: self.valor(campo) })
@@ -143,7 +152,9 @@ impl EditorHumo {
             EntradaNumero::Cancelar => self.edicion = None,
             EntradaNumero::Confirmar => {
                 let resultado = texto.parse::<f32>().map_err(|_| "número inválido").and_then(|v| {
-                    if *i < 10 {
+                    if let Some(p) = &mut self.particulas {
+                        p.poner(*i, v)
+                    } else if *i < 10 {
                         self.humo.poner(*i, v)
                     } else if *i < 14 {
                         self.volumen_opciones.poner(*i - 10, v)
@@ -190,7 +201,7 @@ impl EditorHumo {
                 self.vista = i;
             }
         }
-        for i in 0..if self.volumen { 4 } else { 2 } {
+        for i in 0..if self.volumen && self.particulas.is_none() { 4 } else { 2 } {
             if self.pagina_rect(d, i).contiene(x, y) {
                 self.pagina = i;
             }
@@ -219,17 +230,22 @@ impl EditorHumo {
     pub fn mover(&mut self, d: DisenoObjetos, x: f32) {
         let Some(i) = self.desliz else { return };
         let Some(campo) = self.campo(i) else { return };
-        let (_, min, max) = dominio(campo);
+        let Some(control) = self.control(i) else {
+            return;
+        };
+        let (min, max) = (control.minimo, control.maximo);
         let rect = d.control(i);
         let valor = min + (max - min) * ((x - rect.x) / rect.ancho).clamp(0.0, 1.0);
-        let valor = if campo == 7 {
+        let valor = if self.particulas.is_none() && campo == 7 {
             ((valor * 0.5 + 0.5) as u32 * 2) as f32
-        } else if campo == 10 {
+        } else if campo == 10 || (self.particulas.is_some() && matches!(campo, 0 | 7)) {
             (valor + 0.5) as u32 as f32
         } else {
             valor
         };
-        if let Err(e) = if campo < 10 {
+        if let Err(e) = if let Some(p) = &mut self.particulas {
+            p.poner(campo, valor)
+        } else if campo < 10 {
             self.humo.poner(campo, valor)
         } else if campo < 14 {
             self.volumen_opciones.poner(campo - 10, valor)
@@ -243,6 +259,9 @@ impl EditorHumo {
 
 impl EditorHumo {
     fn valor(&self, campo: usize) -> f32 {
+        if let Some(p) = self.particulas {
+            return p.0[campo];
+        }
         if campo < 10 {
             self.humo.0[campo]
         } else if campo < 14 {
@@ -253,7 +272,7 @@ impl EditorHumo {
     }
     #[allow(clippy::cast_precision_loss, reason = "cuatro pestañas")]
     pub(crate) fn pagina_rect(&self, d: DisenoObjetos, i: usize) -> crate::Rectangulo {
-        if !self.volumen {
+        if !self.volumen || self.particulas.is_some() {
             return d.pagina(i);
         }
         let mut rect = d.pagina(0);

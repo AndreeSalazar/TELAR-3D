@@ -6,7 +6,7 @@ use std::{
 pub(crate) fn destino(args: &[String], volumen: bool) -> Result<Option<String>, String> {
     let ruta = argumento(args, "--exportar-geo")?;
     if ruta.is_some() && !volumen {
-        return Err("--exportar-geo necesita --humo-3d o --explosion".into());
+        return Err("--exportar-geo necesita --humo-3d, --explosion o --particulas".into());
     }
     if let Some(ruta) = &ruta {
         validar_destino(Path::new(ruta))?;
@@ -14,8 +14,10 @@ pub(crate) fn destino(args: &[String], volumen: bool) -> Result<Option<String>, 
     Ok(ruta)
 }
 pub(crate) fn procesar(args: &[String]) -> Option<Result<(), String>> {
-    if args.iter().any(|v| v == "--exportar-geo") && !args.iter().any(|v| v == "--humo-3d" || v == "--explosion") {
-        return Some(Err("--exportar-geo necesita --humo-3d o --explosion".into()));
+    if args.iter().any(|v| v == "--exportar-geo")
+        && !args.iter().any(|v| v == "--humo-3d" || v == "--explosion" || v == "--particulas")
+    {
+        return Some(Err("--exportar-geo necesita --humo-3d, --explosion o --particulas".into()));
     }
     if !args.iter().any(|v| v == "--inspeccionar-geo") {
         return None;
@@ -31,6 +33,7 @@ pub(crate) fn procesar(args: &[String]) -> Option<Result<(), String>> {
                     | "--estudio"
                     | "--fuego"
                     | "--estudio-rayos"
+                    | "--particulas"
                     | "--calculo"
                     | "--esfera-cpu"
                     | "--render-rayos"
@@ -40,12 +43,25 @@ pub(crate) fn procesar(args: &[String]) -> Option<Result<(), String>> {
             return Err("inspeccionar GEO requiere un comando independiente".into());
         }
         let ruta = argumento(args, "--inspeccionar-geo")?.ok_or("falta archivo GEO")?;
-        let puntos = leer(Path::new(&ruta))?;
-        println!(
-            "telar: GEO clásico V5 · {} puntos · P/v/density/heat/id/sim_time · esquema TELAR; comparación Houdini ABIERTA",
-            puntos.len()
-        );
-        println!("telar: {}", resumen(&puntos));
+        match leer(Path::new(&ruta))? {
+            ArchivoGeo::Muestras(puntos) => {
+                println!(
+                    "telar: GEO clásico V5 · {} muestras · P/v/density/heat/id/sim_time · comparación Houdini ABIERTA",
+                    puntos.len()
+                );
+                println!("telar: {}", resumen(&puntos));
+            }
+            ArchivoGeo::Particulas(puntos) => {
+                let base: Vec<_> = puntos.iter().map(|p| p.punto).collect();
+                let edad = puntos.iter().map(|p| p.edad).fold(0.0, f32::max);
+                let vida = puntos.iter().map(|p| p.vida).fold(0.0, f32::max);
+                println!(
+                    "telar: GEO clásico V5 · {} partículas vivas · age/life/birth_time · edad máx {edad} · vida máx {vida} · comparación Houdini ABIERTA",
+                    puntos.len()
+                );
+                println!("telar: {}", resumen(&base));
+            }
+        }
         Ok(())
     })())
 }
@@ -89,7 +105,11 @@ pub(crate) fn exportar(gpu: &telar_gpu::Gpu, lado: u32, ruta: &Path) -> Result<u
     archivo.sync_all().map_err(|e| e.to_string())?;
     Ok(puntos.len())
 }
-pub(crate) fn leer(ruta: &Path) -> Result<Vec<telar_intercambio::Punto>, String> {
+pub(crate) enum ArchivoGeo {
+    Muestras(Vec<telar_intercambio::Punto>),
+    Particulas(Vec<telar_intercambio::Particula>),
+}
+pub(crate) fn leer(ruta: &Path) -> Result<ArchivoGeo, String> {
     extension(ruta)?;
     let mut bytes = Vec::new();
     std::fs::File::open(ruta)
@@ -98,9 +118,12 @@ pub(crate) fn leer(ruta: &Path) -> Result<Vec<telar_intercambio::Punto>, String>
         .read_to_end(&mut bytes)
         .map_err(|e| e.to_string())?;
     let texto = core::str::from_utf8(&bytes).map_err(|_| "GEO requiere texto UTF-8 ASCII")?;
-    telar_intercambio::decodificar_geo(texto).map_err(Into::into)
+    if let Ok(puntos) = telar_intercambio::decodificar_geo(texto) {
+        return Ok(ArchivoGeo::Muestras(puntos));
+    }
+    telar_intercambio::decodificar_particulas_geo(texto).map(ArchivoGeo::Particulas).map_err(Into::into)
 }
-fn validar_destino(ruta: &Path) -> Result<(), String> {
+pub(crate) fn validar_destino(ruta: &Path) -> Result<(), String> {
     extension(ruta)?;
     if ruta.try_exists().map_err(|e| e.to_string())? {
         return Err("el destino GEO ya existe; elige otro nombre".into());
@@ -153,7 +176,9 @@ mod tests {
         assert!(destino(&args(&["--exportar-geo", "a.bgeo"]), true).is_err());
         assert!(destino(&args(&["--exportar-geo", "a.geo"]), false).is_err());
         let ruta = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/ejemplos/muestras-telar.geo");
-        let puntos = leer(&ruta)?;
+        let ArchivoGeo::Muestras(puntos) = leer(&ruta)? else {
+            return Err("perfil inesperado".into());
+        };
         assert_eq!(puntos.len(), 2);
         assert!(resumen(&puntos).contains("0.125"));
         Ok(())

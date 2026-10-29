@@ -10,6 +10,7 @@ pub mod historial_rayos;
 pub mod humo;
 mod imagen_rayos;
 mod muestra_rayos;
+pub mod particulas;
 mod programa;
 pub mod rayos;
 mod sombras;

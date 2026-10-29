@@ -39,13 +39,21 @@ impl EditorHumo {
         texto(
             &mut lienzo,
             [20.0, 18.0, 145.0, 32.0],
-            if self.volumen { "TELAR · 3D" } else { "TELAR · Humo" },
+            if self.particulas.is_some() {
+                "TELAR · Chispas"
+            } else if self.volumen {
+                "TELAR · 3D"
+            } else {
+                "TELAR · Humo"
+            },
             &titulo,
         );
         texto(
             &mut lienzo,
             [180.0, 22.0, ancho - 200.0, 30.0],
-            if self.volumen {
+            if self.particulas.is_some() {
+                "Partículas GPU · arrastrar: órbita · rueda: zoom · Espacio / N / R · F8: GEO"
+            } else if self.volumen {
                 "Campos físicos 32³ · arrastrar: órbita · rueda: zoom · Espacio / N / R · F8: GEO"
             } else {
                 "Emisor / advección / fuerzas / presión · 128² · Espacio: pausa · N: paso · R: reiniciar"
@@ -53,18 +61,19 @@ impl EditorHumo {
             &etiqueta,
         );
         lienzo.caja(diseno.panel, &panel);
-        texto(&mut lienzo, [diseno.panel.x + 16.0, 80.0, 288.0, 24.0], "Inspeccionar campos", &titulo);
-        for (i, nombre) in ["Densidad", "Calor", "Velocidad", "Divergencia"].iter().enumerate() {
+        texto(
+            &mut lienzo,
+            [diseno.panel.x + 16.0, 80.0, 288.0, 24.0],
+            if self.particulas.is_some() { "Partículas · parámetros" } else { "Inspeccionar campos" },
+            &titulo,
+        );
+        for (i, nombre) in self.vistas().iter().enumerate() {
             let boton = self.estilo("boton", self.vista == i);
             let rect = diseno.entidad(i);
             lienzo.caja(rect, &boton);
             lienzo.etiqueta(rect.interior(6.0), nombre, &boton);
         }
-        let paginas: &[&str] = if self.volumen {
-            &["Emisor", "Presión", "Tiempo", "Pulso"]
-        } else {
-            &["Emisor / fuerzas", "Presión / visor"]
-        };
+        let paginas = self.paginas();
         for (i, nombre) in paginas.iter().enumerate() {
             let estilo = self.estilo("boton", self.pagina == i);
             let rect = self.pagina_rect(diseno, i);
@@ -103,4 +112,23 @@ impl EditorHumo {
 }
 fn texto(lienzo: &mut Lienzo, rect: [f32; 4], texto: &str, estilo: &Estilo) {
     lienzo.etiqueta(Rectangulo { x: rect[0], y: rect[1], ancho: rect[2], alto: rect[3] }, texto, estilo);
+}
+
+impl EditorHumo {
+    fn paginas(&self) -> &'static [&'static str] {
+        if self.particulas.is_some() {
+            &["Dinámica", "Emisor / visor"]
+        } else if self.volumen {
+            &["Emisor", "Presión", "Tiempo", "Pulso"]
+        } else {
+            &["Emisor / fuerzas", "Presión / visor"]
+        }
+    }
+    fn vistas(&self) -> [&'static str; 4] {
+        if self.particulas.is_some() {
+            ["Belleza", "Edad / vida", "Velocidad", "Identidad"]
+        } else {
+            ["Densidad", "Calor", "Velocidad", "Divergencia"]
+        }
+    }
 }

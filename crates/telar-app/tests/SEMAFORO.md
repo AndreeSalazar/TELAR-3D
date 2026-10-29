@@ -84,3 +84,13 @@ volumen_gpu.rs amplía referencia a dos subpasos con fuerzas y esfera: caras nor
 El ensayo de volumen compara pulso activo, cruce de duración y fin de emisión a 9³ con y sin esfera; suma global de RHS <0.0001, error por valor <0.0003, reloj y repetibilidad. Valida los shaders y mantiene regresiones. V11 verifica CRC y migración v9/v10. Sin benchmark de rendimiento.
 
 La prueba de volumen exporta un estado real a GEO a 9³, lee y compara todos los atributos, comprueba campos GPU intactos y rechazo de sobrescritura sin cambiar bytes. Puntos MAC verifica promedio de caras con valores fabricados. Descargas/E/S solo en ensayos; no comparación externa Houdini.
+
+Partículas GPU (28-10-2026): base independiente de 128 plazas; dos despachos,
+6148 B lógicos compartidos y visor gaussiano hasta 384². CPU: constantes/eventos,
+configuración y GEO explícito; referencia escalar solo tests. GPU: física y dibujo;
+VRAM/RAM: costes lógicos y temporales descritos en docs/PARTICULAS-GPU.md, sin
+medición del pico físico. E/S: v12 de 56 B y GEO de vivas; descarga explícita
+5664 B al exportar, ninguna por cuadro estable. Sin acoplamiento al humo ni
+compatibilidad externa certificada; perfil de ocho atributos separado del MAC.
+Pruebas y captura reales: docs/PARTICULAS-GPU.md y telar-app/tests/particulas_gpu.rs.
+El estado de riesgo de esta carpeta se conserva; no significa consumo cero.

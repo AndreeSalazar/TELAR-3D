@@ -2,8 +2,10 @@
 #![no_std]
 extern crate alloc;
 mod geo;
+mod particulas;
 use alloc::vec::Vec;
 pub use geo::{codificar_geo, decodificar_geo};
+pub use particulas::{Particula, codificar_particulas_geo, decodificar_particulas_geo, validar_particulas};
 /// Límite explícito de elementos; no mide disponibilidad de memoria.
 pub const MAX_PUNTOS: usize = 65_536;
 /// Máximo texto aceptado/producido: 16 MiB.

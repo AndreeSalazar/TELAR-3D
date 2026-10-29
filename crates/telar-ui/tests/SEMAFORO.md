@@ -50,3 +50,13 @@ catalogo.rs verifica hit testing, capacidades pendientes, acciones de una sola l
 La prueba de humo añade Enter/decimal con coma para tiempo y esfera, rechazo transaccional de subpasos fraccionarios y dominios; no ejecuta shaders.
 
 Humo prueba los cuatro controles de pulso con Enter y decimal con coma; rechaza valores fuera de rango/NaN sin cambiar configuración. No ejecuta simulación en CPU.
+
+Partículas GPU (28-10-2026): base independiente de 128 plazas; dos despachos,
+6148 B lógicos compartidos y visor gaussiano hasta 384². CPU: constantes/eventos,
+configuración y GEO explícito; referencia escalar solo tests. GPU: física y dibujo;
+VRAM/RAM: costes lógicos y temporales descritos en docs/PARTICULAS-GPU.md, sin
+medición del pico físico. E/S: v12 de 56 B y GEO de vivas; descarga explícita
+5664 B al exportar, ninguna por cuadro estable. Sin acoplamiento al humo ni
+compatibilidad externa certificada; perfil de ocho atributos separado del MAC.
+Pruebas y captura reales: docs/PARTICULAS-GPU.md y telar-app/tests/particulas_gpu.rs.
+El estado de riesgo de esta carpeta se conserva; no significa consumo cero.

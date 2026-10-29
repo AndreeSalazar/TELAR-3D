@@ -94,3 +94,31 @@ fn pulso_se_confirma_y_los_dominios_son_transaccionales() -> Result<(), &'static
     editor.explosion.poner(0, 0.0)?;
     editor.explosion.validar()
 }
+#[test]
+fn inspector_de_particulas_aplica_dominios_propios() -> Result<(), &'static str> {
+    let mut editor = EditorHumo::default();
+    editor.volumen = true;
+    editor.particulas = Some(telar_ui::Particulas::default());
+    let d = DisenoObjetos::nuevo((1280, 800));
+    for (pagina, fila, texto) in [(0, 0, "37"), (0, 1, "0,5"), (1, 1, "123"), (1, 2, "0")] {
+        editor.pagina = pagina;
+        let r = d.valor(fila);
+        editor.pulsar(d, r.x + 4.0, r.y + 4.0);
+        for c in texto.chars() {
+            editor.numero(EntradaNumero::Caracter(c));
+        }
+        editor.numero(EntradaNumero::Confirmar);
+        assert!(!editor.editando());
+    }
+    let mut p = editor.particulas.ok_or("sin parámetros")?;
+    assert_eq!(p.0[0].to_bits(), 37.0f32.to_bits());
+    assert_eq!(p.0[1].to_bits(), 0.5f32.to_bits());
+    assert_eq!(p.0[7].to_bits(), 123.0f32.to_bits());
+    assert_eq!(p.0[8].to_bits(), 0.0f32.to_bits());
+    for (i, v) in [(0, 37.5), (0, 129.0), (7, 2.5), (1, 0.0), (6, 1.0), (9, f32::NAN)] {
+        let previo = p;
+        assert!(p.poner(i, v).is_err());
+        assert_eq!(p, previo);
+    }
+    Ok(())
+}

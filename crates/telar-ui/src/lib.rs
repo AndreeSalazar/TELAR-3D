@@ -14,6 +14,8 @@ mod dibujo_humo;
 mod explosion_humo;
 mod fuego;
 mod humo;
+mod particulas;
+pub use particulas::Particulas;
 mod volumen_humo;
 pub use explosion_humo::ExplosionHumo;
 pub use fuego::{EditorFuego, Fuego};

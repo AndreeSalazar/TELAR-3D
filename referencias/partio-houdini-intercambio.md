@@ -78,7 +78,7 @@ realice ese trabajo; esta anotación no lo presenta como instalado o funcional.
 
 ## Propuesta propia para TELAR
 
-La siguiente tabla conserva el alcance ampliado del contrato. La primera entrega implementa muestras con posición, velocidad, id, densidad, calor y tiempo; edad/vida, atributos generales y caché de campos siguen pendientes. La compatibilidad externa continúa ABIERTA:
+La siguiente tabla conserva el alcance ampliado del contrato. La primera entrega implementa muestras con posición, velocidad, id, densidad, calor y tiempo; edad/vida ya tienen un segundo perfil propio; atributos generales y caché de campos siguen pendientes. La compatibilidad externa continúa ABIERTA:
 
 | Dato propuesto | Metadatos necesarios |
 |---|---|
@@ -112,4 +112,4 @@ de decidir precarga o streaming. No se promete coste cero ni una biblioteca GPU.
 El estudio de estas fuentes no sustituye los hitos físicos pendientes de
 [combustión, iluminación y salida](../docs/PLAN-EXPLOSION-PRODUCCION.md).
 
-Entrega aplicada: [telar-intercambio y exportación real de campos a GEO](../docs/INTERCAMBIO-GEO.md). No implementa BGEO binario, PTC ni un solver de partículas.
+Entrega aplicada: [telar-intercambio y exportación real de campos a GEO](../docs/INTERCAMBIO-GEO.md). No implementa BGEO binario ni PTC. El siguiente paso propio añade un emisor GPU independiente y GEO con edad/vida: [PARTICULAS-GPU.md](../docs/PARTICULAS-GPU.md). No se ha probado con Partio/Houdini.

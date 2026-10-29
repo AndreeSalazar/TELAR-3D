@@ -163,3 +163,12 @@ Registro 72 B: cabecera TLAR/version=10/cantidad=14/CRC, diez f32 de humo y cuat
 ## Pulso expansivo v11
 
 Registro de 88 B: cabecera TLAR/version=11/cantidad=18/CRC y 18 f32 (humo 10, tiempo/esfera 4, pulso 4). Duración, expansión y multiplicadores calor/humo se validan antes de aplicar. V9/v10 migran sin pulso; no contiene reloj/campos/cámara. Ver [PULSO-EXPANSIVO-3D.md](PULSO-EXPANSIVO-3D.md).
+
+## Configuración de partículas v12
+
+56 B: cabecera u32 LE `[0x52414c54,12,10,CRC32(payload)]` seguida de diez f32:
+plazas, vida, impulso, gravedad, arrastre, dt, radio visual, semilla, duración y
+dispersión. Dominios en [PARTICULAS-GPU.md](PARTICULAS-GPU.md); plazas/semilla enteros.
+Lector acotado a 57 B, CRC y validación antes de aplicar. Rechaza otros modos.
+F5/F9 conservan configuración; abrir reinicia plazas y reloj. Sin cámara,
+generaciones, posiciones ni caché reanudable.

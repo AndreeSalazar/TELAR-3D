@@ -105,6 +105,7 @@ fn argumentos(espacio: Espacio) -> &'static [&'static str] {
         Espacio::Geometria => &[],
         Espacio::Humo => &["--humo"],
         Espacio::Humo3d => &["--humo-3d"],
+        Espacio::Particulas => &["--particulas"],
         Espacio::Fuego => &["--fuego"],
     }
 }
@@ -202,6 +203,7 @@ fn validar_modo(args: &[String]) -> Result<(), String> {
             "--humo"
                 | "--humo-3d"
                 | "--explosion"
+                | "--particulas"
                 | "--fuego"
                 | "--estudio-rayos"
                 | "--render-objetos"
@@ -226,6 +228,7 @@ mod tests {
         assert_eq!(argumentos(Espacio::Objetos), &["--estudio-rayos"]);
         assert_eq!(argumentos(Espacio::Humo), &["--humo"]);
         assert_eq!(argumentos(Espacio::Humo3d), &["--humo-3d"]);
+        assert_eq!(argumentos(Espacio::Particulas), &["--particulas"]);
         assert_eq!(argumentos(Espacio::Fuego), &["--fuego"]);
     }
 }

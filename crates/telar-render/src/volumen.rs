@@ -49,7 +49,7 @@ pub fn fragmentos(lado: u32, pasos: u32) -> Result<Vec<u32>, &'static str> {
     m.modo(main, op::MODO_ORIGEN_ARRIBA, &[]);
     Ok(m.ensamblar())
 }
-fn direccion(f: &mut Funcion, t: &Tipos, mat: &Matematica, uv: Id) -> Id {
+pub(super) fn direccion(f: &mut Funcion, t: &Tipos, mat: &Matematica, uv: Id) -> Id {
     let base = t.cargar(f, 4);
     let mut direccion = t.xyz(f, base);
     let uno = Matematica::escalar(f, 1.0);

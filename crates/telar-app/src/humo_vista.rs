@@ -11,6 +11,9 @@ pub(crate) fn preparar(
     visible: bool,
     validacion: bool,
 ) -> Result<(Ventana, Gpu), String> {
+    if editor.particulas.is_some() {
+        return crate::particulas_vista::preparar(editor, fuente, visible, validacion);
+    }
     if editor.volumen {
         return crate::volumen_vista::preparar(editor, fuente, visible, validacion);
     }
@@ -74,6 +77,9 @@ pub(crate) fn datos(gpu: &Gpu) -> Result<String, String> {
     resumen(gpu, telar_kernel::humo::CONTROL_ADAPTATIVO * LADO * LADO, false)
 }
 pub(crate) fn datos_editor(gpu: &Gpu, editor: &EditorHumo) -> Result<String, String> {
+    if editor.particulas.is_some() {
+        return crate::particulas_vista::datos(gpu);
+    }
     if editor.volumen {
         resumen(gpu, telar_kernel::humo3d::CONTROL * crate::volumen_vista::LADO.pow(3), true)
     } else {
@@ -161,5 +167,8 @@ pub(crate) fn diseno(tamano: (u32, u32)) -> DisenoObjetos {
 }
 
 pub(crate) fn diseno_editor(editor: &EditorHumo, tamano: (u32, u32)) -> DisenoObjetos {
+    if editor.particulas.is_some() {
+        return crate::particulas_vista::diseno(tamano);
+    }
     if editor.volumen { crate::volumen_vista::diseno(tamano) } else { diseno(tamano) }
 }

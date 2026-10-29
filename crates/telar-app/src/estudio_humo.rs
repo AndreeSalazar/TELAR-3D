@@ -7,13 +7,15 @@ use std::{
 use telar_ui::{EditorHumo, EntradaNumero};
 use telar_ventana::{Boton, Evento, Tecla};
 pub(crate) fn procesar(args: &[String]) -> Option<Result<(), String>> {
-    args.iter().any(|v| v == "--humo" || v == "--humo-3d" || v == "--explosion").then(|| ejecutar(args))
+    args.iter()
+        .any(|v| v == "--humo" || v == "--humo-3d" || v == "--explosion" || v == "--particulas")
+        .then(|| ejecutar(args))
 }
 fn ejecutar(args: &[String]) -> Result<(), String> {
     validar_modo(args)?;
     let abrir = crate::proyecto::argumento(args, "--abrir-escena")?;
     let guardar = crate::proyecto::argumento(args, "--guardar-escena")?;
-    let volumen = args.iter().any(|v| v == "--humo-3d" || v == "--explosion");
+    let volumen = args.iter().any(|v| v == "--humo-3d" || v == "--explosion" || v == "--particulas");
     let ruta = Path::new(guardar.as_deref().or(abrir.as_deref()).unwrap_or(predeterminada(args, volumen)));
     let (captura, limite, objetivo) = opciones(args)?;
     let exportar = crate::intercambio_archivo::destino(args, volumen)?;
@@ -99,13 +101,13 @@ fn ejecutar(args: &[String]) -> Result<(), String> {
         println!("telar: {} · {} pasos", editor.mensaje, estado.pasos);
         humo_vista::capturar_bloque(&mut gpu, &editor, &fuente, Path::new(&destino), &entrada.bloque(&editor, true)?)?;
     }
-    crate::intercambio_archivo::salida(&gpu, crate::volumen_vista::LADO, exportar.as_deref())?;
+    salida_geo(&gpu, &editor, exportar.as_deref())?;
     if guardar.is_some() {
         guardar_editor(ruta, &editor)?;
     }
     finalizar(gpu, ventana)?;
-    let dimension = if volumen { "3D" } else { "2D" };
-    println!("telar: humo MAC {dimension} · {cuadros} fotogramas · {} pasos · 0 avisos de validación", estado.pasos);
+    let dimension = nombre_editor(&editor);
+    println!("telar: {dimension} · {cuadros} fotogramas · {} pasos · 0 avisos de validación", estado.pasos);
     Ok(())
 }
 fn finalizar(gpu: telar_gpu::Gpu, ventana: telar_ventana::Ventana) -> Result<(), String> {
@@ -125,14 +127,8 @@ struct Estado {
 fn atender(tecla: u32, editor: &mut EditorHumo, estado: &mut Estado, gpu: &telar_gpu::Gpu, ruta: &Path) {
     let resultado = match tecla {
         116 => guardar_editor(ruta, editor).map(|()| "Configuración guardada; sin caché de campos".into()),
-        119 => {
-            if editor.volumen {
-                crate::intercambio_archivo::exportar(gpu, crate::volumen_vista::LADO, &ruta.with_extension("geo"))
-                    .map(|n| format!("{n} muestras GEO exportadas · comparación Houdini ABIERTA"))
-            } else {
-                Err("GEO de campos disponible solo en 3D".into())
-            }
-        }
+        119 => exportar_editor(gpu, editor, &ruta.with_extension("geo"))
+            .map(|n| format!("{n} puntos GEO exportados · comparación externa ABIERTA")),
         120 => leer_editor(ruta, editor).and_then(|()| {
             gpu.limpiar_campos()?;
             estado.pasos = 0;
@@ -184,6 +180,11 @@ fn opciones(args: &[String]) -> Result<(Option<String>, Option<u64>, u32), Strin
 }
 
 fn validar_modo(args: &[String]) -> Result<(), String> {
+    if args.iter().any(|v| v == "--particulas")
+        && args.iter().any(|v| matches!(v.as_str(), "--humo" | "--humo-3d" | "--explosion"))
+    {
+        return Err("elige partículas o humo/explosión".into());
+    }
     if args.iter().any(|v| v == "--humo") && args.iter().any(|v| v == "--humo-3d" || v == "--explosion") {
         return Err("elige humo 2D o 3D".into());
     }
@@ -199,6 +200,9 @@ fn validar_modo(args: &[String]) -> Result<(), String> {
 }
 
 fn guardar_editor(ruta: &Path, editor: &EditorHumo) -> Result<(), String> {
+    if let Some(p) = editor.particulas {
+        return crate::particulas_archivo::guardar(ruta, &p);
+    }
     if editor.volumen {
         crate::volumen_archivo::guardar(ruta, &editor.humo, &editor.volumen_opciones, &editor.explosion)
     } else {
@@ -206,6 +210,10 @@ fn guardar_editor(ruta: &Path, editor: &EditorHumo) -> Result<(), String> {
     }
 }
 fn leer_editor(ruta: &Path, editor: &mut EditorHumo) -> Result<(), String> {
+    if editor.particulas.is_some() {
+        editor.particulas = Some(crate::particulas_archivo::leer(ruta)?);
+        return Ok(());
+    }
     if editor.volumen {
         let (humo, opciones, explosion) = crate::volumen_archivo::leer(ruta)?;
         editor.humo = humo;
@@ -217,6 +225,9 @@ fn leer_editor(ruta: &Path, editor: &mut EditorHumo) -> Result<(), String> {
     Ok(())
 }
 fn secuencia(editor: &EditorHumo) -> Result<Vec<usize>, String> {
+    if editor.particulas.is_some() {
+        return Ok(vec![0, 1]);
+    }
     if editor.volumen {
         crate::volumen_vista::secuencia(editor)
     } else {
@@ -249,6 +260,9 @@ fn configurar_pulso(args: &[String], editor: &mut EditorHumo) {
 }
 
 fn predeterminada(args: &[String], volumen: bool) -> &'static str {
+    if args.iter().any(|v| v == "--particulas") {
+        return "particulas.tlar";
+    }
     if args.iter().any(|v| v == "--explosion") {
         "explosion.tlar"
     } else if volumen {
@@ -262,8 +276,42 @@ fn crear_editor(args: &[String], volumen: bool, abrir: Option<&str>) -> Result<E
     let mut editor = EditorHumo::default();
     editor.volumen = volumen;
     configurar_pulso(args, &mut editor);
+    if args.iter().any(|v| v == "--particulas") {
+        editor.particulas = Some(telar_ui::Particulas::default());
+        editor.mensaje = "Emisor GPU · plazas reutilizables · Espacio / N / R · D datos · F5/F9 · F8 GEO".into();
+    }
     if let Some(ruta) = abrir {
         leer_editor(Path::new(ruta), &mut editor)?;
     }
     Ok(editor)
+}
+
+fn exportar_editor(gpu: &telar_gpu::Gpu, editor: &EditorHumo, ruta: &Path) -> Result<usize, String> {
+    if editor.particulas.is_some() {
+        crate::particulas_geo::exportar(gpu, ruta)
+    } else if editor.volumen {
+        crate::intercambio_archivo::exportar(gpu, crate::volumen_vista::LADO, ruta)
+    } else {
+        Err("GEO disponible solo en espacios 3D".into())
+    }
+}
+fn salida_geo(gpu: &telar_gpu::Gpu, editor: &EditorHumo, ruta: Option<&str>) -> Result<(), String> {
+    if editor.particulas.is_none() {
+        return crate::intercambio_archivo::salida(gpu, crate::volumen_vista::LADO, ruta);
+    }
+    if let Some(ruta) = ruta {
+        let n = exportar_editor(gpu, editor, Path::new(ruta))?;
+        println!("telar: {n} partículas vivas exportadas a {ruta}");
+    }
+    Ok(())
+}
+
+fn nombre_editor(editor: &EditorHumo) -> &'static str {
+    if editor.particulas.is_some() {
+        "partículas GPU"
+    } else if editor.volumen {
+        "humo MAC 3D"
+    } else {
+        "humo MAC 2D"
+    }
 }

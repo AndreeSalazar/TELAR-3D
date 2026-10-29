@@ -24,3 +24,13 @@ humo-3d.png es captura GPU real de 180 pasos a 32³ en RTX 3060; PPM convertido 
 humo-3d-colision.png procede de 240 cuadros GPU reales a 32³ con esfera estática y dos subpasos; conversión PPM a PNG sin retoque. La máscara es voxelizada, no superficie final de producción.
 
 pulso-inicio.png y pulso-tarde.png son capturas reales del preset --explosion a 20/100 cuadros en RTX 3060. PPM convertido a PNG sin retoques; no equivalencia con una explosión cinematográfica.
+
+Partículas GPU (28-10-2026): base independiente de 128 plazas; dos despachos,
+6148 B lógicos compartidos y visor gaussiano hasta 384². CPU: constantes/eventos,
+configuración y GEO explícito; referencia escalar solo tests. GPU: física y dibujo;
+VRAM/RAM: costes lógicos y temporales descritos en docs/PARTICULAS-GPU.md, sin
+medición del pico físico. E/S: v12 de 56 B y GEO de vivas; descarga explícita
+5664 B al exportar, ninguna por cuadro estable. Sin acoplamiento al humo ni
+compatibilidad externa certificada; perfil de ocho atributos separado del MAC.
+Pruebas y captura reales: docs/PARTICULAS-GPU.md y telar-app/tests/particulas_gpu.rs.
+El estado de riesgo de esta carpeta se conserva; no significa consumo cero.
