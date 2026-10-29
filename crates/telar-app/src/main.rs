@@ -40,9 +40,11 @@ mod grafo_compilar;
 mod humo_archivo;
 mod humo_entrada;
 mod humo_vista;
+mod intercambio_archivo;
 mod objetos;
 mod produccion;
 mod proyecto;
+mod puntos_mac;
 mod render;
 mod render_asincrono;
 mod render_objetos;
@@ -66,7 +68,8 @@ const PUNTOS_DE_PRUEBA: u32 = 40_000;
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    if let Some(resultado) = centro_estudio::procesar(&args)
+    if let Some(resultado) = intercambio_archivo::procesar(&args)
+        .or_else(|| centro_estudio::procesar(&args))
         .or_else(|| estudio_humo::procesar(&args))
         .or_else(|| estudio_fuego::procesar(&args))
         .or_else(|| estudio_objetos::procesar(&args))

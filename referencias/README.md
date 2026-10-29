@@ -21,3 +21,5 @@ Una por nodo (lo exige la regla `nodo-completo`). Cada una dice:
 Cómo leer las cifras en Houdini:
 - **El nodo:** clic central (o el botón «i») enseña la información: puntos, primitivas, vértices y la caja que la contiene (*bounds*).
 - **El Geometry Spreadsheet** enseña cada punto y su `P`.
+
+Primera aplicación del registro: [intercambio GEO](../docs/INTERCAMBIO-GEO.md), con datos y pruebas propios. La comparación externa permanece ABIERTA.

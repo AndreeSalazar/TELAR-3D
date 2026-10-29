@@ -16,18 +16,14 @@ fn ejecutar(args: &[String]) -> Result<(), String> {
     let volumen = args.iter().any(|v| v == "--humo-3d" || v == "--explosion");
     let ruta = Path::new(guardar.as_deref().or(abrir.as_deref()).unwrap_or(predeterminada(args, volumen)));
     let (captura, limite, objetivo) = opciones(args)?;
-    let mut editor = EditorHumo::default();
-    editor.volumen = volumen;
-    configurar_pulso(args, &mut editor);
-    if let Some(ruta) = &abrir {
-        leer_editor(Path::new(ruta), &mut editor)?;
-    }
+    let exportar = crate::intercambio_archivo::destino(args, volumen)?;
+    let mut editor = crear_editor(args, volumen, abrir.as_deref())?;
     let prueba = args.iter().any(|v| v == "--prueba");
     let fuente = crate::tipografia::crear()?;
     let (mut ventana, mut gpu) = humo_vista::preparar(
         &editor,
         &fuente,
-        !prueba && captura.is_none(),
+        !prueba && captura.is_none() && exportar.is_none(),
         !args.iter().any(|v| v == "--sin-validacion"),
     )?;
     let mut entrada = crate::humo_entrada::Entrada::default();
@@ -55,7 +51,7 @@ fn ejecutar(args: &[String]) -> Result<(), String> {
             match evento {
                 Evento::Cerrar | Evento::Tecla(Tecla::Escape) => break 'vivo,
                 Evento::Tamano { ancho, alto } => gpu.redimensionar(ancho, alto),
-                Evento::Tecla(Tecla::Otra(v @ (116 | 120 | 82 | 68 | 78 | 32))) => accion = Some(v),
+                Evento::Tecla(Tecla::Otra(v @ (116 | 119 | 120 | 82 | 68 | 78 | 32))) => accion = Some(v),
                 Evento::Raton { x, y } => entrada.mover(&mut editor, d, x, y),
                 Evento::Boton { boton: Boton::Izquierdo, pulsado: true } => entrada.pulsar(&mut editor, d),
                 Evento::Boton { boton: Boton::Izquierdo, pulsado: false } => entrada.soltar(&mut editor),
@@ -92,7 +88,7 @@ fn ejecutar(args: &[String]) -> Result<(), String> {
             std::thread::sleep(Duration::from_millis(16));
         }
         if (prueba && cuadros >= 120)
-            || (captura.is_some() && estado.pasos >= objetivo)
+            || ((captura.is_some() || exportar.is_some()) && estado.pasos >= objetivo)
             || limite.is_some_and(|s| inicio.elapsed() >= Duration::from_secs(s))
         {
             break;
@@ -103,6 +99,7 @@ fn ejecutar(args: &[String]) -> Result<(), String> {
         println!("telar: {} · {} pasos", editor.mensaje, estado.pasos);
         humo_vista::capturar_bloque(&mut gpu, &editor, &fuente, Path::new(&destino), &entrada.bloque(&editor, true)?)?;
     }
+    crate::intercambio_archivo::salida(&gpu, crate::volumen_vista::LADO, exportar.as_deref())?;
     if guardar.is_some() {
         guardar_editor(ruta, &editor)?;
     }
@@ -128,6 +125,14 @@ struct Estado {
 fn atender(tecla: u32, editor: &mut EditorHumo, estado: &mut Estado, gpu: &telar_gpu::Gpu, ruta: &Path) {
     let resultado = match tecla {
         116 => guardar_editor(ruta, editor).map(|()| "Configuración guardada; sin caché de campos".into()),
+        119 => {
+            if editor.volumen {
+                crate::intercambio_archivo::exportar(gpu, crate::volumen_vista::LADO, &ruta.with_extension("geo"))
+                    .map(|n| format!("{n} muestras GEO exportadas · comparación Houdini ABIERTA"))
+            } else {
+                Err("GEO de campos disponible solo en 3D".into())
+            }
+        }
         120 => leer_editor(ruta, editor).and_then(|()| {
             gpu.limpiar_campos()?;
             estado.pasos = 0;
@@ -251,4 +256,14 @@ fn predeterminada(args: &[String], volumen: bool) -> &'static str {
     } else {
         "humo.tlar"
     }
+}
+
+fn crear_editor(args: &[String], volumen: bool, abrir: Option<&str>) -> Result<EditorHumo, String> {
+    let mut editor = EditorHumo::default();
+    editor.volumen = volumen;
+    configurar_pulso(args, &mut editor);
+    if let Some(ruta) = abrir {
+        leer_editor(Path::new(ruta), &mut editor)?;
+    }
+    Ok(editor)
 }

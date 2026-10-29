@@ -1,5 +1,10 @@
 //! Humo MAC 3D real: referencia escalar, presión, vistas y pausa sin descarga por cuadro.
 #![allow(clippy::unwrap_used, clippy::cast_precision_loss, reason = "rejilla pequeña de ensayo")]
+#[allow(dead_code, reason = "se ensaya E/S GEO; entrada CLI solo pertenece a la app")]
+#[path = "../src/intercambio_archivo.rs"]
+mod intercambio_archivo;
+#[path = "../src/puntos_mac.rs"]
+mod puntos_mac;
 use telar_gpu::{Gpu, Opciones, PlanCampos, Sombreadores, Superficie};
 const LADO: usize = 9;
 const CELDAS: usize = LADO * LADO * LADO;
@@ -301,6 +306,9 @@ fn pulso(gpu: &mut Gpu) {
             let suma = resultado[10 * CELDAS..11 * CELDAS].iter().sum::<f32>();
             assert!(suma.abs() < 0.0001, "RHS incompatible en caja cerrada: {suma}");
             assert!((resultado[CONTROL + 13] - (inicio + 0.016)).abs() < 1e-6);
+            if radio == 0.0 && inicio == 0.0 {
+                intercambio(gpu, &resultado);
+            }
             assert_eq!(resultado, paso(gpu, &estado, &p));
             if inicio > 0.02 {
                 assert!(resultado[..5 * CELDAS].iter().all(|v| *v == 0.0));
@@ -309,4 +317,20 @@ fn pulso(gpu: &mut Gpu) {
             }
         }
     }
+}
+
+fn intercambio(gpu: &Gpu, estado: &[f32]) {
+    let ruta = std::env::temp_dir().join(format!("telar-geo-gpu-{}.geo", std::process::id()));
+    let antes = gpu.inspeccionar_campos().unwrap();
+    assert_eq!(intercambio_archivo::exportar(gpu, 9, &ruta).unwrap(), CELDAS);
+    let puntos = intercambio_archivo::leer(&ruta).unwrap();
+    let raw: Vec<_> = estado[..5 * CELDAS].iter().map(|v| v.to_bits()).collect();
+    let esperado = puntos_mac::convertir(9, &raw, estado[CONTROL + 13]).unwrap();
+    assert_eq!(puntos, esperado);
+    assert!(puntos.iter().any(|p| p.calor > 0.0));
+    let archivo = std::fs::read(&ruta).unwrap();
+    assert!(intercambio_archivo::exportar(gpu, 9, &ruta).is_err());
+    assert_eq!(archivo, std::fs::read(&ruta).unwrap());
+    assert_eq!(antes, gpu.inspeccionar_campos().unwrap());
+    std::fs::remove_file(ruta).unwrap();
 }

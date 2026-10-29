@@ -46,7 +46,7 @@ impl EditorHumo {
             &mut lienzo,
             [180.0, 22.0, ancho - 200.0, 30.0],
             if self.volumen {
-                "Campos físicos 32³ · arrastrar: órbita · rueda: zoom · Espacio / N / R"
+                "Campos físicos 32³ · arrastrar: órbita · rueda: zoom · Espacio / N / R · F8: GEO"
             } else {
                 "Emisor / advección / fuerzas / presión · 128² · Espacio: pausa · N: paso · R: reiniciar"
             },

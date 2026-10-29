@@ -26,6 +26,7 @@ dependencies = [
  "hilo-spirv",
  "nudo",
  "telar-gpu",
+ "telar-intercambio",
  "telar-kernel",
  "telar-nodos",
  "telar-render",
@@ -43,6 +44,10 @@ version = "0.1.0"
 
 [[package]]
 name = "telar-guard"
+version = "0.1.0"
+
+[[package]]
+name = "telar-intercambio"
 version = "0.1.0"
 
 [[package]]

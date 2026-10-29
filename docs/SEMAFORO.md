@@ -34,3 +34,5 @@ HUMO-3D.md y PLAN-EXPLOSION-PRODUCCION.md documentan la base 32³ y los hitos pe
 TIEMPO-COLISION-3D.md documenta predictor CFL, límites de tiempo/esfera y formato v10; distingue colisión estática de mallas/movimiento pendientes. No ejecuta el solver.
 
 PULSO-EXPANSIVO-3D.md separa fuente/expansión iniciales de combustión y render final pendientes; publica evidencia numérica y límites del dominio cerrado.
+
+INTERCAMBIO-GEO.md describe formato, costes CPU/descargas, límites y diferencia entre muestras y caché MAC. No certifica interoperabilidad por el mero hecho de existir documentación.

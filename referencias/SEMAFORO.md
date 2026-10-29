@@ -17,3 +17,5 @@ partio-houdini-intercambio.md conserva enlaces y conclusiones verificadas el
 28/10/2026; las propuestas de importación/caché están ABIERTAS. No incorpora
 código externo, no ejecuta Partio/HDK ni reserva recursos de producto. Incluye
 límites de variantes BGEO y procedencia/licencias como referencias documentales.
+
+El registro Partio enlaza la implementación propia de GEO y distingue pruebas internas de compatibilidad externa ABIERTA. No incorpora código de Partio/HDK; el documento no ejecuta importación.

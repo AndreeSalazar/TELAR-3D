@@ -70,15 +70,15 @@ Apache-2.0. Se conservan enlaces a sus textos, sin cambiar la licencia de TELAR.
 [Partio LICENSE](https://github.com/wdas/partio/blob/main/LICENSE),
 [LAIKA README y licencias](https://github.com/LaikaStudios/bgeo_reader#license).
 
-Decisión actual: **solo investigación**, sin instalar, enlazar, portar ni incorporar
-código externo. Se mantienen Rust propio, núcleo no_std, backend Vulkan aislado
+Decisión sobre las fuentes externas: **solo investigación**, sin instalar, enlazar, portar ni incorporar
+código externo. La primera implementación propia en Rust ya se documenta en [INTERCAMBIO-GEO.md](../docs/INTERCAMBIO-GEO.md). Se mantienen Rust propio, núcleo no_std, backend Vulkan aislado
 y cero dependencias de terceros según CLAUDE.md. Un posible uso como herramienta
 externa de verificación requerirá fijar versión y comprobar el entorno cuando se
 realice ese trabajo; esta anotación no lo presenta como instalado o funcional.
 
 ## Propuesta propia para TELAR
 
-La siguiente tabla es un contrato por diseñar y probar, no compatibilidad implementada:
+La siguiente tabla conserva el alcance ampliado del contrato. La primera entrega implementa muestras con posición, velocidad, id, densidad, calor y tiempo; edad/vida, atributos generales y caché de campos siguen pendientes. La compatibilidad externa continúa ABIERTA:
 
 | Dato propuesto | Metadatos necesarios |
 |---|---|
@@ -89,7 +89,7 @@ La siguiente tabla es un contrato por diseñar y probar, no compatibilidad imple
 | Atributos adicionales | Nombre, tipo, aridad, valor por defecto y dominio |
 | Estado de volumen MAC | Dimensiones, transformación, canales, caras/centros, dt y reloj |
 
-Plan de estudio, todavía **ABIERTO**:
+Plan de estudio: pasos 1–4 tienen una primera entrega y pruebas internas en GEO clásico; su verificación externa sigue **ABIERTO**. Pasos 5–6 pendientes:
 
 1. Diseñar partículas/atributos propios y distinguir datos de simulación, caché e
    intercambio. Se relaciona con P5/P6 del plan de explosión.
@@ -111,3 +111,5 @@ de decidir precarga o streaming. No se promete coste cero ni una biblioteca GPU.
 
 El estudio de estas fuentes no sustituye los hitos físicos pendientes de
 [combustión, iluminación y salida](../docs/PLAN-EXPLOSION-PRODUCCION.md).
+
+Entrega aplicada: [telar-intercambio y exportación real de campos a GEO](../docs/INTERCAMBIO-GEO.md). No implementa BGEO binario, PTC ni un solver de partículas.

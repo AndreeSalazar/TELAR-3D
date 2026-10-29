@@ -12,3 +12,5 @@ Limites: Los .tlar son datos de arranque; su CRC no autentica código. Referenci
 Evidencia: docs/FORMATO-TLAR.md, docs/ARRANQUE-GPU.md y docs/SEMAFOROS.md.
 
 Clasificación de riesgo, no certificación absoluta ni medición de rendimiento.
+
+muestras-telar.geo contiene dos puntos y atributos creados para TELAR; sirve de fixture del lector/escritor y ejemplo de inspección. No procede de Houdini ni demuestra compatibilidad externa. Sin ejecución automática fuera de las pruebas.

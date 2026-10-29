@@ -82,3 +82,5 @@ volumen_gpu.rs valida catorce kernels SPIR-V y visor, compara 14 planos contra r
 volumen_gpu.rs amplía referencia a dos subpasos con fuerzas y esfera: caras normales/celdas sólidas nulas, recorte CFL, reloj y repetibilidad. Valida 16 shaders; no benchmark. Formato v10 prueba corrupción y migración de v9.
 
 El ensayo de volumen compara pulso activo, cruce de duración y fin de emisión a 9³ con y sin esfera; suma global de RHS <0.0001, error por valor <0.0003, reloj y repetibilidad. Valida los shaders y mantiene regresiones. V11 verifica CRC y migración v9/v10. Sin benchmark de rendimiento.
+
+La prueba de volumen exporta un estado real a GEO a 9³, lee y compara todos los atributos, comprueba campos GPU intactos y rechazo de sobrescritura sin cambiar bytes. Puntos MAC verifica promedio de caras con valores fabricados. Descargas/E/S solo en ensayos; no comparación externa Houdini.

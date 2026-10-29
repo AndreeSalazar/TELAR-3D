@@ -14,7 +14,7 @@ Se estudian guías públicas; no se dispone del código propietario de Houdini.
 | P3 · Explosión | Fuente animada de corta duración, expansión objetivo, reacción/enfriamiento y humo; parámetros separados de simulación y aspecto | Parcial: pulso finito de calor/humo y expansión compensada en GPU; combustible/reacción y fuentes dirigibles pendientes |
 | P4 · Render volumétrico | Absorción, emisión, sombras y dispersión; temperatura con unidades/mapeo y gestión de color | Pendiente; existe fuego analítico separado |
 | P5 · Secundarios | Trayectorias, estelas, chispas y fragmentos con edad/vida; fuentes secundarias controlables | Pendiente |
-| P6 · Caché y salida | Estado versionado por fotograma/semilla, reanudación comprobada, secuencia HDR y pases | Pendiente; guardar parámetros no es cachear campos |
+| P6 · Caché y salida | Estado versionado por fotograma/semilla, reanudación comprobada, secuencia HDR y pases | Caché/seq. pendientes; intercambio inicial de muestras GEO implementado, sin reanudación de campos |
 | P7 · Plano final | Cámara, composición, rango dinámico y comparación reproducible de secuencia; coste GPU/VRAM publicado | Pendiente |
 
 Los hitos se cierran con datos y pruebas. Añadir una carpeta, tarjeta, shader o
@@ -61,4 +61,4 @@ La primera pieza de P3 queda documentada y probada en [PULSO-EXPANSIVO-3D.md](PU
 
 Para preparar P5/P6 se conservan [Partio, LAIKA BGEO y documentación oficial](../referencias/partio-houdini-intercambio.md).
 El registro distingue partículas de cachés de campos y BGEO clásico de variantes
-modernas. Su integración sigue ABIERTO; no añade dependencias ni completa esos hitos.
+modernas. [La primera aplicación propia](INTERCAMBIO-GEO.md) exporta/inspecciona muestras GEO; la compatibilidad externa sigue ABIERTA, sin dependencias externas ni cierre de esos hitos.

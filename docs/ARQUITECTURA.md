@@ -151,3 +151,7 @@ No equivale a invalidación de grafos generales ni a render progresivo todavía.
 El inspector ya conserva configuraciones propias y Relieve recibe un escalar
 vivo HILO, sin recompilar al editar. Parámetros: 32 B por paso. El prefijo de
 control sigue siendo ABI v1; extensión y pruebas en [NODOS-PARAMETROS.md](NODOS-PARAMETROS.md).
+
+## Intercambio de muestras
+
+`telar-intercambio` es no_std + alloc y no depende de otros crates. Define datos/validación y GEO clásico; la app compone E/S y lectura explícita del backend. GPU/kernel/UI no dependen del serializador. Se incorpora al grupo vigilado por núcleo-sin-std. Contrato y límites: [INTERCAMBIO-GEO.md](INTERCAMBIO-GEO.md).

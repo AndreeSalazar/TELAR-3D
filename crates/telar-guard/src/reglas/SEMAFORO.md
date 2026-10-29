@@ -12,3 +12,5 @@ Limites: ABIERTO: tiempos y pico global; no atribuir una medición a una etiquet
 Evidencia: crates/telar-guard/tests/reglas.rs y docs/GUARDIANES.md.
 
 Clasificación de riesgo, no certificación absoluta ni medición de rendimiento.
+
+El grupo no_std añade telar-intercambio: sus fuentes no pueden usar std y sus dependencias siguen vigiladas por fronteras/cero-deps. No se relaja ninguna regla para añadir el serializador. Ver cargo verify.

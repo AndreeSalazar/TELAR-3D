@@ -79,3 +79,7 @@ Existe un laboratorio MAC 2D con campos residentes y controles: [HUMO-MAC-2D.md]
 ## Categorías visibles en TELAR
 
 [ESTUDIO-CATEGORIAS.md](ESTUDIO-CATEGORIAS.md) organiza el centro nativo en ocho áreas. Es navegación a herramientas independientes y un mapa de alcance; no implica compatibilidad con contextos/proyectos Houdini ni que todas las tarjetas estén implementadas.
+
+## Primer intercambio de datos
+
+[INTERCAMBIO-GEO.md](INTERCAMBIO-GEO.md) implementa exportación de campos 3D como puntos e inspección del subconjunto TELAR GEO V5. La comparación real en Houdini permanece ABIERTA; no importa nodos ni reanuda volúmenes.
